@@ -5,7 +5,8 @@
 - Values clear, plain-language explanations of the overall project architecture, component responsibilities, and data flow, with special attention to explaining unfamiliar subsystems such as `sangsad`. Confidence: 0.9
 - Prefers architecture recommendations grounded in a full repository and documentation review, with explicit comparison of alternatives and their performance, freshness, reliability, security, and operational tradeoffs. Confidence: 0.9
 - Prefers deploying this project on a self-hosted VPS with a single shared self-hosted Supabase project/database for MYMP and Sangsad, instead of Vercel-managed infrastructure or separate Supabase projects. Confidence: 0.95
-- Prefers GitHub Actions as the sole production scheduler for the `sync-posts` job, with no duplicate Supabase Cron `sync-posts` job; Supabase Cron may remain for separate jobs such as the reachability probe. Confidence: 0.98
+- Prefers Supabase Cron for all scheduled/periodic jobs (feeds, syncing, probing, sangsad workers) rather than GitHub Actions workflows. GitHub Actions is reserved only for CI checks and VPS deployment (`deploy.yml`). Confidence: 0.9
+- Prefers consolidating all scheduled/periodic tasks onto a single platform (Supabase Cron) to reduce operational complexity and avoid split-scheduler management. Confidence: 0.85
 - Wants VPS deployment documentation to be a complete operational runbook covering Docker deployment, Supabase Cron schedules, secrets, health checks, cutover, rollback, and avoiding duplicate scheduling across Supabase Cron and GitHub Actions. Confidence: 0.95
 - Prefers operational guidance to state exactly what to do and what not to do, using explicit actionable checklists rather than ambiguous explanatory prose. Confidence: 0.95
 - Prefers adapting deployment workflows from a known working sibling project, while inspecting project-specific differences before copying the pattern. Confidence: 0.9
@@ -15,3 +16,6 @@
 - Prefers database schema changes to be runnable through a repository script/command using the `DATABASE_URL` from `.env.local`, rather than requiring manual SQL-editor steps. Confidence: 0.85
 - Is comfortable delegating technical implementation and dependency/tool choices to the assistant when the choice is justified by existing project conventions and best practices. Confidence: 0.85
 - Wants CI environment provenance explained explicitly, distinguishing local dotenv files from variables injected by workflow configuration and GitHub secrets. Confidence: 0.9
+- Expects complete migration/recreation instructions before deleting files or infrastructure — never remove existing functionality without first providing a clear replacement plan with step-by-step guidance for the new location/platform. Confidence: 0.95
+- Prefers wrapping CLI worker jobs behind HTTP API endpoints so they can be called by Supabase Cron, rather than running them directly from the scheduler. Confidence: 0.9
+- Prefers preserving platform-migration behavior faithfully (e.g., triggering VPS redeployment after sangsad worker jobs via GitHub `repository_dispatch`) by adding opt-in query parameters (e.g., `&deploy=1`) on the cron endpoint, so the original workflow lifecycle is maintained. Confidence: 0.9
