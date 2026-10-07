@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { execSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
 
 /**
  * Runs sangsad worker jobs via Supabase Cron.
@@ -53,52 +52,69 @@ export async function GET(req: Request) {
   }
 
   const sangsadDir = resolve(process.cwd(), "sangsad");
+  const workerEnv = {
+    ...process.env,
+    DATABASE_URL:
+      process.env.SANGSAD_DATABASE_URL ?? process.env.DATABASE_URL,
+    DATABASE_SSL: process.env.SANGSAD_DATABASE_SSL ?? "disable",
+    DATABASE_SCHEMA: process.env.SANGSAD_DATABASE_SCHEMA ?? "sangsad",
+    NEXT_PUBLIC_SUPABASE_URL:
+      process.env.SANGSAD_SUPABASE_URL ??
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY:
+      process.env.SANGSAD_SUPABASE_SERVICE_ROLE_KEY ??
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+  };
 
-  try {
-    const output = execSync(`pnpm worker ${job}`, {
+  const { code, stdout, stderr } = await new Promise<{
+    code: number;
+    stdout: string;
+    stderr: string;
+  }>((resolve) => {
+    const child = spawn("pnpm", ["worker", job], {
       cwd: sangsadDir,
-      timeout: 55_000,
-      encoding: "utf-8",
-      env: {
-        ...process.env,
-        DATABASE_URL:
-          process.env.SANGSAD_DATABASE_URL ?? process.env.DATABASE_URL,
-        DATABASE_SSL: process.env.SANGSAD_DATABASE_SSL ?? "disable",
-        DATABASE_SCHEMA: process.env.SANGSAD_DATABASE_SCHEMA ?? "sangsad",
-        NEXT_PUBLIC_SUPABASE_URL:
-          process.env.SANGSAD_SUPABASE_URL ??
-          process.env.NEXT_PUBLIC_SUPABASE_URL,
-        SUPABASE_SERVICE_ROLE_KEY:
-          process.env.SANGSAD_SUPABASE_SERVICE_ROLE_KEY ??
-          process.env.SUPABASE_SERVICE_ROLE_KEY,
-      },
-      stdio: ["pipe", "pipe", "pipe"],
+      env: workerEnv,
+      stdio: ["ignore", "pipe", "pipe"],
     });
 
-    let deployResult: { triggered: boolean; error?: string } | undefined;
-    if (shouldDeploy) {
-      deployResult = await triggerVpsDeploy(job);
-    }
-
-    return NextResponse.json({
-      ok: true,
-      job,
-      output: output.slice(-2000),
-      deploy: deployResult,
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk: Buffer) => {
+      stdout += chunk.toString();
     });
-  } catch (err) {
-    const error = err as { message?: string; stderr?: string; stdout?: string };
+    child.stderr.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
+
+    child.on("close", (code) => {
+      resolve({ code: code ?? 1, stdout, stderr });
+    });
+  });
+
+  if (code !== 0) {
     return NextResponse.json(
       {
         ok: false,
         job,
-        error: error.message ?? "unknown error",
-        stderr: error.stderr?.slice(-2000),
-        stdout: error.stdout?.slice(-2000),
+        error: `worker exited with code ${code}`,
+        stderr: stderr.slice(-2000),
+        stdout: stdout.slice(-2000),
       },
       { status: 500 },
     );
   }
+
+  let deployResult: { triggered: boolean; error?: string } | undefined;
+  if (shouldDeploy) {
+    deployResult = await triggerVpsDeploy(job);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    job,
+    output: stdout.slice(-2000),
+    deploy: deployResult,
+  });
 }
 
 /**

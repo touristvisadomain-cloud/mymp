@@ -18,3 +18,4 @@
 - Expects complete migration/recreation instructions before deleting files or infrastructure — never remove existing functionality without first providing a clear replacement plan with step-by-step guidance for the new location/platform. Confidence: 0.95
 - Prefers wrapping CLI worker jobs behind HTTP API endpoints so they can be called by Supabase Cron, rather than running them directly from the scheduler. Confidence: 0.9
 - Prefers preserving platform-migration behavior faithfully (e.g., triggering VPS redeployment after sangsad worker jobs via GitHub `repository_dispatch`) by adding opt-in query parameters (e.g., `&deploy=1`) on the cron endpoint, so the original workflow lifecycle is maintained. Confidence: 0.9
+- Prefers proper async refactoring (e.g., `spawn` + Promise) over quick fixes like increasing timeouts when a synchronous process exceeds its time limit. Chooses structural solutions over band-aids. Confidence: 0.9
