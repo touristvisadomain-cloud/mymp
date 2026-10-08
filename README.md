@@ -65,8 +65,9 @@ How an edit reaches the public site (there is still no database on the read
 path): every build runs `scripts/sync.mjs --soft` first, which fetches
 parliament.gov.bd, applies every override and hidden flag from Supabase,
 writes the published news to `data/news.json`, then `next build` prerenders.
-"Publish" in the admin calls a Vercel deploy hook; a cron in `vercel.json` does
-the same nightly at 02:00 Dhaka time.
+"Publish" in the admin asks GitHub to rebuild and redeploy the site on the VPS
+(`src/lib/rebuild.ts`); the worker container does the same nightly at 02:00
+Dhaka time, after the parliament jobs. See `docs/vps-deployment.md`.
 
 To connect, once:
 
@@ -74,11 +75,12 @@ To connect, once:
    in its SQL editor.
 2. Supabase → Authentication → Users → Add user: the first admin's email and
    password.
-3. Set the variables in `.env.example` on Vercel (`SUPABASE_SERVICE_ROLE_KEY`
-   and `CRON_SECRET` as secrets). `ADMIN_BOOTSTRAP_EMAIL` is that first user;
-   the admin row is created on their first sign-in. Redeploy.
-4. Vercel → Settings → Git → Deploy Hooks → create one for `main`, paste it
-   as `VERCEL_DEPLOY_HOOK_URL`.
+3. Put the variables in `.env.example` into the VPS runtime file (GitHub
+   secret `DEPLOY_ENV_FILE_B64`). `ADMIN_BOOTSTRAP_EMAIL` is that first user;
+   the admin row is created on their first sign-in.
+4. Add the GitHub secret `MYMP_DEPLOY_TOKEN` (a fine-grained token for this
+   repository, Contents: Read and write) so Publish can rebuild, then run
+   deploy.yml once.
 
 Every admin table has row level security on and no policies, so the anon key
 can read nothing; only server actions holding the service key touch them.

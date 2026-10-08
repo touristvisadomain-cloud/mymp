@@ -6,22 +6,22 @@ This is the production runbook for the self-hosted VPS deployment.
 
 ```text
 GitHub Actions
-  ├─ deploy.yml
-  │    └─ build + sync data/*.json + Docker image + SSH deploy
-  ├─ sangsad-worker.yml
-  │    └─ parliament refresh → Supabase Storage mirror → dispatch deploy.yml
-  ├─ sangsad-news.yml
-  │    └─ news matching → MYMP public tables → dispatch deploy.yml
-  └─ feed-loop.yml / sync-posts.yml
-       └─ authenticated HTTP calls to MYMP cron routes
+  └─ deploy.yml  (push to main, manual run, or a `rebuild` dispatch)
+       ├─ build + sync data/*.json + site image + SSH deploy
+       └─ worker image from sangsad/Dockerfile, only when sangsad/ changed
 
-Supabase Cron
-  └─ authenticated HTTP calls to MYMP cron routes
+VPS  /home/devuser/opt/apps/mymp
+  ├─ .env                  written by deploy.yml on every deploy
+  ├─ container mymp        the site; Caddy → mymp:3000, also on 127.0.0.1:5000
+  └─ container mymp-worker sangsad/worker/src/scheduler.ts
+       ├─ 20:00 UTC: parliament jobs → Storage mirror → `rebuild` dispatch
+       ├─ every 30 min: news → MYMP public tables → `rebuild` every 3 h
+       └─ with WORKER_SITE_JOBS=on: authenticated calls to the MYMP cron routes
 
-VPS
-  ├─ /home/devuser/opt/apps/mymp/.env
-  ├─ Docker container: mymp
-  └─ Caddy/Nginx reverse proxy → 127.0.0.1:3000
+Supabase Cron (only while WORKER_SITE_JOBS is off)
+  └─ authenticated HTTP calls to the MYMP cron routes
+
+Admin "Publish" and the posts sync → `rebuild` dispatch (src/lib/rebuild.ts)
 ```
 
 The public parliamentary pages do not query PostgreSQL on each request. A deployment runs `scripts/sync.mjs`, writes the generated `data/*.json` snapshot, runs `next build`, and starts a container containing that snapshot.
@@ -80,52 +80,55 @@ CRON_SECRET=...
 
 Keep the service-role key only in this runtime file. Never pass it as a Docker build argument.
 
-### All GitHub Actions secrets
+### All GitHub Actions secrets and variables
 
-Configure these repository/environment secrets:
+In the `prod` environment (or the repository):
 
 ```text
 DEPLOY_HOST
 DEPLOY_SSH_KEY
 DEPLOY_ENV_FILE_B64
 MYMP_DEPLOY_TOKEN
-MYMP_CRON_SECRET
-SANGSAD_DATABASE_URL
-SANGSAD_SUPABASE_URL
-SANGSAD_SUPABASE_SERVICE_ROLE_KEY
-MYMP_SUPABASE_URL
-MYMP_SUPABASE_SERVICE_ROLE_KEY
+```
+
+and one repository variable (Settings → Secrets and variables → Actions → Variables):
+
+```text
+WORKER_SITE_JOBS   on | (empty)
 ```
 
 Use the following ownership:
 
 - `DEPLOY_HOST`, `DEPLOY_SSH_KEY`: GitHub-to-VPS Docker deployment.
-- `DEPLOY_ENV_FILE_B64`: complete MYMP VPS runtime `.env`, including `DATABASE_URL`, `DATABASE_SSL=disable`, `DATABASE_SCHEMA=sangsad`, Supabase keys, and `CRON_SECRET`.
-- `MYMP_DEPLOY_TOKEN`: fine-grained GitHub token with repository Contents read/write permission; dispatches `sangsad-data-updated`.
-- `MYMP_CRON_SECRET`: same value as the runtime `CRON_SECRET`; used by GitHub HTTP cron callers.
-- `SANGSAD_DATABASE_URL`: shared PostgreSQL URL used by Sangsad GitHub jobs. Set it as one unquoted line, for example `postgresql://postgres.mymp:PASSWORD@supabase.mymp.bd:5433/postgres`. Do not include `***`, surrounding quotes, spaces, or a `.env` assignment. URL-encode special characters in the password.
-- `SANGSAD_SUPABASE_URL`: shared Supabase URL used for the public mirror bucket.
-- `SANGSAD_SUPABASE_SERVICE_ROLE_KEY`: service key used by Sangsad worker/mirror jobs.
-- `MYMP_SUPABASE_URL`, `MYMP_SUPABASE_SERVICE_ROLE_KEY`: MYMP database delivery credentials used by Sangsad news/enrichment jobs.
+- `DEPLOY_ENV_FILE_B64`: complete MYMP VPS runtime `.env`, including `DATABASE_URL`, Supabase keys, `CRON_SECRET`, and the সংসদ settings below. The worker container reads the same file.
+- `MYMP_DEPLOY_TOKEN`: fine-grained GitHub token for this repository only, Contents: Read and write. deploy.yml appends it to the VPS `.env`; Publish, the posts sync, `/api/cron/republish` and the worker use it to send the `rebuild` dispatch. Without it nothing rebuilds the site except a push to `main`.
+- `WORKER_SITE_JOBS`: `on` moves the MYMP cron calls from Supabase Cron to the worker (see Schedules). deploy.yml appends it to the VPS `.env`.
 
-`DATABASE_SSL=disable` and `DATABASE_SCHEMA=sangsad` are non-secret workflow settings already defined in `sangsad-worker.yml` and `sangsad-news.yml`.
+The worker runs each সংসদ job with these names from the runtime `.env` (sangsad/worker/src/scheduler.ts, `jobEnv`):
 
-### Cron caller secret
+- `SANGSAD_DATABASE_URL`, falling back to `DATABASE_URL`. One unquoted line, for example `postgresql://postgres.mymp:PASSWORD@supabase.mymp.bd:5433/postgres`; URL-encode special characters in the password.
+- `SANGSAD_DATABASE_SSL` (default `disable`) and `SANGSAD_DATABASE_SCHEMA` (default `sangsad`).
+- `SANGSAD_SUPABASE_URL`, `SANGSAD_SUPABASE_SERVICE_ROLE_KEY`, falling back to the site's own Supabase: the public mirror bucket.
+- `MYMP_SUPABASE_URL`, `MYMP_SUPABASE_SERVICE_ROLE_KEY`, falling back to the site's own Supabase: where news and Wikipedia enrichment are delivered.
 
-`MYMP_CRON_SECRET` must equal `CRON_SECRET` in the VPS runtime environment. Supabase Cron uses `CRON_SECRET` directly; GitHub workflows use `MYMP_CRON_SECRET`.
+The old repository secrets `MYMP_CRON_SECRET`, `SANGSAD_*` and `MYMP_SUPABASE_*` belonged to the deleted GitHub schedules; no workflow reads them any more.
 
 ## Deploying the application
 
-A push to `main` or `prod`, a manual dispatch, or a `sangsad-data-updated` event runs:
+A push to `main`, a manual run, or a `rebuild` dispatch (the older `sangsad-data-updated` name still works) runs, always on `main`:
 
 ```bash
 npm ci
 npm run build
 npm run typecheck
-docker build ...
+docker build ...                                   # the site
+docker build -t mymp-worker:<tree hash> sangsad    # only when sangsad/ changed
 ssh ... /home/devuser/opt/apps/mymp
-docker compose up -d --force-recreate web
+docker compose up -d --force-recreate web          # then waits for healthy
+docker compose up -d --force-recreate worker
 ```
+
+Other branches, `prod` included, do not deploy. Deploys queue one at a time (`concurrency: production-deploy`).
 
 `npm run build` is the important step:
 
@@ -139,91 +142,65 @@ scripts/sync.mjs --soft
 
 The container image uses `npm run build:local` because the snapshot has already been generated in the workflow. A failed build stops before the VPS container is replaced.
 
-## Supabase Cron setup
+## Schedules
 
-Open the self-hosted Supabase dashboard at:
+The GitHub schedules are gone; the worker container is the clock
+(sangsad/worker/src/scheduler.ts). Times are UTC; Dhaka is UTC+6.
 
-```text
-https://supabase.mymp.bd/project/default/integrations/cron/jobs
-```
+| Job | Runs in | When (UTC) | What |
+|---|---|---|---|
+| Parliament refresh | worker | 20:00 daily | `parliament` → `parliament:photos` → `parliament:report`, then a rebuild |
+| সংসদ news | worker | every 30 min | `news`; on the hour at 00, 03, … 21 also a rebuild when it succeeded |
+| RSS + thumbnails / sitemaps | Supabase Cron, or worker when `WORKER_SITE_JOBS=on` | every 15 min, taking turns | `/api/cron/feed?collector=rss`, `thumbs`, `sitemap` |
+| YouTube | same | hourly | `/api/cron/feed?collector=youtube` |
+| Search | same | hourly at :45 | `/api/cron/feed?collector=search` |
+| Government posts sync | same | 00:40, 06:40, 12:40, 18:40 | `/api/cron/sync-posts` |
+| Press | same | 03:40 daily | `/api/cron/feed?collector=press` |
+| Learning from feedback | same | Monday 04:00 | `/api/cron/feed?collector=learn` |
+| Parliament reachability probe | same | every 6 h | `/api/cron/probe` |
 
-Create HTTP jobs that call the public MYMP origin. Every request must include:
+A rebuild is the `rebuild` dispatch to deploy.yml. The nightly one also applies
+the day's admin edits, which the old Vercel republish cron used to do.
 
-```http
-Authorization: Bearer <CRON_SECRET>
-```
+The worker runs one সংসদ job at a time and one site call at a time; a slot that
+comes due while the previous one is still running is skipped and logged.
 
-Use the Supabase Cron UI’s HTTP-request/job feature if available. If the UI requires SQL, enable the `pg_cron` and `pg_net` extensions and use the equivalent `cron.schedule`/`net.http_get` configuration supplied by your self-hosted Supabase version.
+### Moving the site calls from Supabase Cron to the worker
 
-Do not put the service-role key in a Cron job. Only `CRON_SECRET` is required for these routes.
+Supabase Cron (`https://supabase.mymp.bd/project/default/integrations/cron/jobs`)
+calls the MYMP routes until the worker takes them over. Never let both call
+them: the YouTube and search quotas are sized for one caller.
 
-### Exact production scheduler ownership
+1. Delete or deactivate every Supabase Cron job that calls `mymp.bd/api/cron/`,
+   including any that call the removed `/api/cron/sangsad-worker` route.
+2. Set the repository variable `WORKER_SITE_JOBS` to `on`.
+3. Run deploy.yml once (Actions → Build and deploy Docker image → Run workflow).
+   The worker's first log line then says `site jobs on`.
 
-Cron expressions are UTC. Dhaka is UTC+6. Follow this table exactly; do not create jobs marked **Do not create**.
-
-| Job | Owner | Schedule | URL/action |
-|---|---|---:|---|
-| Government posts sync | **GitHub Actions** | `40 */6 * * *` | `/api/cron/sync-posts?trigger=github` |
-| Parliament reachability probe | **Supabase Cron** | `0 */6 * * *` | `/api/cron/probe` |
-| RSS collector | **GitHub Actions** | every 15 minutes via `feed-loop.yml` | `/api/cron/feed?collector=rss&trigger=github` |
-| Sitemap collector | **GitHub Actions** | every 15 minutes via `feed-loop.yml` | `/api/cron/feed?collector=sitemap&trigger=github` |
-| YouTube collector | **GitHub Actions** | hourly within `feed-loop.yml` | `/api/cron/feed?collector=youtube&trigger=github` |
-| Thumbnail fill | **GitHub Actions** | after RSS runs within `feed-loop.yml` | `/api/cron/feed?collector=thumbs&trigger=github` |
-| Press collector | **Do not create** | not part of the selected feed loop | — |
-| Learning/feedback | **Do not create** | not part of the selected feed loop | — |
-| Republish | **Do not create** | VPS deployment is GitHub-dispatch based | — |
-
-### What to create in Supabase Cron
-
-Create exactly one HTTP job:
-
-1. **Parliament probe**
-   ```text
-   Schedule: 0 */6 * * *
-   URL: https://mymp.bd/api/cron/probe
-   Header: Authorization: Bearer <CRON_SECRET>
-   ```
-
-### What not to create in Supabase Cron
-
-Do not create a posts-sync, RSS, sitemap, YouTube, thumbnail, press, learning, or republish job.
-
-- `sync-posts.yml` owns government posts sync.
-- `feed-loop.yml` owns RSS, sitemap, YouTube, and thumbnail collection.
-- Sangsad/GitHub Actions owns rebuild dispatches.
-- `/api/cron/republish` is obsolete for VPS deployment.
-
-Keep these GitHub workflows enabled:
-
-```text
-.github/workflows/feed-loop.yml
-.github/workflows/sync-posts.yml
-.github/workflows/sangsad-worker.yml
-.github/workflows/sangsad-news.yml
-```
-
-`sync-posts.yml` is the sole production scheduler for posts sync. Do not create a Supabase Cron posts job, or the posts sync will run twice.
-
-### Republish caveat for VPS
-
-The existing `/api/cron/republish` route still calls `VERCEL_DEPLOY_HOOK_URL`. It cannot deploy a Docker image on the VPS by itself. For VPS production, use the Sangsad repository-dispatch workflow for parliamentary rebuilds, or update this route to call a separately secured GitHub dispatch endpoint.
-
-Until that route is changed, do not rely on `/api/cron/republish` for VPS deployment. It should be disabled in Supabase Cron, or left only as a health-visible no-op that is expected to return an error.
+While Supabase Cron keeps them, every request needs `Authorization: Bearer <CRON_SECRET>`,
+and never the service-role key.
 
 ## Sangsad refresh flow
 
 The normal parliamentary refresh is:
 
 ```text
-sangsad-worker.yml nightly schedule
+worker, 20:00 UTC
   → pnpm worker parliament
   → pnpm worker parliament:photos
   → pnpm worker parliament:report
   → uploads mirror/parliament/latest.json
-  → repository_dispatch(sangsad-data-updated, ref=prod)
-  → deploy.yml
+  → rebuild dispatch
+  → deploy.yml on main
   → npm run build
   → Docker deploy to VPS
+```
+
+To run a job by hand with the same environment the schedule uses:
+
+```bash
+docker exec mymp-worker pnpm job parliament
+docker exec mymp-worker pnpm job health
 ```
 
 The first setup on the shared database is:
@@ -294,6 +271,17 @@ ssh devuser@<DEPLOY_HOST> \
 
 The container health check requests `/` on `127.0.0.1:3000`.
 
+### Worker container
+
+```bash
+ssh devuser@<DEPLOY_HOST> \
+  'cd /home/devuser/opt/apps/mymp && docker compose logs --tail 200 worker'
+```
+
+The first lines after a deploy show `site jobs on|off`, whether rebuilds are on
+(`MYMP_DEPLOY_TOKEN`), and the result of the `health` job that runs on every
+start: `db ok (...); parliament.gov.bd ok (... sitting members)`.
+
 ### Supabase mirror
 
 ```bash
@@ -334,14 +322,14 @@ counts
 2. Run `pnpm db:seed` and `pnpm worker health`.
 3. Confirm `sangsad` has the normalized tables and `public` has MYMP tables.
 4. Configure the GitHub `prod` environment secrets.
-5. Deploy the `prod` branch manually once.
+5. Add `MYMP_DEPLOY_TOKEN`, then deploy `main` once.
 6. Confirm `mymp.bd` serves through the VPS reverse proxy.
-7. Run one Sangsad parliamentary refresh and confirm `mirror/parliament/latest.json` changes.
-8. Confirm the `sangsad-data-updated` event starts `deploy.yml`.
-9. Create Supabase Cron jobs for `sync-posts` and `probe`.
-10. Decide whether GitHub `feed-loop.yml` remains the feed scheduler; do not schedule duplicate feed collectors.
-11. Disable or remove Vercel Cron after VPS cutover.
-12. Remove obsolete Vercel deploy-hook variables from production secrets after the VPS flow is confirmed.
+7. Confirm the worker log shows a passing `health` run and `rebuilds on`.
+8. Press Publish in /admin and confirm a `repository_dispatch` run of deploy.yml starts.
+9. After the first night, confirm `mirror/parliament/latest.json` changed and a rebuild followed.
+10. Choose one caller for the MYMP cron routes: Supabase Cron, or the worker with `WORKER_SITE_JOBS=on`.
+11. Disable or remove the Vercel project after VPS cutover.
+12. Remove `VERCEL_DEPLOY_HOOK_URL` from the runtime `.env`; nothing reads it any more.
 
 ## Rollback
 

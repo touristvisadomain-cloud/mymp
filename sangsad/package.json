@@ -14,6 +14,7 @@
     "db:migrate": "pnpm --filter @sangsad/db migrate",
     "db:seed": "pnpm --filter @sangsad/db seed",
     "worker": "pnpm --filter @sangsad/worker start",
+    "job": "pnpm --filter @sangsad/worker job",
     "format": "prettier --write ."
   },
   "devDependencies": {

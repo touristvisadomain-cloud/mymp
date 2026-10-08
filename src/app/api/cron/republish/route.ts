@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
+import { requestRebuild } from '@/lib/rebuild';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Nightly rebuild, called by Vercel Cron (see vercel.json). Rebuilding is what
- * refreshes the site from parliament.gov.bd and applies every admin edit, so
- * this is the "always current" guarantee.
+ * Rebuilds the site on request. Rebuilding is what refreshes the site from
+ * parliament.gov.bd and applies every admin edit. The worker container already
+ * rebuilds every night after the parliament jobs (sangsad/worker/src/scheduler.ts);
+ * this route is for anything else that should be able to ask for one.
  *
- * Vercel sends `Authorization: Bearer <CRON_SECRET>`; anything else is refused.
+ * Callers send `Authorization: Bearer <CRON_SECRET>`; anything else is refused.
  */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
@@ -16,14 +18,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
   }
 
-  const hook = process.env.VERCEL_DEPLOY_HOOK_URL;
-  if (!hook) {
-    return NextResponse.json({ ok: false, error: 'VERCEL_DEPLOY_HOOK_URL is not set' }, { status: 500 });
-  }
-
-  const res = await fetch(hook, { method: 'POST' });
+  const r = await requestRebuild('cron-republish');
   return NextResponse.json(
-    { ok: res.ok, status: res.status, at: new Date().toISOString() },
-    { status: res.ok ? 200 : 502 },
+    r.ok ? { ok: true, at: new Date().toISOString() } : { ok: false, error: r.detail, at: new Date().toISOString() },
+    { status: r.ok ? 200 : r.reason === 'no-token' ? 500 : 502 },
   );
 }

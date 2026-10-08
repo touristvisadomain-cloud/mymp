@@ -5,6 +5,7 @@ import { buildMatcher, type Candidate, type MatchMember, type Resolution } from 
 import { normalizeName, nameSimilarity, ministryKey } from './names';
 import { restDb, isMissingTable, type Db } from './db';
 import { sendSyncMail } from './mail';
+import { requestRebuild } from '../rebuild';
 
 /**
  * The posts sync: reads the cabinet and parliament lists, works out who each
@@ -343,12 +344,8 @@ async function finish(
     report.mail = await sendSyncMail(mailSubject(report, changed), mailText(report, newUnmatched));
   }
   if (report.status === 'ok' && changed > 0) {
-    const hook = process.env.VERCEL_DEPLOY_HOOK_URL;
-    if (!hook) report.deploy = 'not rebuilt: VERCEL_DEPLOY_HOOK_URL is not set';
-    else {
-      const res = await fetch(hook, { method: 'POST' }).catch((e: Error) => ({ ok: false, status: e.message }) as const);
-      report.deploy = res.ok ? 'site rebuild requested' : `rebuild failed: ${res.status}`;
-    }
+    const r = await requestRebuild('posts-sync');
+    report.deploy = r.ok ? 'site rebuild requested' : r.reason === 'no-token' ? `not rebuilt: ${r.detail}` : `rebuild failed: ${r.detail}`;
   }
   return report;
 }

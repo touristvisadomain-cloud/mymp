@@ -10,6 +10,7 @@ import {
   upsertResult, setResultStatus, socialOverrides, dropSocialSource, dropBioFromWiki, setPostAlias,
 } from '@/lib/admin/store';
 import { runPostsSync } from '@/lib/posts/sync';
+import { requestRebuild } from '@/lib/rebuild';
 import { runRssCollector } from '@/lib/feed/collect';
 import { upsertItem } from '@/lib/feed/store';
 import { fetchItemForUrl } from '@/lib/feed/fetchItem';
@@ -294,12 +295,11 @@ export async function deleteAdmin(fd: FormData) {
  */
 export async function publishSite(): Promise<ActionState> {
   const me = await requireAdmin();
-  const hook = process.env.VERCEL_DEPLOY_HOOK_URL;
-  if (!hook) return { error: 'VERCEL_DEPLOY_HOOK_URL সেট করা নেই। Vercel → Settings → Git → Deploy Hooks থেকে একটি তৈরি করে env-এ দিন।' };
-  const res = await fetch(hook, { method: 'POST' });
-  await audit(me, { action: 'site.publish', entity_type: null, entity_id: null, field: null, old_value: null, new_value: res.ok ? 'triggered' : `failed ${res.status}` });
-  if (!res.ok) return { error: `Vercel ফিরিয়ে দিয়েছে: HTTP ${res.status}` };
-  return { ok: 'সাইট নতুন করে তৈরি হচ্ছে। ২-৩ মিনিটের মধ্যে পরিবর্তন mymp.bd-তে দেখা যাবে।' };
+  const r = await requestRebuild('admin-publish');
+  await audit(me, { action: 'site.publish', entity_type: null, entity_id: null, field: null, old_value: null, new_value: r.ok ? 'triggered' : `failed ${r.detail}` });
+  if (!r.ok && r.reason === 'no-token') return { error: 'MYMP_DEPLOY_TOKEN সেট করা নেই। GitHub-এ এই রিপোর MYMP_DEPLOY_TOKEN সিক্রেট দিয়ে আবার ডিপ্লয় করুন।' };
+  if (!r.ok) return { error: `সাইট নতুন করে তৈরি শুরু করা যায়নি: ${r.detail}` };
+  return { ok: 'সাইট নতুন করে তৈরি হচ্ছে। ৫-১০ মিনিটের মধ্যে পরিবর্তন mymp.bd-তে দেখা যাবে।' };
 }
 
 /* ---------------- government posts sync ---------------- */
