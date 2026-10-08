@@ -13,8 +13,8 @@ export default function SetupPage() {
     ['NEXT_PUBLIC_SUPABASE_ANON_KEY', 'একই পাতায় → anon public key'],
     ['SUPABASE_SERVICE_ROLE_KEY', 'একই পাতায় → service_role key (গোপন, Secret হিসেবে দিন)'],
     ['ADMIN_BOOTSTRAP_EMAIL', 'প্রথম অ্যাডমিনের ইমেইল। Supabase → Authentication → Users → Add user দিয়ে আগে ব্যবহারকারীটি তৈরি করুন'],
-    ['VERCEL_DEPLOY_HOOK_URL', 'Vercel → Settings → Git → Deploy Hooks → Create Hook (branch main)'],
-    ['CRON_SECRET', 'যেকোনো লম্বা এলোমেলো স্ট্রিং; রাতের স্বয়ংক্রিয় রিবিল্ড এটি দিয়ে যাচাই হয়'],
+    ['MYMP_DEPLOY_TOKEN', 'GitHub → Settings → Developer settings → Fine-grained token: শুধু mymp রিপো, Contents: Read and write। রিপোর prod এনভায়রনমেন্টের সিক্রেট হিসেবে দিন'],
+    ['CRON_SECRET', 'যেকোনো লম্বা এলোমেলো স্ট্রিং; /api/cron/* রুটগুলো এটি দিয়ে যাচাই হয়'],
   ];
 
   return (
@@ -25,7 +25,7 @@ export default function SetupPage() {
           <h1 className="display text-[30px] font-extrabold">ডেটাবেস এখনো যুক্ত হয়নি</h1>
           <p className="text-[15px] text-inksoft leading-relaxed">
             অ্যাডমিন প্যানেল চালু হতে একটি Supabase প্রজেক্ট লাগে। প্রথমে <code className="bg-sunk px-1.5 rounded">supabase/schema.sql</code> ফাইলটি
-            Supabase-এর SQL Editor-এ চালান, তারপর নিচের পরিবেশ-ভ্যারিয়েবলগুলো Vercel-এ দিয়ে Redeploy করুন।
+            Supabase-এর SQL Editor-এ চালান, তারপর নিচের পরিবেশ-ভ্যারিয়েবলগুলো VPS-এর .env-এ (GitHub সিক্রেট DEPLOY_ENV_FILE_B64) দিয়ে আবার ডিপ্লয় করুন।
             জনসাধারণের সাইট এতে কোনোভাবে প্রভাবিত হয় না, সেটি আগের মতোই চলছে।
           </p>
         </div>

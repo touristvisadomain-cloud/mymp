@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",
+    "schedule": "tsx src/scheduler.ts",
+    "job": "tsx src/scheduler.ts run",
     "build": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo \"(worker) no lint step\"",

@@ -13,13 +13,13 @@ Read this once, top to bottom, before the first commit. It is short on purpose.
 | | |
 | --- | --- |
 | GitHub | **Write** on `sumongetup/mymp`. Push branches, open pull requests. |
-| Vercel | No. You do not need it: every push gets its own preview URL, posted on the pull request by the Vercel bot. |
+| VPS | No. Merging to `main` deploys through `.github/workflows/deploy.yml`. |
 | Supabase | No. The service role key is not shared. |
 | Play Console | No. |
 
 This is not a matter of trust, it is the blast radius. `SUPABASE_SERVICE_ROLE_KEY`
-bypasses row level security on the whole database, and the Vercel project holds
-it in plain view of anyone with project access. Anything you need that requires
+bypasses row level security on the whole database, and the VPS `.env` holds it
+in plain view of anyone with server access. Anything you need that requires
 those keys, ask the owner to run.
 
 You can do all normal work without them. See the next section.
@@ -91,7 +91,7 @@ src/lib/districts.ts  the single source of district ↔ seat grouping
 src/lib/search.ts     bilingual search (Bengali or English, same results)
 src/lib/seo/          titles, descriptions, structured data
 src/components/       shared UI
-.github/workflows/    feed and posts jobs that run outside Vercel
+.github/workflows/    deploy to the VPS, CI for sangsad/
 ```
 
 Public routes: `/` `/mp` `/mp/[slug]` `/ason` `/ason/[slug]` `/jela`
@@ -124,13 +124,14 @@ npm test && npx tsc --noEmit && npx eslint .
 
 ## 6. Deploy model
 
-- Push a branch, open a pull request. Vercel builds a **preview** and comments
-  the URL. Check your work there.
-- Merge to `main` deploys **production** (mymp.bd) automatically.
+- Push a branch, open a pull request. There is no preview deployment: check
+  your work locally with `npm run build:local && npm start`.
+- Merge to `main` deploys **production** (mymp.bd) through
+  `.github/workflows/deploy.yml`, in about five minutes. No other branch deploys.
 - Do not push straight to `main`. Branch, push, open the pull request, let the
-  owner look at the preview.
+  owner look at it.
 - A failed build never replaces the live site, but a green build with wrong data
-  does. Look at the preview before asking for a merge.
+  does. Check locally before asking for a merge.
 
 ## 7. Rules this project holds to
 
@@ -183,7 +184,7 @@ the code is correct.
 ## 9. Before you ask for a merge
 
 - [ ] `npm test && npx tsc --noEmit && npx eslint .` all clean
-- [ ] Checked the Vercel preview, on a phone width as well
+- [ ] Checked locally (`npm run build:local && npm start`), on a phone width as well
 - [ ] No new Supabase or auth call in anything under `src/app/(site)`
 - [ ] Any new information type has a row on `/sutro`
 - [ ] Any new page is in `src/app/sitemap.xml/route.ts` and reachable from a
@@ -201,7 +202,7 @@ the code is correct.
 | Supabase migrations, keys, grants | owner |
 | `/admin` content edits, publish | owner |
 | Play Console releases, app signing | owner |
-| Domain, DNS, Vercel settings | owner |
+| Domain, DNS, VPS and GitHub settings | owner |
 
 Questions about data or editorial rules go to the owner, not into an
 assumption. Anything the sources do not say, the site does not say.
