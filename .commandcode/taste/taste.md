@@ -1,4 +1,5 @@
 - Prefers a full-project inspection of configuration and environment-variable references before creating or changing local environment files. Confidence: 0.9
+- Expects existing deployment configurations (e.g., Dockerfile) to be thoroughly reviewed and referenced when creating new deployment configs (e.g., railpack.json), so start commands, build scripts, and file copies match what already works. Also expects the full project directory tree — including subdirectories like `sangsad/` — to be inspected before writing deployment configs, so nothing is overlooked. Confidence: 0.95
 - Wants local environment configuration to include all required variables discovered from the project, rather than only a minimal example. Confidence: 0.9
 - Prefers `.env.local` to be the canonical local configuration source and for all project components to use the same values consistently. Confidence: 0.9
 - Values clear, plain-language explanations of the overall project architecture, component responsibilities, and data flow, with special attention to explaining unfamiliar subsystems such as `sangsad`. Confidence: 0.9
