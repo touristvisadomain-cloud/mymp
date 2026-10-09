@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "packages": {
+    "node": "24"
+  },
+  "steps": {
+    "build": {
+      "commands": ["...", "RAILPACK_NO_SPA=1 npm run build:local"]
+    }
+  },
+  "secrets": [
+    "NEXT_PUBLIC_SITE_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+  ],
+  "deploy": {
+    "startCommand": "node server.js"
+  }
+}
