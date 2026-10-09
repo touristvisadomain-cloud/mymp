@@ -6,7 +6,6 @@
   "steps": {
     "build": {
       "commands": [
-        "...",
         "RAILPACK_NO_SPA=1 npm run build:local",
         "cp -r .next/standalone/* ./",
         "mkdir -p .next && cp -r .next/static ./.next/"
