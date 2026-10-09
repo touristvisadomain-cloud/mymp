@@ -6,19 +6,7 @@
   "steps": {
     "build": {
       "commands": [
-        "RAILPACK_NO_SPA=1 npm run build:local",
-        "cp -r .next/standalone/* ./",
-        "mkdir -p .next && cp -r .next/static ./.next/"
-      ],
-      "deployOutputs": [
-        {
-          "include": [
-            "server.js",
-            "node_modules/**",
-            "public/**",
-            ".next/static/**"
-          ]
-        }
+        "npm run build:local"
       ]
     }
   },
@@ -29,7 +17,7 @@
     "SUPABASE_SERVICE_ROLE_KEY"
   ],
   "deploy": {
-    "startCommand": "node server.js",
+    "startCommand": "npx next start",
     "variables": {
       "NODE_ENV": "production",
       "NEXT_TELEMETRY_DISABLED": "1",
