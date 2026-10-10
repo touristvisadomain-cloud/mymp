@@ -6,9 +6,11 @@
   },
   "steps": {
     "install-sangsad": {
+      "inputs": ["..."],
       "commands": ["cd sangsad && pnpm install --frozen-lockfile"]
     },
     "build": {
+      "inputs": ["..."],
       "commands": ["npm run build"]
     }
   },
