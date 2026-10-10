@@ -6,7 +6,7 @@
   },
   "steps": {
     "install": {
-      "inputs": [{"local": true}],
+      "inputs": ["..."],
       "commands": ["cd sangsad && pnpm install --frozen-lockfile"]
     },
     "build": {
