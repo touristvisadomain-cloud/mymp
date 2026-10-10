@@ -1,20 +1,41 @@
 {
   "$schema": "https://schema.railpack.com",
   "packages": {
-    "node": "24"
+    "node": "24",
+    "pnpm": "12.3.4"
   },
   "steps": {
+    "install-sangsad": {
+      "commands": ["cd sangsad && pnpm install --frozen-lockfile"]
+    },
     "build": {
-      "commands": [
-        "npm run build:local"
-      ]
+      "commands": ["npm run build:local"]
     }
   },
   "secrets": [
     "NEXT_PUBLIC_SITE_URL",
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY"
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "DATABASE_URL",
+    "DATABASE_SSL",
+    "DATABASE_SCHEMA",
+    "SANGSAD_SUPABASE_URL",
+    "SANGSAD_DATABASE_URL",
+    "SANGSAD_DATABASE_SSL",
+    "SANGSAD_DATABASE_SCHEMA",
+    "SANGSAD_SUPABASE_SERVICE_ROLE_KEY",
+    "MYMP_SUPABASE_URL",
+    "MYMP_SUPABASE_SERVICE_ROLE_KEY",
+    "ADMIN_BOOTSTRAP_EMAIL",
+    "DOKPLOY_DEPLOY_WEBHOOK",
+    "MYMP_DEPLOY_TOKEN",
+    "DEPLOY_REPOSITORY",
+    "CRON_SECRET",
+    "WORKER_SITE_JOBS",
+    "APP_ENV",
+    "RESEND_API_KEY",
+    "MAIL_FROM"
   ],
   "deploy": {
     "startCommand": "npx next start",

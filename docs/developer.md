@@ -3,7 +3,7 @@
 Everything a new developer needs to work on **আমার এমপি / MY MP** (mymp.bd).
 Read this once, top to bottom, before the first commit. It is short on purpose.
 
-- Website repo: `sumongetup/mymp` (this one). Next.js, deployed as Docker on the VPS; see `docs/vps-deployment.md`.
+- Website repo: `sumongetup/mymp` (this one). Next.js, deployed via Dokploy on the VPS; see `docs/vps-deployment.md`.
 - App repo: `sumongetup/mymp-app` (separate). Flutter, built on Codemagic,
   published as `bd.mymp.app` on Google Play. It reads this site's
   `/api/app/v1/*` routes, so a breaking change here breaks the app.
@@ -13,7 +13,7 @@ Read this once, top to bottom, before the first commit. It is short on purpose.
 | | |
 | --- | --- |
 | GitHub | **Write** on `sumongetup/mymp`. Push branches, open pull requests. |
-| VPS | No. Merging to `main` deploys through `.github/workflows/deploy.yml`. |
+| VPS | No. Merging to `main` deploys through Dokploy. |
 | Supabase | No. The service role key is not shared. |
 | Play Console | No. |
 
@@ -58,8 +58,8 @@ Supabase: overrides, hidden, news, results, feed
 ```
 
 - **No database is read when a visitor loads a page.** Public pages must never
-  call auth or Supabase. The generated snapshot is bundled into the VPS Docker
-  image and served as static/build-time data.
+  call auth or Supabase. The generated snapshot is built and served as
+  static/build-time data by the Dokploy deployment.
 - `scripts/sync.mjs` runs at the start of every build (`npm run build` =
   `sync --soft` then the name index then `next build`). It fetches the official
   sources, then applies every row from the Supabase `overrides` table and every

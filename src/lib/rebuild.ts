@@ -3,17 +3,30 @@
  * sources and the admin database (scripts/sync.mjs), so this is how an edit,
  * a posts change or a night's parliament data reaches visitors.
  *
- * It asks GitHub for the `rebuild` dispatch that .github/workflows/deploy.yml
- * listens for, always building main. MYMP_DEPLOY_TOKEN is a fine-grained token
- * for this repository only, with Contents: Read and write (the permission the
- * dispatch endpoint requires). The worker container sends the same request
- * (sangsad/worker/src/scheduler.ts).
+ * Uses the Dokploy deploy webhook when DOKPLOY_DEPLOY_WEBHOOK is set.
+ * Falls back to GitHub repository_dispatch when MYMP_DEPLOY_TOKEN is set.
  */
-export type RebuildResult = { ok: true } | { ok: false; reason: 'no-token' | 'refused' | 'unreachable'; detail: string };
+export type RebuildResult = { ok: true } | { ok: false; reason: 'no-config' | 'refused' | 'unreachable'; detail: string };
 
 export async function requestRebuild(source: string): Promise<RebuildResult> {
+  // Dokploy webhook (preferred)
+  const webhook = process.env.DOKPLOY_DEPLOY_WEBHOOK?.trim();
+  if (webhook) {
+    try {
+      const res = await fetch(webhook, {
+        method: 'POST',
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.ok) return { ok: true };
+      return { ok: false, reason: 'refused', detail: `Dokploy webhook HTTP ${res.status}` };
+    } catch (e) {
+      return { ok: false, reason: 'unreachable', detail: (e as Error).message };
+    }
+  }
+
+  // GitHub repository_dispatch (legacy fallback)
   const token = process.env.MYMP_DEPLOY_TOKEN?.trim();
-  if (!token) return { ok: false, reason: 'no-token', detail: 'MYMP_DEPLOY_TOKEN is not set' };
+  if (!token) return { ok: false, reason: 'no-config', detail: 'neither DOKPLOY_DEPLOY_WEBHOOK nor MYMP_DEPLOY_TOKEN is set' };
   const repo = process.env.DEPLOY_REPOSITORY?.trim() || 'touristvisadomain-cloud/mymp';
   try {
     const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {

@@ -66,8 +66,8 @@ path): every build runs `scripts/sync.mjs --soft` first, which fetches
 parliament.gov.bd, applies every override and hidden flag from Supabase,
 writes the published news to `data/news.json`, then `next build` prerenders.
 "Publish" in the admin asks GitHub to rebuild and redeploy the site on the VPS
-(`src/lib/rebuild.ts`); the worker container does the same nightly at 02:00
-Dhaka time, after the parliament jobs. See `docs/vps-deployment.md`.
+(`src/lib/rebuild.ts`); Supabase Cron does the same nightly at 02:00 Dhaka
+time, after the parliament jobs. See `docs/vps-deployment.md`.
 
 To connect, once:
 
@@ -75,12 +75,13 @@ To connect, once:
    in its SQL editor.
 2. Supabase → Authentication → Users → Add user: the first admin's email and
    password.
-3. Put the variables in `.env.example` into the VPS runtime file (GitHub
-   secret `DEPLOY_ENV_FILE_B64`). `ADMIN_BOOTSTRAP_EMAIL` is that first user;
-   the admin row is created on their first sign-in.
-4. Add the GitHub secret `MYMP_DEPLOY_TOKEN` (a fine-grained token for this
-   repository, Contents: Read and write) so Publish can rebuild, then run
-   deploy.yml once.
+3. Set the variables in `.env.example` in Dokploy's environment configuration.
+   `ADMIN_BOOTSTRAP_EMAIL` is that first user; the admin row is created on
+   their first sign-in.
+4. Add `MYMP_DEPLOY_TOKEN` (a fine-grained GitHub token for this repository,
+   Contents: Read and write) so Publish can rebuild.
+5. Run the Supabase Cron migration (`supabase/migrations/005_cron.sql`) to
+   schedule all periodic jobs.
 
 Every admin table has row level security on and no policies, so the anon key
 can read nothing; only server actions holding the service key touch them.
