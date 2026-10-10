@@ -66,29 +66,22 @@ describe('worker schedule', () => {
 });
 
 describe('job environment', () => {
-  it('points the jobs at the সংসদ database and Supabase when the .env names them', () => {
+  it('passes through env vars with defaults', () => {
     const env = jobEnv({
-      DATABASE_URL: 'postgresql://TEST_site',
-      SANGSAD_DATABASE_URL: 'postgresql://TEST_sangsad',
-      NEXT_PUBLIC_SUPABASE_URL: 'https://TEST-site.example',
-      SUPABASE_SERVICE_ROLE_KEY: 'TEST_site_key',
-      SANGSAD_SUPABASE_URL: 'https://TEST-sangsad.example',
-      SANGSAD_SUPABASE_SERVICE_ROLE_KEY: 'TEST_sangsad_key',
+      DATABASE_URL: 'postgresql://TEST_db',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://TEST.example',
+      SUPABASE_SERVICE_ROLE_KEY: 'TEST_key',
     });
-    expect(env.DATABASE_URL).toBe('postgresql://TEST_sangsad');
-    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe('https://TEST-sangsad.example');
-    expect(env.SUPABASE_SERVICE_ROLE_KEY).toBe('TEST_sangsad_key');
-    // News still lands in mymp.bd's own tables.
-    expect(env.MYMP_SUPABASE_URL).toBe('https://TEST-site.example');
-    expect(env.MYMP_SUPABASE_SERVICE_ROLE_KEY).toBe('TEST_site_key');
+    expect(env.DATABASE_URL).toBe('postgresql://TEST_db');
+    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe('https://TEST.example');
+    expect(env.SUPABASE_SERVICE_ROLE_KEY).toBe('TEST_key');
     expect(env.DATABASE_SSL).toBe('disable');
     expect(env.DATABASE_SCHEMA).toBe('sangsad');
     expect(env.APP_ENV).toBe('production');
   });
 
-  it('falls back to the shared names, and treats a blank value as unset', () => {
-    const env = jobEnv({ DATABASE_URL: 'postgresql://TEST_shared', SANGSAD_DATABASE_URL: '  ', SANGSAD_DATABASE_SSL: 'require', APP_ENV: 'staging' });
-    expect(env.DATABASE_URL).toBe('postgresql://TEST_shared');
+  it('respects overrides', () => {
+    const env = jobEnv({ DATABASE_URL: 'postgresql://TEST', DATABASE_SSL: 'require', APP_ENV: 'staging' });
     expect(env.DATABASE_SSL).toBe('require');
     expect(env.APP_ENV).toBe('staging');
   });

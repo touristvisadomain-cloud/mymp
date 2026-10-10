@@ -21,6 +21,6 @@ export async function GET(req: Request) {
   const r = await requestRebuild('cron-republish');
   return NextResponse.json(
     r.ok ? { ok: true, at: new Date().toISOString() } : { ok: false, error: r.detail, at: new Date().toISOString() },
-    { status: r.ok ? 200 : r.reason === 'no-token' ? 500 : 502 },
+    { status: r.ok ? 200 : r.reason === 'no-config' ? 500 : 502 },
   );
 }

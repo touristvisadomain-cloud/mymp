@@ -9,7 +9,7 @@
       "commands": ["cd sangsad && pnpm install --frozen-lockfile"]
     },
     "build": {
-      "commands": ["npm run build:local"]
+      "commands": ["npm run build"]
     }
   },
   "secrets": [
@@ -20,22 +20,25 @@
     "DATABASE_URL",
     "DATABASE_SSL",
     "DATABASE_SCHEMA",
-    "SANGSAD_SUPABASE_URL",
-    "SANGSAD_DATABASE_URL",
-    "SANGSAD_DATABASE_SSL",
-    "SANGSAD_DATABASE_SCHEMA",
-    "SANGSAD_SUPABASE_SERVICE_ROLE_KEY",
-    "MYMP_SUPABASE_URL",
-    "MYMP_SUPABASE_SERVICE_ROLE_KEY",
     "ADMIN_BOOTSTRAP_EMAIL",
     "DOKPLOY_DEPLOY_WEBHOOK",
-    "MYMP_DEPLOY_TOKEN",
-    "DEPLOY_REPOSITORY",
     "CRON_SECRET",
     "WORKER_SITE_JOBS",
     "APP_ENV",
     "RESEND_API_KEY",
-    "MAIL_FROM"
+    "MAIL_FROM",
+    "NEWS_AUTO_PUBLISH",
+    "SCRAPER_USER_AGENT",
+    "CHROME_PATH",
+    "OG_CARDS_ALL",
+    "WIKI_CACHE_DIR",
+    "FEED_SEARCH_KEY",
+    "FEED_SEARCH_PROVIDER",
+    "FEED_SEARCH_CX",
+    "FEED_SEARCH_PER_RUN",
+    "YOUTUBE_API_KEY",
+    "YOUTUBE_MEMBERS_PER_RUN",
+    "YOUTUBE_CHANNELS_PER_RUN"
   ],
   "deploy": {
     "startCommand": "npx next start",

@@ -83,22 +83,15 @@ export function dueSlots(at: Date, siteJobs: boolean): Slot[] {
 const pick = (...values: (string | undefined)[]) => values.find((v) => v !== undefined && v.trim() !== '');
 
 /**
- * The environment a সংসদ job runs with. The container reads mymp.bd's own .env,
- * which names the সংসদ database SANGSAD_*; these are the same fallbacks the
- * removed /api/cron/sangsad-worker route used. News is delivered into mymp.bd's
- * tables, so MYMP_* defaults to the site's own Supabase.
+ * The environment a সংসদ job runs with. One Supabase for everything.
  */
 export function jobEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return {
     ...env,
-    DATABASE_URL: pick(env.SANGSAD_DATABASE_URL, env.DATABASE_URL),
-    DATABASE_SSL: pick(env.SANGSAD_DATABASE_SSL) ?? 'disable',
-    DATABASE_SCHEMA: pick(env.SANGSAD_DATABASE_SCHEMA) ?? 'sangsad',
-    NEXT_PUBLIC_SUPABASE_URL: pick(env.SANGSAD_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_URL),
-    SUPABASE_SERVICE_ROLE_KEY: pick(env.SANGSAD_SUPABASE_SERVICE_ROLE_KEY, env.SUPABASE_SERVICE_ROLE_KEY),
-    MYMP_SUPABASE_URL: pick(env.MYMP_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_URL),
-    MYMP_SUPABASE_SERVICE_ROLE_KEY: pick(env.MYMP_SUPABASE_SERVICE_ROLE_KEY, env.SUPABASE_SERVICE_ROLE_KEY),
-    APP_ENV: pick(env.APP_ENV) ?? 'production',
+    DATABASE_URL: env.DATABASE_URL,
+    DATABASE_SSL: env.DATABASE_SSL ?? 'disable',
+    DATABASE_SCHEMA: env.DATABASE_SCHEMA ?? 'sangsad',
+    APP_ENV: env.APP_ENV ?? 'production',
   };
 }
 

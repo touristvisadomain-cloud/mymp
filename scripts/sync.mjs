@@ -58,8 +58,8 @@ if (existsSync(envFile)) {
  * what mymp.bd itself publishes; mobile numbers are stripped by the engine),
  * so its address is not a secret and needs no environment variable.
  */
-const ENGINE_URL = (process.env.SANGSAD_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
-if (!ENGINE_URL) throw new Error('Supabase URL is not configured: set SANGSAD_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL.');
+const ENGINE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+if (!ENGINE_URL) throw new Error('Supabase URL is not configured: set NEXT_PUBLIC_SUPABASE_URL.');
 const MIRROR_URL = `${ENGINE_URL}/storage/v1/object/public/mirror`;
 const MIRROR_MAX_AGE_HOURS = 36;
 /** Set by loadMirror(): { fetchedAt, responses: { [apiPath]: rows }, photos: { [externalId]: url } }. */

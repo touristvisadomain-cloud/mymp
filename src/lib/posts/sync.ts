@@ -345,7 +345,7 @@ async function finish(
   }
   if (report.status === 'ok' && changed > 0) {
     const r = await requestRebuild('posts-sync');
-    report.deploy = r.ok ? 'site rebuild requested' : r.reason === 'no-token' ? `not rebuilt: ${r.detail}` : `rebuild failed: ${r.detail}`;
+    report.deploy = r.ok ? 'site rebuild requested' : r.reason === 'no-config' ? `not rebuilt: ${r.detail}` : `rebuild failed: ${r.detail}`;
   }
   return report;
 }

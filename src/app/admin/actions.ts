@@ -297,7 +297,7 @@ export async function publishSite(): Promise<ActionState> {
   const me = await requireAdmin();
   const r = await requestRebuild('admin-publish');
   await audit(me, { action: 'site.publish', entity_type: null, entity_id: null, field: null, old_value: null, new_value: r.ok ? 'triggered' : `failed ${r.detail}` });
-  if (!r.ok && r.reason === 'no-token') return { error: 'সাইট নতুন করে তৈরির কোনো পথ সেট করা নেই। হোস্টিং প্ল্যাটফর্মের ডিপ্লয় ওয়েবহুক DEPLOY_HOOK_URL হিসেবে, অথবা GitHub-এর MYMP_DEPLOY_TOKEN দিন।' };
+  if (!r.ok && r.reason === 'no-config') return { error: 'সাইট নতুন করে তৈরির কোনো পথ সেট করা নেই। হোস্টিং প্ল্যাটফর্মের ডিপ্লয় ওয়েবহুক DEPLOY_HOOK_URL হিসেবে, অথবা GitHub-এর MYMP_DEPLOY_TOKEN দিন।' };
   if (!r.ok) return { error: `সাইট নতুন করে তৈরি শুরু করা যায়নি: ${r.detail}` };
   return { ok: 'সাইট নতুন করে তৈরি হচ্ছে। ৫-১০ মিনিটের মধ্যে পরিবর্তন mymp.bd-তে দেখা যাবে।' };
 }

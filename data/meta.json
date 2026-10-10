@@ -1,21 +1,21 @@
 {
  "parliamentNo": 13,
- "overridesApplied": 3147,
+ "overridesApplied": 3406,
  "hidden": 0,
- "syncedAt": "2026-09-16T22:41:00.026Z",
- "builtAt": "2026-09-17T19:40:04.017Z",
- "source": "https://ckeorrzppdgsutqfqdor.supabase.co/storage/v1/object/public/mirror/parliament/latest.json",
- "via": "engine",
+ "syncedAt": "2026-10-10T08:58:17.257Z",
+ "builtAt": "2026-10-10T08:58:17.257Z",
+ "source": "https://www.parliament.gov.bd/api",
+ "via": "live",
  "counts": {
-  "members": 348,
+  "members": 347,
   "territorial": 298,
-  "reserved": 50,
-  "resigned": 1,
+  "reserved": 49,
+  "resigned": 2,
   "parties": 11,
-  "committees": 67,
-  "committeesCurrent": 34,
+  "committees": 72,
+  "committeesCurrent": 57,
   "sittings": 61,
-  "notices": 421,
+  "notices": 514,
   "returningMembers": 63
  }
 }
