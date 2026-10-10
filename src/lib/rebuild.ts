@@ -17,8 +17,11 @@ export async function requestRebuild(source: string): Promise<RebuildResult> {
     return { ok: false, reason: "no-config", detail: "DOKPLOY_API_KEY and DOKPLOY_APP_ID must be set" };
   }
 
+  const deployUrl = `${apiUrl}/api/application.deploy`;
+  console.log(`[rebuild] ${source}: POST ${deployUrl} (appId=${appId})`);
+
   try {
-    const res = await fetch(`${apiUrl}/api/application.deploy`, {
+    const res = await fetch(deployUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
