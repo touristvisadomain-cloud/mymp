@@ -216,30 +216,8 @@ async function rebuild(source: string) {
   }
   log(`${source}: POST ${request.url}`);
   try {
-    // Build curl arguments from the request
-    const args = ["-s", "-w", "\n%{http_code}", "-X", request.init.method || "POST"];
-    const headers = request.init.headers as Record<string, string> || {};
-    for (const [key, value] of Object.entries(headers)) {
-      args.push("-H", `${key}: ${value}`);
-    }
-    if (request.init.body) {
-      args.push("-d", request.init.body as string);
-    }
-    args.push("--connect-timeout", "15", request.url);
-
-    const child = spawn("curl", args, { timeout: 30_000 });
-    let stdout = "";
-    child.stdout.on("data", (data) => { stdout += data; });
-    await new Promise((resolve) => child.on("close", resolve));
-
-    const lines = stdout.trim().split("\n");
-    const statusCode = parseInt(lines[lines.length - 1] || "0", 10);
-    log(`${source}: curl HTTP ${statusCode}`);
-    if (statusCode >= 200 && statusCode < 300) {
-      log(`${source}: rebuild of mymp.bd requested`);
-    } else {
-      log(`${source}: rebuild refused, HTTP ${statusCode}`);
-    }
+    const res = await fetch(request.url, { ...request.init, signal: AbortSignal.timeout(30_000) });
+    log(res.ok ? `${source}: rebuild of mymp.bd requested` : `${source}: rebuild refused, HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
   } catch (err) {
     log(`${source}: rebuild request failed (${(err as Error).message})`);
   }
