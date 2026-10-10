@@ -46,3 +46,7 @@ next-env.d.ts
 
 # CA chain for parliament.gov.bd: public certificates, not keys
 !src/lib/parliament-ca.mjs
+
+# Local memory of the Command Code assistant; one of its file names holds a colon,
+# which Windows cannot check out.
+.commandcode/

@@ -2,6 +2,34 @@
 
 This is the production runbook for the self-hosted VPS deployment.
 
+## Now: a Railpack platform (since 2026-10-09)
+
+The site is built and run by a hosting platform from `railpack.json` (the site)
+and `sangsad/railpack.json` (the worker). `.github/workflows/deploy.yml` is
+switched off (every line commented out), so the GitHub flow described further
+down is not what runs today. Until one of the two is chosen for good, keep both
+in mind:
+
+- **Site service** (`railpack.json`): build `npm run build:local`, start `npx next start`.
+  `build:local` skips `scripts/sync.mjs`, so the site shows the committed `data/`
+  snapshot and no admin edit, vote count or parliament refresh reaches it.
+  Switch the build to `npm run build` **only after** the admin database holds its
+  data again: the build now refuses to publish when the database has less than
+  half of the snapshot's corrections, vote counts or published news
+  (`src/lib/dataFloor.mjs`; `ALLOW_DATA_DROP=1` overrides it once).
+- **Worker service** (`sangsad/railpack.json`): start `pnpm schedule`, the same
+  clock as the worker container below. Give it the site's environment plus the
+  সংসদ names listed under "All GitHub Actions secrets and variables", and
+  `MYMP_INTERNAL_URL` pointing at the site service if `WORKER_SITE_JOBS=on`.
+- **Rebuilds**: set `DEPLOY_HOOK_URL` to the platform's deploy webhook in both
+  services (`DEPLOY_HOOK_METHOD=GET` and `DEPLOY_HOOK_TOKEN` if the platform wants
+  them). Without it, Publish, the posts sync and the worker fall back to the
+  GitHub dispatch, which does nothing while deploy.yml is off.
+- **Runtime environment** of the site service: `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET`
+  at least. Without them `/api/feed/<slug>` answers `"unavailable": true` and the
+  news pages fall back to the snapshot's September stories.
+
 ## Production architecture
 
 ```text

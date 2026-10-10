@@ -103,11 +103,24 @@ export function jobEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 }
 
 /**
- * The GitHub call that rebuilds and redeploys mymp.bd (.github/workflows/deploy.yml
- * listens for `rebuild`). The same request as src/lib/rebuild.ts in the site.
- * Null when MYMP_DEPLOY_TOKEN is not set.
+ * The call that rebuilds and redeploys mymp.bd, the same request as
+ * src/lib/rebuild.ts in the site: the hosting platform's deploy webhook when
+ * DEPLOY_HOOK_URL is set (DEPLOY_HOOK_METHOD=GET and DEPLOY_HOOK_TOKEN when the
+ * platform wants them), else the `rebuild` dispatch to GitHub that
+ * .github/workflows/deploy.yml listens for. Null when neither is configured.
  */
 export function rebuildRequest(env: NodeJS.ProcessEnv, source: string): { url: string; init: RequestInit } | null {
+  const hook = pick(env.DEPLOY_HOOK_URL);
+  if (hook) {
+    const hookToken = pick(env.DEPLOY_HOOK_TOKEN);
+    return {
+      url: hook,
+      init: {
+        method: pick(env.DEPLOY_HOOK_METHOD)?.toUpperCase() === 'GET' ? 'GET' : 'POST',
+        headers: hookToken ? { authorization: `Bearer ${hookToken}` } : {},
+      },
+    };
+  }
   const token = pick(env.MYMP_DEPLOY_TOKEN);
   if (!token) return null;
   const repo = pick(env.DEPLOY_REPOSITORY) ?? 'touristvisadomain-cloud/mymp';
@@ -186,12 +199,12 @@ async function callSite(path: string): Promise<boolean> {
 async function rebuild(source: string) {
   const request = rebuildRequest(process.env, `worker:${source}`);
   if (!request) {
-    log(`${source}: no rebuild, MYMP_DEPLOY_TOKEN is not set`);
+    log(`${source}: no rebuild, neither DEPLOY_HOOK_URL nor MYMP_DEPLOY_TOKEN is set`);
     return;
   }
   try {
     const res = await fetch(request.url, { ...request.init, signal: AbortSignal.timeout(30_000) });
-    log(res.ok ? `${source}: rebuild of mymp.bd requested` : `${source}: rebuild refused by GitHub, HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
+    log(res.ok ? `${source}: rebuild of mymp.bd requested` : `${source}: rebuild refused, HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
   } catch (err) {
     log(`${source}: rebuild request failed (${(err as Error).message})`);
   }
@@ -247,8 +260,9 @@ function every(minuteHandler: (at: Date) => void) {
 
 function main() {
   const siteJobs = pick(process.env.WORKER_SITE_JOBS)?.toLowerCase() === 'on';
+  const rebuildsVia = pick(process.env.DEPLOY_HOOK_URL) ? 'the deploy webhook' : pick(process.env.MYMP_DEPLOY_TOKEN) ? 'GitHub' : null;
   log(
-    `started; site jobs ${siteJobs ? 'on' : 'off'}; rebuilds ${pick(process.env.MYMP_DEPLOY_TOKEN) ? 'on' : 'off (MYMP_DEPLOY_TOKEN is not set)'}`,
+    `started; site jobs ${siteJobs ? 'on' : 'off'}; rebuilds ${rebuildsVia ? `via ${rebuildsVia}` : 'off (neither DEPLOY_HOOK_URL nor MYMP_DEPLOY_TOKEN is set)'}`,
   );
   for (const signal of ['SIGTERM', 'SIGINT'] as const) {
     process.on(signal, () => {

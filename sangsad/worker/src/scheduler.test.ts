@@ -107,4 +107,14 @@ describe('rebuild request', () => {
     expect(JSON.parse(r.init.body as string)).toEqual({ event_type: 'rebuild', client_payload: { source: 'worker:news' } });
     expect(rebuildRequest({ MYMP_DEPLOY_TOKEN: 'TEST_token' }, 'x')!.url).toContain('/repos/touristvisadomain-cloud/mymp/');
   });
+
+  it("prefers the hosting platform's deploy webhook when one is set", () => {
+    const post = rebuildRequest({ DEPLOY_HOOK_URL: 'https://TEST.example/api/deploy/TEST', MYMP_DEPLOY_TOKEN: 'TEST_token' }, 'x')!;
+    expect(post.url).toBe('https://TEST.example/api/deploy/TEST');
+    expect(post.init.method).toBe('POST');
+    expect(post.init.headers).toEqual({});
+    const get = rebuildRequest({ DEPLOY_HOOK_URL: 'https://TEST.example/deploy?uuid=TEST', DEPLOY_HOOK_METHOD: 'get', DEPLOY_HOOK_TOKEN: 'TEST_hook' }, 'x')!;
+    expect(get.init.method).toBe('GET');
+    expect((get.init.headers as Record<string, string>).authorization).toBe('Bearer TEST_hook');
+  });
 });
