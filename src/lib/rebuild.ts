@@ -4,6 +4,11 @@
  * (scripts/sync.mjs), so this is how an edit, a posts change or a
  * night's parliament data reaches visitors.
  */
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
+
 export type RebuildResult =
   | { ok: true }
   | { ok: false; reason: "no-config" | "refused" | "unreachable"; detail: string };
@@ -21,18 +26,27 @@ export async function requestRebuild(source: string): Promise<RebuildResult> {
   console.log(`[rebuild] ${source}: POST ${deployUrl} (appId=${appId})`);
 
   try {
-    const res = await fetch(deployUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-      },
-      body: JSON.stringify({ applicationId: appId, title: `Rebuild from ${source}` }),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (res.ok) return { ok: true };
-    return { ok: false, reason: "refused", detail: `Dokploy API HTTP ${res.status}` };
+    const { stdout, stderr } = await execFileAsync("curl", [
+      "-s",
+      "-w", "\n%{http_code}",
+      "-X", "POST",
+      "-H", "Content-Type: application/json",
+      "-H", `x-api-key: ${apiKey}`,
+      "-d", JSON.stringify({ applicationId: appId, title: `Rebuild from ${source}` }),
+      "--connect-timeout", "15",
+      deployUrl,
+    ], { timeout: 30_000 });
+
+    const lines = stdout.trim().split("\n");
+    const statusCode = parseInt(lines[lines.length - 1] || "0", 10);
+    const body = lines.slice(0, -1).join("\n");
+
+    console.log(`[rebuild] ${source}: curl HTTP ${statusCode} ${body.slice(0, 200)}`);
+
+    if (statusCode >= 200 && statusCode < 300) return { ok: true };
+    return { ok: false, reason: "refused", detail: `Dokploy API HTTP ${statusCode}: ${body.slice(0, 200)}` };
   } catch (e) {
+    console.log(`[rebuild] ${source}: curl error: ${(e as Error).message}`);
     return { ok: false, reason: "unreachable", detail: (e as Error).message };
   }
 }

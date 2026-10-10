@@ -97,12 +97,29 @@ export function jobEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 
 /**
  * The call that rebuilds and redeploys mymp.bd, the same request as
- * src/lib/rebuild.ts in the site: the hosting platform's deploy webhook when
- * DEPLOY_HOOK_URL is set (DEPLOY_HOOK_METHOD=GET and DEPLOY_HOOK_TOKEN when the
- * platform wants them), else the `rebuild` dispatch to GitHub that
- * .github/workflows/deploy.yml listens for. Null when neither is configured.
+ * src/lib/rebuild.ts in the site. Tries Dokploy API first, then the legacy
+ * deploy webhook, then GitHub dispatch.
  */
 export function rebuildRequest(env: NodeJS.ProcessEnv, source: string): { url: string; init: RequestInit } | null {
+  // Dokploy API (primary)
+  const apiKey = pick(env.DOKPLOY_API_KEY);
+  const appId = pick(env.DOKPLOY_APP_ID);
+  if (apiKey && appId) {
+    const apiUrl = pick(env.DOKPLOY_API_URL) ?? 'http://13.140.59.8:3000';
+    return {
+      url: `${apiUrl}/api/application.deploy`,
+      init: {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({ applicationId: appId, title: `Rebuild from ${source}` }),
+      },
+    };
+  }
+
+  // Legacy deploy webhook
   const hook = pick(env.DEPLOY_HOOK_URL);
   if (hook) {
     const hookToken = pick(env.DEPLOY_HOOK_TOKEN);
@@ -114,6 +131,8 @@ export function rebuildRequest(env: NodeJS.ProcessEnv, source: string): { url: s
       },
     };
   }
+
+  // GitHub dispatch (legacy fallback)
   const token = pick(env.MYMP_DEPLOY_TOKEN);
   if (!token) return null;
   const repo = pick(env.DEPLOY_REPOSITORY) ?? 'touristvisadomain-cloud/mymp';
@@ -192,12 +211,35 @@ async function callSite(path: string): Promise<boolean> {
 async function rebuild(source: string) {
   const request = rebuildRequest(process.env, `worker:${source}`);
   if (!request) {
-    log(`${source}: no rebuild, neither DEPLOY_HOOK_URL nor MYMP_DEPLOY_TOKEN is set`);
+    log(`${source}: no rebuild, neither DOKPLOY_API_KEY/DOKPLOY_APP_ID nor DEPLOY_HOOK_URL nor MYMP_DEPLOY_TOKEN is set`);
     return;
   }
+  log(`${source}: POST ${request.url}`);
   try {
-    const res = await fetch(request.url, { ...request.init, signal: AbortSignal.timeout(30_000) });
-    log(res.ok ? `${source}: rebuild of mymp.bd requested` : `${source}: rebuild refused, HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
+    // Build curl arguments from the request
+    const args = ["-s", "-w", "\n%{http_code}", "-X", request.init.method || "POST"];
+    const headers = request.init.headers as Record<string, string> || {};
+    for (const [key, value] of Object.entries(headers)) {
+      args.push("-H", `${key}: ${value}`);
+    }
+    if (request.init.body) {
+      args.push("-d", request.init.body as string);
+    }
+    args.push("--connect-timeout", "15", request.url);
+
+    const child = spawn("curl", args, { timeout: 30_000 });
+    let stdout = "";
+    child.stdout.on("data", (data) => { stdout += data; });
+    await new Promise((resolve) => child.on("close", resolve));
+
+    const lines = stdout.trim().split("\n");
+    const statusCode = parseInt(lines[lines.length - 1] || "0", 10);
+    log(`${source}: curl HTTP ${statusCode}`);
+    if (statusCode >= 200 && statusCode < 300) {
+      log(`${source}: rebuild of mymp.bd requested`);
+    } else {
+      log(`${source}: rebuild refused, HTTP ${statusCode}`);
+    }
   } catch (err) {
     log(`${source}: rebuild request failed (${(err as Error).message})`);
   }
