@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ম্যাজিক লিঙ্ক</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+    .container { max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header { background: #1a1a2e; padding: 24px; text-align: center; }
+    .header h1 { color: #ffffff; font-size: 20px; margin: 0; }
+    .body { padding: 32px 24px; }
+    .body p { color: #333; font-size: 15px; line-height: 1.6; margin: 0 0 16px; }
+    .btn { display: inline-block; background: #e94560; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; }
+    .footer { padding: 16px 24px; background: #f9f9f9; text-align: center; }
+    .footer p { color: #999; font-size: 12px; margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>আমার এমপি</h1>
+    </div>
+    <div class="body">
+      <p>নমস্কার,</p>
+      <p>আমার এমপি অ্যাডমিন প্যানেলে লগইন করতে নিচের বোতামে ক্লিক করুন।</p>
+      <p style="text-align: center; margin: 24px 0;">
+        <a href="{{ .ConfirmationURL }}" class="btn">লগইন করুন</a>
+      </p>
+      <p>এই লিঙ্কটি ১ ঘণ্টার মধ্যে মেয়াদ শেষ হয়ে যাবে।</p>
+      <p>আপনি এই লগইন অনুরোধ করেননি? তাহলে এই ইমেইলটি উপেক্ষা করুন।</p>
+    </div>
+    <div class="footer">
+      <p>আমার এমপি — mymp.bd</p>
+    </div>
+  </div>
+</body>
+</html>
