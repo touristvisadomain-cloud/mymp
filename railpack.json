@@ -5,13 +5,12 @@
     "pnpm": "12.3.4"
   },
   "steps": {
-    "install": {
-      "inputs": ["..."],
-      "commands": ["cd sangsad && pnpm install --frozen-lockfile"]
-    },
     "build": {
-      "inputs": ["$install"],
-      "commands": ["npm run build"]
+      "commands": [
+        "ls -la",
+        "cd sangsad && pnpm install --frozen-lockfile && cd ..",
+        "npm run build"
+      ]
     }
   },
   "secrets": [
