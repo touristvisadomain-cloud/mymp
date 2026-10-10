@@ -1,5 +1,5 @@
 /**
- * Rebuilds and redeploys mymp.bd via the Dokploy deploy webhook.
+ * Rebuilds and redeploys mymp.bd via the Dokploy API.
  * Every build re-reads the official sources and the admin database
  * (scripts/sync.mjs), so this is how an edit, a posts change or a
  * night's parliament data reaches visitors.
@@ -9,17 +9,26 @@ export type RebuildResult =
   | { ok: false; reason: "no-config" | "refused" | "unreachable"; detail: string };
 
 export async function requestRebuild(source: string): Promise<RebuildResult> {
-  const webhook = process.env.DOKPLOY_DEPLOY_WEBHOOK?.trim();
-  if (!webhook) {
-    return { ok: false, reason: "no-config", detail: "DOKPLOY_DEPLOY_WEBHOOK is not set" };
+  const apiKey = process.env.DOKPLOY_API_KEY?.trim();
+  const appId = process.env.DOKPLOY_APP_ID?.trim();
+  const apiUrl = process.env.DOKPLOY_API_URL?.trim() || "http://13.140.59.8:3000";
+
+  if (!apiKey || !appId) {
+    return { ok: false, reason: "no-config", detail: "DOKPLOY_API_KEY and DOKPLOY_APP_ID must be set" };
   }
+
   try {
-    const res = await fetch(webhook, {
+    const res = await fetch(`${apiUrl}/api/application.deploy`, {
       method: "POST",
-      signal: AbortSignal.timeout(15_000),
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+      },
+      body: JSON.stringify({ applicationId: appId, title: `Rebuild from ${source}` }),
+      signal: AbortSignal.timeout(30_000),
     });
     if (res.ok) return { ok: true };
-    return { ok: false, reason: "refused", detail: `Dokploy webhook HTTP ${res.status}` };
+    return { ok: false, reason: "refused", detail: `Dokploy API HTTP ${res.status}` };
   } catch (e) {
     return { ok: false, reason: "unreachable", detail: (e as Error).message };
   }

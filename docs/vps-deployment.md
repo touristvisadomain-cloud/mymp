@@ -100,7 +100,9 @@ DATABASE_SSL=disable
 DATABASE_SCHEMA=sangsad
 CRON_SECRET=...
 ADMIN_BOOTSTRAP_EMAIL=...
-DOKPLOY_DEPLOY_WEBHOOK=http://13.140.59.8:3000/api/deploy/wnV4Hfit5DWLIydz-7Vkj
+DOKPLOY_API_KEY=your-dokploy-api-key
+DOKPLOY_APP_ID=IQfdSnupvUCx5WVuhR2dH
+# DOKPLOY_API_URL=http://13.140.59.8:3000  # optional, this is the default
 ```
 
 **Optional (legacy GitHub fallback):**

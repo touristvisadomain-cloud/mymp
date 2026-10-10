@@ -13,7 +13,8 @@ export default function SetupPage() {
     ['NEXT_PUBLIC_SUPABASE_ANON_KEY', 'একই পাতায় → anon public key'],
     ['SUPABASE_SERVICE_ROLE_KEY', 'একই পাতায় → service_role key (গোপন, Secret হিসেবে দিন)'],
     ['ADMIN_BOOTSTRAP_EMAIL', 'প্রথম অ্যাডমিনের ইমেইল। Supabase → Authentication → Users → Add user দিয়ে আগে ব্যবহারকারীটি তৈরি করুন'],
-    ['MYMP_DEPLOY_TOKEN', 'GitHub → Settings → Developer settings → Fine-grained token: শুধু mymp রিপো, Contents: Read and write। রিপোর prod এনভায়রনমেন্টের সিক্রেট হিসেবে দিন'],
+    ['DOKPLOY_API_KEY', 'Dokploy → Settings → API → API Key'],
+    ['DOKPLOY_APP_ID', 'Dokploy → your app → URL bar shows the application ID'],
     ['CRON_SECRET', 'যেকোনো লম্বা এলোমেলো স্ট্রিং; /api/cron/* রুটগুলো এটি দিয়ে যাচাই হয়'],
   ];
 
