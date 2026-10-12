@@ -1,0 +1,34 @@
+name: Site CI
+
+# The gate docs/developer.md asks for before a merge: types, lint and unit tests,
+# on every pull request and every push to main. Deploying is Dokploy's job
+# (railpack.json); this only says whether the code is sound. sangsad/ has its
+# own workflow, sangsad-ci.yml.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'sangsad/**'
+      - 'data/**'
+      - 'docs/**'
+  pull_request:
+    paths-ignore:
+      - 'sangsad/**'
+      - 'docs/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # The route types (PageProps) that tsc needs come from Next's type generation.
+      - run: npx next typegen
+      - run: npx tsc --noEmit
+      - run: npx eslint .
+      - run: npm test

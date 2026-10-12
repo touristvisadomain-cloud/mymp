@@ -1,0 +1,41 @@
+name: Sangsad CI
+
+# The সংসদ data engine behind mymp.bd lives in sangsad/ inside this repository.
+# GitHub only reads workflows from the repository root, so this file is here,
+# but it runs only for changes under that folder and every step runs inside it.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sangsad/**'
+      - '.github/workflows/sangsad-ci.yml'
+  pull_request:
+    paths:
+      - 'sangsad/**'
+      - '.github/workflows/sangsad-ci.yml'
+
+defaults:
+  run:
+    working-directory: sangsad
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # CI has no database: the db package runs its tests on PGlite with TEST_ data.
+      FIXTURES: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: sangsad/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test

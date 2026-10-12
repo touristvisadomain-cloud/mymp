@@ -13,6 +13,14 @@ const staticExport = process.env.STATIC_EXPORT === "1";
  * per-member ids do not map onto the new slugs, so those fall back to the list.
  */
 const legacyRedirects = [
+  // One address for search engines and shares: www.mymp.bd served the same
+  // pages as a second site until 2026-10-12.
+  {
+    source: "/:path*",
+    has: [{ type: "host" as const, value: "www.mymp.bd" }],
+    destination: "https://mymp.bd/:path*",
+    permanent: true,
+  },
   { source: "/mps", destination: "/mp", permanent: true },
   { source: "/mps/:id", destination: "/mp", permanent: true },
   { source: "/parties", destination: "/dol", permanent: true },
