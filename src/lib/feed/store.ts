@@ -69,6 +69,16 @@ export function canonicalUrl(raw: string): string {
 export const contentHash = (title: string, summary?: string | null) =>
   createHash('sha256').update(`${title.trim()}\n${(summary ?? '').trim()}`).digest('hex');
 
+/**
+ * Nothing is published later than now. A few outlets stamp Dhaka time as UTC,
+ * which put their stories hours into the future and kept them at the top of
+ * every list (The Daily Observer, 2026-10-12); those take the time we saw them.
+ */
+export function notLaterThanNow(publishedAt: string, now = Date.now()): string {
+  const t = Date.parse(publishedAt);
+  return Number.isFinite(t) && t > now + 10 * 60_000 ? new Date(now).toISOString() : publishedAt;
+}
+
 /** Headlines compare past punctuation and spacing, for the 48-hour syndication check. */
 export const headlineKey = (title: string) =>
   title.normalize('NFC').replace(/[^\p{L}\p{M}\p{N}]+/gu, '').toLowerCase();
@@ -97,6 +107,7 @@ export async function upsertItem(input: FeedItemInput): Promise<UpsertResult | n
   // An outlet's stand-in picture says nothing about the story; the card's own
   // placeholder is better than the same front page on every card.
   if (isGenericThumbnail(input.thumbnailUrl)) input = { ...input, thumbnailUrl: null };
+  input = { ...input, publishedAt: notLaterThanNow(input.publishedAt) };
   const canonical = canonicalUrl(input.url);
   const hash = contentHash(input.title, input.summary);
   const sb = db();
