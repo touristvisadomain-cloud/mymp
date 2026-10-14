@@ -4,11 +4,15 @@
  * hotlink a government server and never show a third-party image.
  *
  * Only members whose copy is missing are fetched (the sync clears photo_url
- * when the source URL changes). A failed fetch leaves photo_url null, which
- * the site renders as the neutral placeholder, and is retried on the next run.
+ * when the source URL changes). A copy that lives on another Supabase host is
+ * treated as missing too: after the move from supabase.co to the VPS, every
+ * profile still pointed at the old project, which would have taken all 347
+ * photos down with it the day that project was paused. A failed fetch leaves
+ * photo_url null, which the site renders as the neutral placeholder, and is
+ * retried on the next run.
  */
 import { createClient } from '@supabase/supabase-js';
-import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, notLike, or, sql } from 'drizzle-orm';
 import { schema } from '@sangsad/db';
 import type { Db } from './parliament-core';
 import { uploadMirrorFile } from './mirror';
@@ -33,7 +37,7 @@ export async function runPhotos(db: Db, parliamentNumber = 13): Promise<{ itemsF
     .from(members)
     .innerJoin(memberTerms, and(eq(memberTerms.memberId, members.id), eq(memberTerms.role, 'MP')))
     .innerJoin(parliaments, and(eq(parliaments.id, memberTerms.parliamentId), eq(parliaments.number, parliamentNumber)))
-    .where(and(isNotNull(members.photoSourceUrl), isNull(members.photoUrl)));
+    .where(and(isNotNull(members.photoSourceUrl), or(isNull(members.photoUrl), notLike(members.photoUrl, `${url.replace(/\/$/, '')}/%`))));
 
   let copied = 0;
   const failed: string[] = [];
