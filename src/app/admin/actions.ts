@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { supabaseSession } from '@/lib/supabase/server';
+import { siteUrl } from '@/lib/site';
 import { requireAdmin, requireSuperAdmin } from '@/lib/admin/auth';
 import {
   EDITABLE, type EntityType, setOverride, clearOverride, setHidden, overridesFor,
@@ -55,6 +56,21 @@ export async function signOut() {
   const sb = await supabaseSession();
   await sb.auth.signOut();
   redirect('/admin/login');
+}
+
+/**
+ * Emails a password-reset link. The reply never says whether the address is
+ * known, so the form cannot be used to list admin emails; Supabase applies its
+ * own rate limit. The link comes back to /admin/recover with a PKCE code whose
+ * verifier this call leaves as a cookie, so it only works in this browser.
+ */
+export async function requestPasswordReset(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const email = str(fd, 'email').trim().toLowerCase();
+  if (!email) return { error: 'ইমেইল লাগবে।' };
+  const sb = await supabaseSession();
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: `${siteUrl}/admin/recover` });
+  if (error && /rate limit|too many/i.test(error.message)) return { error: 'একটু পরে আবার চেষ্টা করুন।' };
+  return { ok: `${email} ঠিকানাটি অ্যাডমিন তালিকায় থাকলে সেখানে পাসওয়ার্ড রিসেটের লিংক গেছে।` };
 }
 
 /** Change the signed-in admin's own password. Runs against their session, not the service key. */

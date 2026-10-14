@@ -82,6 +82,11 @@ To connect, once:
    Contents: Read and write) so Publish can rebuild.
 5. Run the Supabase Cron migration (`supabase/migrations/005_cron.sql`) to
    schedule all periodic jobs.
+6. Supabase → Authentication → URL Configuration: site URL = the site's
+   origin, and add `<origin>/admin/recover` to the redirect allow list
+   (`ADDITIONAL_REDIRECT_URLS` on a self-hosted stack). "পাসওয়ার্ড ভুলে
+   গেছেন?" on the login screen sends a reset email that returns there; the
+   link must be opened in the browser that asked for it.
 
 Every admin table has row level security on and no policies, so the anon key
 can read nothing; only server actions holding the service key touch them.

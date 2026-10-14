@@ -50,6 +50,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               </p>
             )}
             <LoginForm />
+            <p className="text-center text-[13.5px]">
+              <Link href="/admin/forgot" className="text-muted hover:text-brand">পাসওয়ার্ড ভুলে গেছেন?</Link>
+            </p>
           </>
         )}
 
