@@ -670,7 +670,18 @@ async function main() {
 
   const byFold = new Map(members.map((m) => [fold(m.nameBn), m.id]));
   const bySeatNo = new Map(members.filter((m) => m.seat).map((m) => [m.seat.no, m.id]));
-  const memberByName = (name) => byFold.get(fold(name)) ?? null;
+  // The presiding-officer list writes a courtesy title before some names
+  // ("জনাব হাফিজ উদ্দিন আহমদ বীর বিক্রম") that the member roll does not, so the
+  // Speaker and five whips matched nobody and vanished from the homepage.
+  // Exact first; then without any leading courtesy title.
+  const COURTESY = /^(?:জনাব|মিস|মিসেস|বেগম|শ্রী|শ্রীমতী|মাননীয়|মাননীয়া)\s+/u;
+  const memberByName = (name) => {
+    const exact = byFold.get(fold(name));
+    if (exact) return exact;
+    let bare = String(name ?? '').trim();
+    while (COURTESY.test(bare)) bare = bare.replace(COURTESY, '');
+    return (bare !== name && byFold.get(fold(bare))) || null;
+  };
 
   const speakers = rawSpeakers
     .filter((x) => x.isCurrent && x.parliamentNo === PARLIAMENT)
