@@ -7,13 +7,14 @@
  * pages is to ask a search engine, so the provider sits behind this interface
  * and can be swapped by setting one environment variable.
  *
- *   FEED_SEARCH_PROVIDER = brave | serpapi | google | bing
- *   FEED_SEARCH_KEY      = the provider's key
+ *   FEED_SEARCH_PROVIDER = gnews | brave | serpapi | google | bing
+ *   FEED_SEARCH_KEY      = the provider's key (gnews needs none)
  *   FEED_SEARCH_CX       = Google Programmable Search only: the engine id
  *
- * Brave is the live choice. Google closed the Custom Search JSON API to new
- * customers (every call answers 403 "does not have the access") and retires it
- * on 2027-01-01; Microsoft retired Bing Search. Brave's free plan gives 2,000
+ * Google News' RSS search is the default: no key, no quota, and it reaches
+ * months back. Google closed the Custom Search JSON API to new customers
+ * (every call answers 403 "does not have the access") and retires it on
+ * 2027-01-01; Microsoft retired Bing Search. Brave's free plan gives 2,000
  * queries a month, about 65 a day.
  *
  * Without a key the collector reports that it is not configured and changes
@@ -25,6 +26,8 @@ export interface SearchHit {
   summary: string | null;
   publishedAt: string | null;
   outletName: string | null;
+  /** The outlet's hostname when `url` does not carry it (a redirect link). */
+  outletHost?: string | null;
 }
 
 export interface SearchProvider {
@@ -32,6 +35,8 @@ export interface SearchProvider {
   /** One query, newest first. `since` is a date the provider may use to narrow. */
   search(query: string, opts: { since?: string; limit?: number }): Promise<SearchHit[]>;
 }
+
+import { parseFeed } from './rss';
 
 const UA = 'mymp-feed/1.0 (+https://mymp.bd)';
 
@@ -172,11 +177,48 @@ function brave(key: string): SearchProvider {
   };
 }
 
-/** The configured provider, or null when no key is set. */
+/**
+ * Google News' RSS search. The same index Google News shows, as a feed, with
+ * no key: a hundred stories a query, newest first, back as far as the outlet
+ * is indexed. Each link is a Google redirect that opens the article, so the
+ * outlet comes from the item's <source>, not from the address.
+ */
+function gnews(): SearchProvider {
+  return {
+    name: 'gnews',
+    async search(query, { limit = 100 }) {
+      const url = new URL('https://news.google.com/rss/search');
+      url.searchParams.set('q', query);
+      url.searchParams.set('hl', 'bn');
+      url.searchParams.set('gl', 'BD');
+      url.searchParams.set('ceid', 'BD:bn');
+      const res = await fetch(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(20000) });
+      if (!res.ok) throw new Error(`gnews ${res.status}: ${await why(res)}`);
+      const xml = await res.text();
+      const out: SearchHit[] = [];
+      for (const block of xml.match(/<item>[\s\S]*?<\/item>/g) ?? []) {
+        const [item] = parseFeed(`<rss><channel>${block}</channel></rss>`);
+        if (!item) continue;
+        const source = block.match(/<source url="([^"]*)"[^>]*>([^<]*)<\/source>/);
+        const sourceName = source?.[2]?.trim() || null;
+        const host = source?.[1] ? new URL(source[1]).hostname.replace(/^www\./, '') : null;
+        // Google appends " - Outlet" to every headline.
+        const title = sourceName && item.title.endsWith(` - ${sourceName}`) ? item.title.slice(0, -(sourceName.length + 3)).trim() : item.title;
+        out.push({ title, url: item.url, summary: null, publishedAt: item.publishedAt, outletName: sourceName, outletHost: host });
+        if (out.length >= limit) break;
+      }
+      return out;
+    },
+  };
+}
+
+/** The configured provider; Google News needs no key, the others return null without one. */
 export function searchProvider(): SearchProvider | null {
+  const which = (process.env.FEED_SEARCH_PROVIDER ?? 'gnews').toLowerCase();
+  if (which === 'gnews') return gnews();
   const key = process.env.FEED_SEARCH_KEY;
   if (!key) return null;
-  switch ((process.env.FEED_SEARCH_PROVIDER ?? 'brave').toLowerCase()) {
+  switch (which) {
     case 'brave': return brave(key);
     case 'bing': return bing(key);
     case 'serpapi': return serpapi(key);
@@ -184,6 +226,6 @@ export function searchProvider(): SearchProvider | null {
       const cx = process.env.FEED_SEARCH_CX;
       return cx ? google(key, cx) : null;
     }
-    default: return brave(key);
+    default: return gnews();
   }
 }

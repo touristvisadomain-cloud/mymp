@@ -296,17 +296,17 @@ export async function runSearchCollector(opts: { trigger?: string; perRun?: numb
   if (!provider) {
     const result: RunResult = {
       status: 'aborted', itemsFound: 0, itemsNew: 0, itemsAttached: 0, unmatched: 0, lowConfidence: 0,
-      errors: [{ source: 'search', message: 'FEED_SEARCH_KEY is not set, so the outlets without a feed were not searched' }],
+      errors: [{ source: 'search', message: 'FEED_SEARCH_KEY is not set for the chosen FEED_SEARCH_PROVIDER, so the outlets without a feed were not searched' }],
     };
     await finishRun(run, result);
     return result;
   }
 
-  // Brave's free plan gives 2,000 queries a month, about 65 a day, so this
-  // keeps to two an hour: 48 a day, inside the allowance, a full pass over
-  // the House in about a week. FEED_SEARCH_PER_RUN raises it when the budget
-  // allows (a paid plan, or SerpAPI).
-  const perRun = opts.perRun ?? Math.max(1, Number(process.env.FEED_SEARCH_PER_RUN ?? 2));
+  // Four members an hour, like the video collector: Google News' feed has no
+  // published quota, but a hundred queries a day from one address is a polite
+  // trickle, and it walks the whole House every three and a half days.
+  // FEED_SEARCH_PER_RUN changes it (a Brave free key wants 2).
+  const perRun = opts.perRun ?? Math.max(1, Number(process.env.FEED_SEARCH_PER_RUN ?? 4));
   const slice = sliceFor(targets(), perRun, await turnOf('search', run, 60));
   const index = await buildIndex();
   const sites = SEARCH_ONLY_SOURCES.map((s) => new URL(s.homepage).hostname.replace(/^www\./, ''));
@@ -319,13 +319,17 @@ export async function runSearchCollector(opts: { trigger?: string; perRun?: numb
     try {
       const hits = await provider.search(q, { limit: 20 });
       for (const h of hits) {
+        const where = h.outletHost ?? h.url;
+        const outlet = SEARCH_ONLY_SOURCES.find((s) => where.includes(new URL(s.homepage).hostname.replace(/^www\./, '')));
+        // A hit from somewhere else is a search engine ignoring site:, not news.
+        if (!outlet) continue;
         items.push({
           type: 'news',
           title: h.title,
           url: h.url,
           summary: h.summary,
-          outletName: h.outletName ?? SEARCH_ONLY_SOURCES.find((s) => h.url.includes(new URL(s.homepage).hostname.replace(/^www\./, '')))?.nameBn ?? null,
-          outletId: SEARCH_ONLY_SOURCES.find((s) => h.url.includes(new URL(s.homepage).hostname.replace(/^www\./, '')))?.key ?? null,
+          outletName: outlet.nameBn,
+          outletId: outlet.key,
           publishedAt: h.publishedAt ?? new Date().toISOString(),
           source: 'search',
         });
