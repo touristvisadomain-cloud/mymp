@@ -9,7 +9,7 @@ import FeedRunButton from './FeedRunButton';
 
 export const metadata: Metadata = { title: 'সংগ্রহের ইতিহাস' };
 
-const TRIGGER_BN: Record<string, string> = { cron: 'Vercel, দৈনিক', github: 'GitHub, ৩০ মিনিট', admin: 'অ্যাডমিন', cli: 'টার্মিনাল', manual: 'হাতে' };
+const TRIGGER_BN: Record<string, string> = { cron: 'নির্ধারিত সময়ে (Supabase Cron)', github: 'GitHub, ৩০ মিনিট', admin: 'অ্যাডমিন', cli: 'টার্মিনাল', manual: 'হাতে' };
 const STATUS_BN: Record<string, string> = { ok: 'সফল', failed: 'ব্যর্থ', aborted: 'থামানো', running: 'চলছে' };
 
 export default async function FeedRuns() {
