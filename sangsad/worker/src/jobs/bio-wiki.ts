@@ -265,10 +265,10 @@ export async function runBioWiki(db: Db): Promise<{ itemsFound: number; itemsNew
   writeFileSync(report, JSON.stringify({ generatedAt: new Date().toISOString(), ...summary, items: found }, null, 1));
   process.stdout.write(`  bio: ${JSON.stringify(summary)}; report ${report}\n`);
 
-  const url = process.env.MYMP_SUPABASE_URL;
-  const key = process.env.MYMP_SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
-    process.stdout.write('  not written to mymp.bd (MYMP_SUPABASE_URL / MYMP_SUPABASE_SERVICE_ROLE_KEY not set)\n');
+    process.stdout.write('  not written to mymp.bd (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set)\n');
     return { itemsFound: sitting.length, itemsNew: 0 };
   }
   const mymp = createClient(url, key, { auth: { persistSession: false } });

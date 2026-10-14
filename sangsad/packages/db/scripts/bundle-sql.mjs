@@ -19,6 +19,7 @@ let out = `-- সংসদ engine for mymp.bd: one-shot setup for Supabase's SQL
 -- Safe to run once on a fresh project. Afterwards use \`pnpm db:migrate\` for new migrations.
 
 create schema if not exists drizzle;
+create schema if not exists sangsad;
 create table if not exists drizzle.__drizzle_migrations (
   id serial primary key,
   hash text not null,

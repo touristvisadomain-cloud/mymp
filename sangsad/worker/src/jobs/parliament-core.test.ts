@@ -85,7 +85,8 @@ const payload = (): ParliamentPayload => ({
 
 beforeAll(async () => {
   await pg.exec('create role anon nologin; create role authenticated nologin; create role service_role nologin;');
-  await migrate(db, { migrationsFolder: resolve(dbDir, 'migrations') });
+  await pg.exec('create schema if not exists sangsad;');
+  await migrate(db, { migrationsFolder: resolve(dbDir, 'migrations'), migrationsSchema: 'drizzle', migrationsTable: '__drizzle_migrations' });
   await pg.exec(await readFile(resolve(dbDir, 'sql/rls.sql'), 'utf8'));
   await upsertParliaments(db, [
     { parliamentNo: 13, externalId: 112, electionDate: '2026-02-12', oathDate: '2026-02-17', parliamentLastDate: '2031-02-16' },

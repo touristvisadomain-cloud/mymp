@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 import https from 'node:https';
 import tls from 'node:tls';
 import { PARLIAMENT_CA } from '../src/lib/parliament-ca.mjs';
+import { FLOORS, dataDrop, dataDropError } from '../src/lib/dataFloor.mjs';
 
 const BASE = 'https://www.parliament.gov.bd';
 const HOST = 'www.parliament.gov.bd';
@@ -40,22 +41,9 @@ const LIVE = process.argv.includes('--live');
 const ENGINE_ONLY = process.argv.includes('--engine');
 
 /*
- * The engine's public mirror. The bucket is public by design (it holds only
- * what mymp.bd itself publishes; mobile numbers are stripped by the engine),
- * so its address is not a secret and needs no environment variable.
- */
-const ENGINE_URL = (process.env.SANGSAD_SUPABASE_URL || 'https://ckeorrzppdgsutqfqdor.supabase.co').replace(/\/$/, '');
-const MIRROR_URL = `${ENGINE_URL}/storage/v1/object/public/mirror`;
-const MIRROR_MAX_AGE_HOURS = 36;
-/** Set by loadMirror(): { fetchedAt, responses: { [apiPath]: rows }, photos: { [externalId]: url } }. */
-let mirror = null;
-
-/*
  * `npm run build` starts here, under plain Node, which does not read .env.local
- * the way Next does. Without it the admin database looks absent, and a local
- * build quietly rewrites data/*.json with none of the editors' overrides in it
- * — hundreds of corrections gone from the files, with nothing on screen to say
- * so. Reading the file makes a local build produce what Vercel's build does.
+ * the way Next does. Load it before any environment-derived URLs or clients are
+ * initialized, so local and CI builds use the same configuration.
  */
 const envFile = new URL('../.env.local', import.meta.url);
 if (existsSync(envFile)) {
@@ -64,6 +52,18 @@ if (existsSync(envFile)) {
     if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^"|"$/g, '');
   }
 }
+
+/*
+ * The engine's public mirror. The bucket is public by design (it holds only
+ * what mymp.bd itself publishes; mobile numbers are stripped by the engine),
+ * so its address is not a secret and needs no environment variable.
+ */
+const ENGINE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+if (!ENGINE_URL) throw new Error('Supabase URL is not configured: set NEXT_PUBLIC_SUPABASE_URL.');
+const MIRROR_URL = `${ENGINE_URL}/storage/v1/object/public/mirror`;
+const MIRROR_MAX_AGE_HOURS = 36;
+/** Set by loadMirror(): { fetchedAt, responses: { [apiPath]: rows }, photos: { [externalId]: url } }. */
+let mirror = null;
 
 /**
  * Optional admin database. When the Supabase variables are present, admin
@@ -372,7 +372,25 @@ const seatInTitle = (title) => {
 const slugify = (s) =>
   String(s).toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+/**
+ * What the committed snapshot in data/ was built with, read before this run
+ * overwrites it: the floor the admin database is held to (src/lib/dataFloor.mjs).
+ */
+async function readBaseline() {
+  const read = async (name) => {
+    try { return JSON.parse(await readFile(join(OUT, name), 'utf8')); } catch { return null; }
+  };
+  const [meta, results, news] = await Promise.all([read('meta.json'), read('results.json'), read('news.json')]);
+  return {
+    overrides: meta?.overridesApplied ?? 0,
+    results: Array.isArray(results) ? results.length : 0,
+    news: Array.isArray(news) ? news.length : 0,
+  };
+}
+
 async function main() {
+  const baseline = await readBaseline();
+  const allowDrop = process.env.ALLOW_DATA_DROP === '1';
   if (!LIVE) {
     try {
       mirror = await loadMirror();
@@ -804,6 +822,13 @@ async function main() {
       throw e;
     }
   }
+  // An empty or wrong database reads without an error, so the floor catches it.
+  // A production build with no database at all would drop the edits the same way.
+  if (!allowDrop) {
+    const configured = dbConfigured();
+    const reason = configured || SOFT ? dataDrop('admin corrections', overridesApplied, baseline.overrides, FLOORS.overrides) : null;
+    if (reason) throw dataDropError(configured ? reason : `${reason} (the admin database is not configured)`);
+  }
 
   const meta = {
     parliamentNo: PARLIAMENT,
@@ -874,9 +899,12 @@ async function main() {
         id: r.id, titleBn: r.title_bn, sourceName: r.source_name, sourceUrl: r.source_url,
         publishedOn: r.published_on, excerptBn: r.excerpt_bn ?? null, memberId: r.member_id ?? null, seatSlug: r.seat_slug ?? null,
       }));
+      const drop = allowDrop ? null : dataDrop('published news', news.length, baseline.news, FLOORS.news);
+      if (drop) throw dataDropError(drop);
       await writeFile(join(OUT, 'news.json'), JSON.stringify(news, null, 1), 'utf8');
       console.log('Wrote data/news.json —', news.length, 'published items');
     } catch (err) {
+      if (err.fatal) throw err;
       console.warn('  news skipped:', err.message);
     }
     // Vote counts come only from here: the source has none. Draft rows never leave the database.
@@ -887,9 +915,12 @@ async function main() {
         totalVotes: r.total_votes ?? null, turnout: r.turnout == null ? null : Number(r.turnout),
         sourceUrl: r.source_url, sourceNote: r.source_note ?? null,
       }));
+      const drop = allowDrop ? null : dataDrop('published vote counts', results.length, baseline.results, FLOORS.results);
+      if (drop) throw dataDropError(drop);
       await writeFile(join(OUT, 'results.json'), JSON.stringify(results, null, 1), 'utf8');
       console.log('Wrote data/results.json —', results.length, 'published results');
     } catch (err) {
+      if (err.fatal) throw err;
       console.warn('  election results skipped (table missing?):', err.message.slice(0, 120));
     }
     try {

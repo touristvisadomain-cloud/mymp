@@ -15,6 +15,8 @@ import { parliamentGet, parliamentGetAll } from '@sangsad/shared';
 import { getDb } from './client';
 import { upsertConstituencySet, upsertParliaments, type SrcConstituency, type SrcParliament } from './seed-core';
 
+config({ path: resolve(import.meta.dirname, '../../../../.env.local') });
+config({ path: resolve(import.meta.dirname, '../../../.env.local') });
 config({ path: resolve(import.meta.dirname, '../../../.env') });
 
 const CURRENT_PARLIAMENT = 13;

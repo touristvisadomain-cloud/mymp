@@ -7,7 +7,7 @@
 import { config } from 'dotenv';
 import { resolve } from 'node:path';
 import { sql } from 'drizzle-orm';
-import { getDb } from '@sangsad/db';
+import { closeDb, getDb } from '@sangsad/db';
 import { ingestRuns } from '@sangsad/db/schema';
 import { parliamentGet } from '@sangsad/shared';
 import { runParliament } from './jobs/parliament';
@@ -20,6 +20,7 @@ import { runSocialWiki } from './jobs/social-wiki';
 import { runBioWiki } from './jobs/bio-wiki';
 import { runOgCards } from './jobs/og-cards';
 
+config({ path: resolve(import.meta.dirname, '../../.env.local') });
 config({ path: resolve(import.meta.dirname, '../../.env') });
 
 type Job = () => Promise<{ itemsFound: number; itemsNew: number }>;
@@ -74,6 +75,7 @@ async function run(name: string) {
       .set({ finishedAt: new Date(), ok: true, itemsFound: result.itemsFound, itemsNew: result.itemsNew })
       .where(sql`${ingestRuns.id} = ${runRow!.id}`);
     console.log(`job ${name}: ok in ${Math.round((Date.now() - started) / 1000)}s`);
+    await closeDb();
     process.exit(0);
   } catch (err) {
     const message = (err as Error).message ?? String(err);
@@ -82,6 +84,7 @@ async function run(name: string) {
       .set({ finishedAt: new Date(), ok: false, errors: 1, errorText: message.slice(0, 2000) })
       .where(sql`${ingestRuns.id} = ${runRow!.id}`);
     console.error(`job ${name}: failed: ${message}`);
+    await closeDb();
     process.exit(1);
   }
 }

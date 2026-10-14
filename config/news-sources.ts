@@ -107,7 +107,8 @@ export const NEWS_SOURCES: NewsSource[] = [
   // here for the search collector.
   { key: 'bdnews24', nameBn: 'বিডিনিউজ২৪', homepage: 'https://bdnews24.com', searchOnly: true, sitemaps: [{ url: 'https://bdnews24.com/news_sitemap.xml' }, { url: 'https://bangla.bdnews24.com/news_sitemap.xml' }], lang: 'bn' },
   { key: 'somoynews', nameBn: 'সময় টিভি', homepage: 'https://www.somoynews.tv', searchOnly: true, lang: 'bn' },
-  { key: 'jamuna', nameBn: 'যমুনা টিভি', homepage: 'https://jamuna.tv', searchOnly: true, lang: 'bn' },
+  // No feed, but a Google News sitemap that answers the collector (checked 2026-10-12: 500 stories).
+  { key: 'jamuna', nameBn: 'যমুনা টিভি', homepage: 'https://jamuna.tv', searchOnly: true, sitemaps: [{ url: 'https://www.jamuna.tv/news_sitemap.xml' }], lang: 'bn' },
   { key: 'kalbela', nameBn: 'কালবেলা', homepage: 'https://www.kalbela.com', searchOnly: true, lang: 'bn' },
   { key: 'banglanews24', nameBn: 'বাংলানিউজ২৪', homepage: 'https://www.banglanews24.com', searchOnly: true, sitemaps: [{ url: 'https://www.banglanews24.com/daily-sitemap/{d}/sitemap.xml', daily: true }], lang: 'bn' },
   { key: 'nayadiganta', nameBn: 'নয়া দিগন্ত', homepage: 'https://www.dailynayadiganta.com', searchOnly: true, lang: 'bn' },

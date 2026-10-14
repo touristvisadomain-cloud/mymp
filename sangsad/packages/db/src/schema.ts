@@ -13,8 +13,7 @@ import {
   integer,
   jsonb,
   numeric,
-  pgEnum,
-  pgTable,
+  pgSchema,
   serial,
   text,
   timestamp,
@@ -22,12 +21,14 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+export const sangsadSchema = pgSchema('sangsad');
+
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).notNull().defaultNow();
 
 /* ---------------- reference ---------------- */
 
-export const parliaments = pgTable('parliaments', {
+export const parliaments = sangsadSchema.table('parliaments', {
   id: serial('id').primaryKey(),
   number: integer('number').notNull().unique(),
   electionDate: date('election_date'),
@@ -41,7 +42,7 @@ export const parliaments = pgTable('parliaments', {
  * Keyed on the source's party id, not the abbreviation: the source lists two
  * different parties as "JP" and two as "BJP".
  */
-export const parties = pgTable('parties', {
+export const parties = sangsadSchema.table('parties', {
   id: serial('id').primaryKey(),
   nameBn: text('name_bn').notNull(),
   nameEn: text('name_en').notNull(),
@@ -51,7 +52,7 @@ export const parties = pgTable('parties', {
   sourceId: integer('source_id').unique(),
 });
 
-export const divisions = pgTable('divisions', {
+export const divisions = sangsadSchema.table('divisions', {
   id: serial('id').primaryKey(),
   nameBn: text('name_bn').notNull(),
   nameEn: text('name_en').notNull(),
@@ -59,7 +60,7 @@ export const divisions = pgTable('divisions', {
   sourceId: integer('source_id').unique(),
 });
 
-export const districts = pgTable(
+export const districts = sangsadSchema.table(
   'districts',
   {
     id: serial('id').primaryKey(),
@@ -74,7 +75,7 @@ export const districts = pgTable(
   (t) => [index('districts_division_idx').on(t.divisionId)],
 );
 
-export const constituencies = pgTable(
+export const constituencies = sangsadSchema.table(
   'constituencies',
   {
     id: serial('id').primaryKey(),
@@ -101,14 +102,14 @@ export const constituencies = pgTable(
 
 /* ---------------- members ---------------- */
 
-export const genderEnum = pgEnum('gender', ['male', 'female', 'other', 'unknown']);
+export const genderEnum = sangsadSchema.enum('gender', ['male', 'female', 'other', 'unknown']);
 
 /**
  * People. The columns after `gender` are what parliament.gov.bd publishes about
  * a member and are shown labelled as such; nothing is written here by hand.
  * Mobile numbers exist in the source and are deliberately never stored.
  */
-export const members = pgTable(
+export const members = sangsadSchema.table(
   'members',
   {
     id: serial('id').primaryKey(),
@@ -144,7 +145,7 @@ export const members = pgTable(
   (t) => [index('members_name_bn_idx').on(t.nameBn), index('members_person_idx').on(t.sourcePersonId)],
 );
 
-export const memberTerms = pgTable(
+export const memberTerms = sangsadSchema.table(
   'member_terms',
   {
     id: serial('id').primaryKey(),
@@ -174,9 +175,9 @@ export const memberTerms = pgTable(
   ],
 );
 
-export const aliasLanguageEnum = pgEnum('alias_language', ['bn', 'en']);
+export const aliasLanguageEnum = sangsadSchema.enum('alias_language', ['bn', 'en']);
 
-export const memberAliases = pgTable(
+export const memberAliases = sangsadSchema.table(
   'member_aliases',
   {
     id: serial('id').primaryKey(),
@@ -194,9 +195,9 @@ export const memberAliases = pgTable(
 
 /* ---------------- elections ---------------- */
 
-export const verifyStatusEnum = pgEnum('verify_status', ['pending', 'verified', 'rejected']);
+export const verifyStatusEnum = sangsadSchema.enum('verify_status', ['pending', 'verified', 'rejected']);
 
-export const electionResults = pgTable(
+export const electionResults = sangsadSchema.table(
   'election_results',
   {
     id: serial('id').primaryKey(),
@@ -226,9 +227,9 @@ export const electionResults = pgTable(
 
 /* ---------------- affidavits ---------------- */
 
-export const extractionMethodEnum = pgEnum('extraction_method', ['text', 'ocr', 'manual']);
+export const extractionMethodEnum = sangsadSchema.enum('extraction_method', ['text', 'ocr', 'manual']);
 
-export const affidavits = pgTable(
+export const affidavits = sangsadSchema.table(
   'affidavits',
   {
     id: serial('id').primaryKey(),
@@ -258,7 +259,7 @@ export const affidavits = pgTable(
   (t) => [unique('affidavits_member_parliament').on(t.memberId, t.parliamentId)],
 );
 
-export const affidavitCases = pgTable('affidavit_cases', {
+export const affidavitCases = sangsadSchema.table('affidavit_cases', {
   id: serial('id').primaryKey(),
   affidavitId: integer('affidavit_id')
     .notNull()
@@ -271,7 +272,7 @@ export const affidavitCases = pgTable('affidavit_cases', {
 
 /* ---------------- committees ---------------- */
 
-export const committees = pgTable(
+export const committees = sangsadSchema.table(
   'committees',
   {
     id: serial('id').primaryKey(),
@@ -293,7 +294,7 @@ export const committees = pgTable(
   (t) => [unique('committees_parliament_slug').on(t.parliamentId, t.slug)],
 );
 
-export const memberCommittees = pgTable(
+export const memberCommittees = sangsadSchema.table(
   'member_committees',
   {
     id: serial('id').primaryKey(),
@@ -311,7 +312,7 @@ export const memberCommittees = pgTable(
 /* ---------------- what the House is doing ---------------- */
 
 /** A session of a parliament as the secretariat records it. */
-export const parliamentSessions = pgTable('parliament_sessions', {
+export const parliamentSessions = sangsadSchema.table('parliament_sessions', {
   id: serial('id').primaryKey(),
   parliamentId: integer('parliament_id')
     .notNull()
@@ -325,7 +326,7 @@ export const parliamentSessions = pgTable('parliament_sessions', {
 });
 
 /** One sitting day, with its order-of-the-day PDF on the parliament's own server. */
-export const sittings = pgTable(
+export const sittings = sangsadSchema.table(
   'sittings',
   {
     id: serial('id').primaryKey(),
@@ -347,7 +348,7 @@ export const sittings = pgTable(
  * members, committee meeting notices, and general notifications. Staff
  * office orders, tenders and downloads are filtered out by the worker.
  */
-export const notices = pgTable(
+export const notices = sangsadSchema.table(
   'notices',
   {
     id: serial('id').primaryKey(),
@@ -365,7 +366,7 @@ export const notices = pgTable(
   (t) => [index('notices_date_idx').on(t.date), index('notices_committee_idx').on(t.committeeId)],
 );
 
-export const noticeMembers = pgTable(
+export const noticeMembers = sangsadSchema.table(
   'notice_members',
   {
     id: serial('id').primaryKey(),
@@ -383,7 +384,7 @@ export const noticeMembers = pgTable(
 
 /* ---------------- biography ---------------- */
 
-export const bioFacts = pgTable(
+export const bioFacts = sangsadSchema.table(
   'bio_facts',
   {
     id: serial('id').primaryKey(),
@@ -404,7 +405,7 @@ export const bioFacts = pgTable(
   (t) => [index('bio_facts_member_idx').on(t.memberId)],
 );
 
-export const bioFactSources = pgTable('bio_fact_sources', {
+export const bioFactSources = sangsadSchema.table('bio_fact_sources', {
   id: serial('id').primaryKey(),
   bioFactId: integer('bio_fact_id')
     .notNull()
@@ -417,11 +418,11 @@ export const bioFactSources = pgTable('bio_fact_sources', {
 
 /* ---------------- news ---------------- */
 
-export const sourceTypeEnum = pgEnum('source_type', ['portal', 'tv', 'official', 'verification']);
-export const sourceStatusEnum = pgEnum('source_status', ['active', 'no_feed', 'blocked', 'disabled', 'pending_inspection']);
+export const sourceTypeEnum = sangsadSchema.enum('source_type', ['portal', 'tv', 'official', 'verification']);
+export const sourceStatusEnum = sangsadSchema.enum('source_status', ['active', 'no_feed', 'blocked', 'disabled', 'pending_inspection']);
 
 /** Mirrors config/sources.json; the worker upserts it on every run. */
-export const sources = pgTable('sources', {
+export const sources = sangsadSchema.table('sources', {
   id: text('id').primaryKey(),
   nameBn: text('name_bn').notNull(),
   nameEn: text('name_en').notNull(),
@@ -439,7 +440,7 @@ export const sources = pgTable('sources', {
   consecutiveFailures: integer('consecutive_failures').notNull().default(0),
 });
 
-export const articles = pgTable(
+export const articles = sangsadSchema.table(
   'articles',
   {
     id: serial('id').primaryKey(),
@@ -457,7 +458,7 @@ export const articles = pgTable(
   (t) => [index('articles_published_idx').on(t.publishedAt), index('articles_source_idx').on(t.sourceId)],
 );
 
-export const videos = pgTable(
+export const videos = sangsadSchema.table(
   'videos',
   {
     id: serial('id').primaryKey(),
@@ -474,9 +475,9 @@ export const videos = pgTable(
   (t) => [index('videos_published_idx').on(t.publishedAt)],
 );
 
-export const matchStatusEnum = pgEnum('match_status', ['auto', 'approved', 'rejected', 'pending']);
+export const matchStatusEnum = sangsadSchema.enum('match_status', ['auto', 'approved', 'rejected', 'pending']);
 
-export const articleMembers = pgTable(
+export const articleMembers = sangsadSchema.table(
   'article_members',
   {
     id: serial('id').primaryKey(),
@@ -500,7 +501,7 @@ export const articleMembers = pgTable(
   ],
 );
 
-export const videoMembers = pgTable(
+export const videoMembers = sangsadSchema.table(
   'video_members',
   {
     id: serial('id').primaryKey(),
@@ -522,9 +523,9 @@ export const videoMembers = pgTable(
 
 /* ---------------- editorial operations ---------------- */
 
-export const correctionStatusEnum = pgEnum('correction_status', ['open', 'resolved', 'rejected']);
+export const correctionStatusEnum = sangsadSchema.enum('correction_status', ['open', 'resolved', 'rejected']);
 
-export const corrections = pgTable('corrections', {
+export const corrections = sangsadSchema.table('corrections', {
   id: serial('id').primaryKey(),
   memberId: integer('member_id').references(() => members.id, { onDelete: 'set null' }),
   pagePath: text('page_path'),
@@ -538,7 +539,7 @@ export const corrections = pgTable('corrections', {
   updatedAt: updatedAt(),
 });
 
-export const auditLog = pgTable(
+export const auditLog = sangsadSchema.table(
   'audit_log',
   {
     id: serial('id').primaryKey(),
@@ -554,7 +555,7 @@ export const auditLog = pgTable(
   (t) => [index('audit_log_table_row_idx').on(t.tableName, t.rowId)],
 );
 
-export const ingestRuns = pgTable(
+export const ingestRuns = sangsadSchema.table(
   'ingest_runs',
   {
     id: serial('id').primaryKey(),
@@ -571,10 +572,10 @@ export const ingestRuns = pgTable(
   (t) => [index('ingest_runs_job_idx').on(t.job, t.startedAt)],
 );
 
-export const adminRoleEnum = pgEnum('admin_role', ['admin', 'editor']);
+export const adminRoleEnum = sangsadSchema.enum('admin_role', ['admin', 'editor']);
 
 /** Who may use /admin. user_id is the Supabase Auth user id. */
-export const adminUsers = pgTable('admin_users', {
+export const adminUsers = sangsadSchema.table('admin_users', {
   userId: uuid('user_id').primaryKey(),
   email: text('email').notNull().unique(),
   role: adminRoleEnum('role').notNull().default('editor'),

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "packages": {
+    "node": "24",
+    "pnpm": "12.3.4"
+  },
+  "steps": {
+    "build": {
+      "commands": [
+        "cd sangsad && pnpm install --frozen-lockfile && cd ..",
+        "npm run build"
+      ]
+    }
+  },
+  "secrets": [
+    "NEXT_PUBLIC_SITE_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "DOKPLOY_API_KEY",
+    "DOKPLOY_APP_ID"
+  ],
+  "deploy": {
+    "startCommand": "npx next start",
+    "variables": {
+      "NODE_ENV": "production",
+      "NEXT_TELEMETRY_DISABLED": "1",
+      "HOSTNAME": "0.0.0.0",
+      "PORT": "3000"
+    }
+  }
+}

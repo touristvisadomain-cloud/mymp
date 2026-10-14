@@ -3,7 +3,7 @@
 Everything a new developer needs to work on **আমার এমপি / MY MP** (mymp.bd).
 Read this once, top to bottom, before the first commit. It is short on purpose.
 
-- Website repo: `sumongetup/mymp` (this one). Next.js, deployed on Vercel.
+- Website repo: `sumongetup/mymp` (this one). Next.js, deployed via Dokploy on the VPS; see `docs/vps-deployment.md`.
 - App repo: `sumongetup/mymp-app` (separate). Flutter, built on Codemagic,
   published as `bd.mymp.app` on Google Play. It reads this site's
   `/api/app/v1/*` routes, so a breaking change here breaks the app.
@@ -13,13 +13,13 @@ Read this once, top to bottom, before the first commit. It is short on purpose.
 | | |
 | --- | --- |
 | GitHub | **Write** on `sumongetup/mymp`. Push branches, open pull requests. |
-| Vercel | No. You do not need it: every push gets its own preview URL, posted on the pull request by the Vercel bot. |
+| VPS | No. Merging to `main` deploys through Dokploy. |
 | Supabase | No. The service role key is not shared. |
 | Play Console | No. |
 
 This is not a matter of trust, it is the blast radius. `SUPABASE_SERVICE_ROLE_KEY`
-bypasses row level security on the whole database, and the Vercel project holds
-it in plain view of anyone with project access. Anything you need that requires
+bypasses row level security on the whole database, and the VPS `.env` holds it
+in plain view of anyone with server access. Anything you need that requires
 those keys, ask the owner to run.
 
 You can do all normal work without them. See the next section.
@@ -58,15 +58,16 @@ Supabase: overrides, hidden, news, results, feed
 ```
 
 - **No database is read when a visitor loads a page.** Public pages must never
-  call auth or Supabase. One `auth()` call in a public route makes the whole
-  site uncacheable and the Vercel bill jumps. This has happened before.
+  call auth or Supabase. The generated snapshot is built and served as
+  static/build-time data by the Dokploy deployment.
 - `scripts/sync.mjs` runs at the start of every build (`npm run build` =
   `sync --soft` then the name index then `next build`). It fetches the official
   sources, then applies every row from the Supabase `overrides` table and every
   `hidden` flag on top, then writes `data/*.json`.
-- So an edit made in `/admin` is not live until a build runs. "Publish" in the
-  admin calls a Vercel deploy hook; a Vercel cron does the same nightly at
-  02:00 Dhaka time (`vercel.json`, `0 21 * * *` UTC).
+- So an edit made in `/admin` is not live until a build runs. Sangsad refreshes
+  dispatch the GitHub VPS deployment workflow; Supabase Cron handles protected
+  application jobs such as posts sync and feed collection. See
+  `docs/vps-deployment.md` for schedules and cutover steps.
 - `data/*.json` is committed. Treat it as generated output: regenerate with
   `npm run sync`, do not hand-edit it. Corrections belong in the `overrides`
   table (via `/admin`), not in the JSON.
@@ -90,7 +91,7 @@ src/lib/districts.ts  the single source of district ↔ seat grouping
 src/lib/search.ts     bilingual search (Bengali or English, same results)
 src/lib/seo/          titles, descriptions, structured data
 src/components/       shared UI
-.github/workflows/    feed and posts jobs that run outside Vercel
+.github/workflows/    deploy to the VPS, CI for sangsad/
 ```
 
 Public routes: `/` `/mp` `/mp/[slug]` `/ason` `/ason/[slug]` `/jela`
@@ -123,13 +124,14 @@ npm test && npx tsc --noEmit && npx eslint .
 
 ## 6. Deploy model
 
-- Push a branch, open a pull request. Vercel builds a **preview** and comments
-  the URL. Check your work there.
-- Merge to `main` deploys **production** (mymp.bd) automatically.
+- Push a branch, open a pull request. There is no preview deployment: check
+  your work locally with `npm run build:local && npm start`.
+- Merge to `main` deploys **production** (mymp.bd) through
+  `.github/workflows/deploy.yml`, in about five minutes. No other branch deploys.
 - Do not push straight to `main`. Branch, push, open the pull request, let the
-  owner look at the preview.
+  owner look at it.
 - A failed build never replaces the live site, but a green build with wrong data
-  does. Look at the preview before asking for a merge.
+  does. Check locally before asking for a merge.
 
 ## 7. Rules this project holds to
 
@@ -182,7 +184,7 @@ the code is correct.
 ## 9. Before you ask for a merge
 
 - [ ] `npm test && npx tsc --noEmit && npx eslint .` all clean
-- [ ] Checked the Vercel preview, on a phone width as well
+- [ ] Checked locally (`npm run build:local && npm start`), on a phone width as well
 - [ ] No new Supabase or auth call in anything under `src/app/(site)`
 - [ ] Any new information type has a row on `/sutro`
 - [ ] Any new page is in `src/app/sitemap.xml/route.ts` and reachable from a
@@ -200,7 +202,7 @@ the code is correct.
 | Supabase migrations, keys, grants | owner |
 | `/admin` content edits, publish | owner |
 | Play Console releases, app signing | owner |
-| Domain, DNS, Vercel settings | owner |
+| Domain, DNS, VPS and GitHub settings | owner |
 
 Questions about data or editorial rules go to the owner, not into an
 assumption. Anything the sources do not say, the site does not say.

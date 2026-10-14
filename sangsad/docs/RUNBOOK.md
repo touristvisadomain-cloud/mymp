@@ -49,11 +49,11 @@ Jobs today:
 | `og:cards` | a 1200x630 link-preview card (photo, name, seat, party on the site green) for every sitting member, drawn in headless Chrome with the local Noto Sans Bengali (Satori and canvas break Bangla conjuncts), kept inside the centre square for WhatsApp crops. Uploads `mirror/og/mp/<id>.jpg` and `mirror/og/latest.json` (id → version); only cards whose content changed are redrawn (`OG_CARDS_ALL=1` redraws all). mymp.bd's sync reads the list into member.shareImage, but since 2026-09-11 the pages share the plain official photo instead (the owner's choice: WhatsApp shows a small square where a card's text cannot be read), so this job is not in the nightly run; run it by hand if the cards are wanted again | NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY; Chrome (CHROME_PATH if not in a usual place) |
 | `parliament:report` | writes `docs/reports/parliament-<date>.md`: counts against the source, the unseated seat, officers, every member with a missing photo, email, profession, date of birth or party | DATABASE_URL |
 
-The nightly workflow `.github/workflows/sangsad-worker.yml` (repository root) runs the three parliament jobs at 02:00 Dhaka and can be started by hand with a job name. It reads the repository secrets `SANGSAD_DATABASE_URL`, `SANGSAD_SUPABASE_URL` and `SANGSAD_SUPABASE_SERVICE_ROLE_KEY`, and optionally `MYMP_DEPLOY_HOOK_URL`.
+The worker container on the VPS (`worker/src/scheduler.ts`, service `worker` in the root `docker-compose.yml`) runs the three parliament jobs at 02:00 Dhaka and then asks GitHub to rebuild mymp.bd. It reads mymp.bd's runtime `.env`: `SANGSAD_DATABASE_URL`, `SANGSAD_SUPABASE_URL` and `SANGSAD_SUPABASE_SERVICE_ROLE_KEY` (see `docs/vps-deployment.md` in the repository root for the fallbacks), and `MYMP_DEPLOY_TOKEN` for the rebuild. Any job by hand, with the same environment: `docker exec mymp-worker pnpm job <job>`.
 
 ## News
 
-`.github/workflows/sangsad-news.yml` runs `news` every 30 minutes and, every 3 hours, calls mymp.bd's deploy hook so new headlines reach the static pages. It needs, besides the three `SANGSAD_*` secrets, `MYMP_SUPABASE_URL` and `MYMP_SUPABASE_SERVICE_ROLE_KEY` (mymp.bd's own Supabase project) and optionally `MYMP_DEPLOY_HOOK_URL`.
+The worker container runs `news` every 30 minutes and, every 3 hours when it succeeded, asks GitHub to rebuild mymp.bd so new headlines reach the static pages. Besides the `SANGSAD_*` settings it delivers with `MYMP_SUPABASE_URL` and `MYMP_SUPABASE_SERVICE_ROLE_KEY`, which default to mymp.bd's own Supabase.
 
 Only headline, outlet, date and link reach the site. The feed summary (160 characters at most) is stored for the matcher and never shown. A wrong match is removed in mymp.bd's admin (News: reject or unpublish); `news:rematch` never re-delivers a story mymp.bd already holds.
 
@@ -65,7 +65,7 @@ The `parliament` job writes `mirror/parliament/latest.json` (plus a dated copy f
 
 The bucket is public, and the source's records carry every member's mobile number, a second mobile and email, a signature image, user ids and officers' phone numbers. `worker/src/jobs/mirror.ts` therefore rebuilds each record from an allow-list of fields, keeps a mobile number only as `hasMobile`, and scans the whole document for private field names before uploading; `mirror.test.ts` covers this. A copy with fewer than 300 sitting members is refused, so a bad night never replaces a good copy.
 
-After the nightly jobs the workflow calls mymp.bd's deploy hook when the repository secret `MYMP_DEPLOY_HOOK_URL` exists; mymp.bd's own cron (03:00 Dhaka) rebuilds it anyway.
+After the nightly jobs the worker asks GitHub to rebuild mymp.bd, whether or not they succeeded: the build reads this copy when it is fresh and parliament.gov.bd otherwise.
 
 To check what mymp.bd will read: open `https://<engine-ref>.supabase.co/storage/v1/object/public/mirror/parliament/latest.json` and look at `fetchedAt`. To force a build straight from parliament.gov.bd: `node scripts/sync.mjs --live` in the repository root.
 

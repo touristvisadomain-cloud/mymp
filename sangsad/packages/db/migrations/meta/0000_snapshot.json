@@ -4,9 +4,9 @@
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.admin_users": {
+    "sangsad.admin_users": {
       "name": "admin_users",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "user_id": {
           "name": "user_id",
@@ -23,7 +23,7 @@
         "role": {
           "name": "role",
           "type": "admin_role",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true,
           "default": "'editor'"
@@ -52,9 +52,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.affidavit_cases": {
+    "sangsad.affidavit_cases": {
       "name": "affidavit_cases",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -109,9 +109,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.affidavits": {
+    "sangsad.affidavits": {
       "name": "affidavits",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -182,7 +182,7 @@
         "extraction_method": {
           "name": "extraction_method",
           "type": "extraction_method",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true,
           "default": "'text'"
@@ -190,7 +190,7 @@
         "status": {
           "name": "status",
           "type": "verify_status",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
@@ -266,9 +266,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.article_members": {
+    "sangsad.article_members": {
       "name": "article_members",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -303,7 +303,7 @@
         "status": {
           "name": "status",
           "type": "match_status",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true
         },
@@ -393,9 +393,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.articles": {
+    "sangsad.articles": {
       "name": "articles",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -508,9 +508,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.audit_log": {
+    "sangsad.audit_log": {
       "name": "audit_log",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -598,9 +598,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.bio_fact_sources": {
+    "sangsad.bio_fact_sources": {
       "name": "bio_fact_sources",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -669,9 +669,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.bio_facts": {
+    "sangsad.bio_facts": {
       "name": "bio_facts",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -706,7 +706,7 @@
         "status": {
           "name": "status",
           "type": "verify_status",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
@@ -776,9 +776,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.committees": {
+    "sangsad.committees": {
       "name": "committees",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -873,9 +873,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.constituencies": {
+    "sangsad.constituencies": {
       "name": "constituencies",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -1013,9 +1013,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.corrections": {
+    "sangsad.corrections": {
       "name": "corrections",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -1056,7 +1056,7 @@
         "status": {
           "name": "status",
           "type": "correction_status",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true,
           "default": "'open'"
@@ -1110,9 +1110,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.districts": {
+    "sangsad.districts": {
       "name": "districts",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -1204,9 +1204,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.divisions": {
+    "sangsad.divisions": {
       "name": "divisions",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -1262,9 +1262,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.election_results": {
+    "sangsad.election_results": {
       "name": "election_results",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -1336,7 +1336,7 @@
         "status": {
           "name": "status",
           "type": "verify_status",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
@@ -1431,9 +1431,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.ingest_runs": {
+    "sangsad.ingest_runs": {
       "name": "ingest_runs",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -1544,9 +1544,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.member_aliases": {
+    "sangsad.member_aliases": {
       "name": "member_aliases",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -1569,7 +1569,7 @@
         "language": {
           "name": "language",
           "type": "alias_language",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true
         },
@@ -1634,9 +1634,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.member_committees": {
+    "sangsad.member_committees": {
       "name": "member_committees",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -1708,9 +1708,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.member_terms": {
+    "sangsad.member_terms": {
       "name": "member_terms",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -1870,9 +1870,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.members": {
+    "sangsad.members": {
       "name": "members",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -1919,7 +1919,7 @@
         "gender": {
           "name": "gender",
           "type": "gender",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true,
           "default": "'unknown'"
@@ -1996,9 +1996,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.parliaments": {
+    "sangsad.parliaments": {
       "name": "parliaments",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -2053,9 +2053,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.parties": {
+    "sangsad.parties": {
       "name": "parties",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -2110,9 +2110,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.sources": {
+    "sangsad.sources": {
       "name": "sources",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -2135,7 +2135,7 @@
         "type": {
           "name": "type",
           "type": "source_type",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true
         },
@@ -2179,7 +2179,7 @@
         "status": {
           "name": "status",
           "type": "source_status",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true,
           "default": "'pending_inspection'"
@@ -2212,9 +2212,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.video_members": {
+    "sangsad.video_members": {
       "name": "video_members",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -2249,7 +2249,7 @@
         "status": {
           "name": "status",
           "type": "match_status",
-          "typeSchema": "public",
+          "typeSchema": "sangsad",
           "primaryKey": false,
           "notNull": true
         },
@@ -2339,9 +2339,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.videos": {
+    "sangsad.videos": {
       "name": "videos",
-      "schema": "",
+      "schema": "sangsad",
       "columns": {
         "id": {
           "name": "id",
@@ -2435,43 +2435,43 @@
     }
   },
   "enums": {
-    "public.admin_role": {
+    "sangsad.admin_role": {
       "name": "admin_role",
-      "schema": "public",
+      "schema": "sangsad",
       "values": [
         "admin",
         "editor"
       ]
     },
-    "public.alias_language": {
+    "sangsad.alias_language": {
       "name": "alias_language",
-      "schema": "public",
+      "schema": "sangsad",
       "values": [
         "bn",
         "en"
       ]
     },
-    "public.correction_status": {
+    "sangsad.correction_status": {
       "name": "correction_status",
-      "schema": "public",
+      "schema": "sangsad",
       "values": [
         "open",
         "resolved",
         "rejected"
       ]
     },
-    "public.extraction_method": {
+    "sangsad.extraction_method": {
       "name": "extraction_method",
-      "schema": "public",
+      "schema": "sangsad",
       "values": [
         "text",
         "ocr",
         "manual"
       ]
     },
-    "public.gender": {
+    "sangsad.gender": {
       "name": "gender",
-      "schema": "public",
+      "schema": "sangsad",
       "values": [
         "male",
         "female",
@@ -2479,9 +2479,9 @@
         "unknown"
       ]
     },
-    "public.match_status": {
+    "sangsad.match_status": {
       "name": "match_status",
-      "schema": "public",
+      "schema": "sangsad",
       "values": [
         "auto",
         "approved",
@@ -2489,9 +2489,9 @@
         "pending"
       ]
     },
-    "public.source_status": {
+    "sangsad.source_status": {
       "name": "source_status",
-      "schema": "public",
+      "schema": "sangsad",
       "values": [
         "active",
         "no_feed",
@@ -2500,9 +2500,9 @@
         "pending_inspection"
       ]
     },
-    "public.source_type": {
+    "sangsad.source_type": {
       "name": "source_type",
-      "schema": "public",
+      "schema": "sangsad",
       "values": [
         "portal",
         "tv",
@@ -2510,9 +2510,9 @@
         "verification"
       ]
     },
-    "public.verify_status": {
+    "sangsad.verify_status": {
       "name": "verify_status",
-      "schema": "public",
+      "schema": "sangsad",
       "values": [
         "pending",
         "verified",

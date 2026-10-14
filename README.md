@@ -65,8 +65,9 @@ How an edit reaches the public site (there is still no database on the read
 path): every build runs `scripts/sync.mjs --soft` first, which fetches
 parliament.gov.bd, applies every override and hidden flag from Supabase,
 writes the published news to `data/news.json`, then `next build` prerenders.
-"Publish" in the admin calls a Vercel deploy hook; a cron in `vercel.json` does
-the same nightly at 02:00 Dhaka time.
+"Publish" in the admin asks GitHub to rebuild and redeploy the site on the VPS
+(`src/lib/rebuild.ts`); Supabase Cron does the same nightly at 02:00 Dhaka
+time, after the parliament jobs. See `docs/vps-deployment.md`.
 
 To connect, once:
 
@@ -74,12 +75,14 @@ To connect, once:
    in its SQL editor.
 2. Supabase → Authentication → Users → Add user: the first admin's email and
    password.
-3. Set the variables in `.env.example` on Vercel (`SUPABASE_SERVICE_ROLE_KEY`
-   and `CRON_SECRET` as secrets). `ADMIN_BOOTSTRAP_EMAIL` is that first user;
-   the admin row is created on their first sign-in. Redeploy.
-4. Vercel → Settings → Git → Deploy Hooks → create one for `main`, paste it
-   as `VERCEL_DEPLOY_HOOK_URL`.
-5. Supabase → Authentication → URL Configuration: site URL = the site's
+3. Set the variables in `.env.example` in Dokploy's environment configuration.
+   `ADMIN_BOOTSTRAP_EMAIL` is that first user; the admin row is created on
+   their first sign-in.
+4. Add `MYMP_DEPLOY_TOKEN` (a fine-grained GitHub token for this repository,
+   Contents: Read and write) so Publish can rebuild.
+5. Run the Supabase Cron migration (`supabase/migrations/005_cron.sql`) to
+   schedule all periodic jobs.
+6. Supabase → Authentication → URL Configuration: site URL = the site's
    origin, and add `<origin>/admin/recover` to the redirect allow list
    (`ADDITIONAL_REDIRECT_URLS` on a self-hosted stack). "পাসওয়ার্ড ভুলে
    গেছেন?" on the login screen sends a reset email that returns there; the

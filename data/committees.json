@@ -5,7 +5,7 @@
   "nameBn": "কার্য উপদেষ্টা কমিটি",
   "nameEn": "Business Advisory Committee",
   "type": "Parliamentary Committee",
-  "startDate": "2026-03-12",
+  "startDate": "2026-09-01",
   "rosterCurrent": true,
   "memberCount": 15,
   "members": [
@@ -73,19 +73,162 @@
   "previousStartDate": "2024-02-07"
  },
  {
-  "id": "68",
-  "slug": "committee-on-private-members-bills-and-resolutions",
-  "nameBn": "বেসরকারী সদস‌্যদের বিল এবং বেসরকারী সদস‌্যদের সিদ্ধান্ত-প্রস্তাব সম্পর্কিত কমিটি",
-  "nameEn": "Committee on Private Member's Bills and Resolutions",
+  "id": "102",
+  "slug": "committee-on-estimates",
+  "nameBn": "অনুমিত হিসাব সম্পর্কিত কমিটি",
+  "nameEn": "Committee on Estimates",
   "type": "Parliamentary Committee",
-  "startDate": "2026-03-12",
+  "startDate": "2026-09-16",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
    {
     "role": "Chairman",
-    "memberId": "013027101"
+    "memberId": "013023901"
    },
+   {
+    "role": "Member",
+    "memberId": "013004901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013023801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013013501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013015001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013032201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013007901"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "104",
+  "slug": "committee-on-government-assurances",
+  "nameBn": "সরকারী প্রতিশ্রুতি সম্পর্কিত কমিটি",
+  "nameEn": "Committee on Government Assurances",
+  "type": "Parliamentary Committee",
+  "startDate": "2026-09-16",
+  "rosterCurrent": true,
+  "memberCount": 7,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013026801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013004001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013000501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013014201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013004601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013002701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013033701"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "105",
+  "slug": "committee-on-petitions",
+  "nameBn": "পিটিশন কমিটি",
+  "nameEn": "Committee on Petitions",
+  "type": "Parliamentary Committee",
+  "startDate": "2026-09-16",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013011701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013015701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013011001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013027701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013010101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013005901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013024101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013018401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006501"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "68",
+  "slug": "committee-on-private-members-bills-and-resolutions",
+  "nameBn": "বেসরকারী সদস‌্যদের বিল এবং বেসরকারী সদস‌্যদের সিদ্ধান্ত-প্রস্তাব সম্পর্কিত কমিটি",
+  "nameEn": "Committee on Private Member's Bills and Resolutions",
+  "type": "Parliamentary Committee",
+  "startDate": "2026-09-16",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
    {
     "role": "Member",
     "memberId": "013008101"
@@ -121,6 +264,63 @@
    {
     "role": "Member",
     "memberId": "013002201"
+   },
+   {
+    "role": "Chairman",
+    "memberId": "013029701"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "109",
+  "slug": "committee-on-public-undertakings",
+  "nameBn": "সরকারী প্রতিষ্ঠান কমিটি",
+  "nameEn": "Committee on Public Undertakings",
+  "type": "Parliamentary Committee",
+  "startDate": "2026-09-16",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013011001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013000901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013023001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013017401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013009301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013020401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013017801"
    }
   ],
   "previousStartDate": "2024-02-07"
@@ -236,57 +436,69 @@
   "previousStartDate": "2024-02-07"
  },
  {
-  "id": "72",
+  "id": "69",
   "slug": "special-committee",
   "nameBn": "বিশেষ কমিটি",
   "nameEn": "Special Committee",
   "type": "Parliamentary Committee",
-  "startDate": "2026-04-26",
+  "startDate": "2026-09-01",
   "rosterCurrent": true,
-  "memberCount": 10,
+  "memberCount": 13,
   "members": [
    {
     "role": "Chairman",
-    "memberId": "013006301"
+    "memberId": "013012101"
    },
    {
     "role": "Member",
-    "memberId": "013008701"
+    "memberId": "013018101"
    },
    {
     "role": "Member",
-    "memberId": "013027701"
+    "memberId": "013029401"
    },
    {
     "role": "Member",
-    "memberId": "013022301"
+    "memberId": "013011001"
    },
    {
     "role": "Member",
-    "memberId": "013016901"
+    "memberId": "013008101"
    },
    {
     "role": "Member",
-    "memberId": "013018501"
+    "memberId": "013016401"
    },
    {
     "role": "Member",
-    "memberId": "013004501"
+    "memberId": "013026801"
    },
    {
     "role": "Member",
-    "memberId": "013018901"
+    "memberId": "013003501"
    },
    {
     "role": "Member",
-    "memberId": "013025201"
+    "memberId": "013000101"
    },
    {
     "role": "Member",
-    "memberId": "013023301"
+    "memberId": "013005801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013005201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006801"
    }
   ],
-  "previousStartDate": "2026-03-12"
+  "previousStartDate": "2026-04-26"
  },
  {
   "id": "87",
@@ -398,12 +610,64 @@
   "previousStartDate": "2024-02-07"
  },
  {
+  "id": "115",
+  "slug": "standing-committee-on-expatriates-welfare-and-overseas-employment",
+  "nameBn": "প্রবাসী কল্যাণ ও বৈদেশিক কর্মসংস্থান মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Expatriates' Welfare and Overseas Employment",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-10",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013019801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013023201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013011301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013004001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013023101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013025301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013015901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013023501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013002501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013003101"
+   }
+  ]
+ },
+ {
   "id": "99",
   "slug": "standing-committee-on-ministry-of-agriculture",
   "nameBn": "কৃষি মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Agriculture",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-09-10",
+  "startDate": "2026-09-16",
   "rosterCurrent": true,
   "memberCount": 9,
   "members": [
@@ -447,12 +711,65 @@
   "previousStartDate": "2024-02-07"
  },
  {
+  "id": "120",
+  "slug": "standing-committee-on-ministry-of-chittagong-hill-tracts-affairs",
+  "nameBn": "পার্বত্য চট্টগ্রাম বিষয়ক মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Chittagong Hill Tracts Affairs",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-09",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013029801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013030001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013028201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013028001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013029901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013028901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013001901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013029201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013029301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013016101"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
   "id": "94",
   "slug": "standing-committee-on-ministry-of-civil-aviation-and-tourism",
   "nameBn": "বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Civil Aviation and Tourism",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-09-06",
+  "startDate": "2026-09-10",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -490,7 +807,7 @@
    },
    {
     "role": "Member",
-    "memberId": "013016101"
+    "memberId": "013015101"
    },
    {
     "role": "Member",
@@ -505,7 +822,7 @@
   "nameBn": "বাণিজ্য মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Commerce",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-07-14",
+  "startDate": "2026-09-06",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -553,12 +870,170 @@
   "previousStartDate": "2024-02-07"
  },
  {
+  "id": "122",
+  "slug": "standing-committee-on-ministry-of-cultural-affairs",
+  "nameBn": "সংস্কৃতি মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Cultural Affairs",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-09",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013027001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013009201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013020901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013024401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013013301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013015201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013010001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013033801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013007901"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "112",
+  "slug": "standing-committee-on-ministry-of-defence",
+  "nameBn": "প্রতিরক্ষা মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Defence",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-16",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013020301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013019001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013018801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013011001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013021701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013017201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013007501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013029601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013018901"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "119",
+  "slug": "standing-committee-on-ministry-of-disaster-management-and-relief",
+  "nameBn": "দুর্যোগ ব্যবস্থাপনা ও ত্রাণ মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Disaster Management and Relief",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-09",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013026501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013001801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013014801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013012301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013028301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013016801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013033201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013032201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013002001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013007001"
+   }
+  ]
+ },
+ {
   "id": "90",
   "slug": "standing-committee-on-ministry-of-education",
   "nameBn": "শিক্ষা মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Education",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-09-06",
+  "startDate": "2026-09-16",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -580,15 +1055,15 @@
    },
    {
     "role": "Member",
+    "memberId": "013023001"
+   },
+   {
+    "role": "Member",
     "memberId": "013021501"
    },
    {
     "role": "Member",
     "memberId": "013021901"
-   },
-   {
-    "role": "Member",
-    "memberId": "013023001"
    },
    {
     "role": "Member",
@@ -664,7 +1139,7 @@
   "nameBn": "অর্থ মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Finance",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-06-16",
+  "startDate": "2026-09-16",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -694,7 +1169,7 @@
    },
    {
     "role": "Member",
-    "memberId": "013027401"
+    "memberId": "013022201"
    },
    {
     "role": "Member",
@@ -712,12 +1187,109 @@
   "previousStartDate": "2024-02-07"
  },
  {
+  "id": "106",
+  "slug": "standing-committee-on-ministry-of-fisheries-and-livestock",
+  "nameBn": "মৎস্য ও প্রাণিসম্পদ মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Fisheries and Livestock",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-09",
+  "rosterCurrent": true,
+  "memberCount": 9,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013019901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013013401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013005101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013005601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013024301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013020701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013008201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013007701"
+   }
+  ]
+ },
+ {
+  "id": "117",
+  "slug": "standing-committee-on-ministry-of-food",
+  "nameBn": "খাদ্য মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Food",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-09",
+  "rosterCurrent": true,
+  "memberCount": 9,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013013101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013017001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013003501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013020801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013019201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013017401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013007101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013003001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013034301"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
   "id": "86",
   "slug": "standing-committee-on-ministry-of-foreign-affairs",
   "nameBn": "পররাষ্ট্র মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Foreign Affairs",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-07-14",
+  "startDate": "2026-09-06",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -735,7 +1307,7 @@
    },
    {
     "role": "Member",
-    "memberId": "013028401"
+    "memberId": "013011401"
    },
    {
     "role": "Member",
@@ -747,7 +1319,7 @@
    },
    {
     "role": "Member",
-    "memberId": "013011401"
+    "memberId": "013028401"
    },
    {
     "role": "Member",
@@ -770,7 +1342,7 @@
   "nameBn": "স্বাস্থ্য ও পরিবার পরিকল্পনা মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Health and Family Planning",
   "type": "Ministry Related Standing Committee",
-  "startDate": null,
+  "startDate": "2026-09-10",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -875,9 +1447,9 @@
   "nameBn": "গৃহায়ন ও গণপূর্ত মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Housing and Public Works",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-09-07",
+  "startDate": "2026-09-16",
   "rosterCurrent": true,
-  "memberCount": 10,
+  "memberCount": 9,
   "members": [
    {
     "role": "Chairman",
@@ -909,10 +1481,6 @@
    },
    {
     "role": "Member",
-    "memberId": "013032301"
-   },
-   {
-    "role": "Member",
     "memberId": "013008001"
    },
    {
@@ -928,7 +1496,7 @@
   "nameBn": "শিল্প মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Industries",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-07-14",
+  "startDate": "2026-09-06",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -1028,6 +1596,59 @@
   ]
  },
  {
+  "id": "124",
+  "slug": "standing-committee-on-ministry-of-labour-and-employment",
+  "nameBn": "শ্রম ও কর্মসংস্থান মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Labour and Employment",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-09",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013007201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013023201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013011301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013025501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013026401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013003401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013001201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013034201"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
   "id": "98",
   "slug": "standing-committee-on-ministry-of-land",
   "nameBn": "ভূমি মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
@@ -1086,7 +1707,7 @@
   "nameBn": "আইন, বিচার ও সংসদ বিষয়ক মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Law, Justice and Parliamentary Affairs",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-06-16",
+  "startDate": "2026-09-06",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -1139,7 +1760,7 @@
   "nameBn": "মুক্তিযুদ্ধ বিষয়ক মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Liberation War Affairs",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-07-14",
+  "startDate": "2026-09-01",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -1187,12 +1808,64 @@
   "previousStartDate": "2024-02-07"
  },
  {
+  "id": "118",
+  "slug": "standing-committee-on-ministry-of-local-government-rural-development-and-co-operatives",
+  "nameBn": "স্থানীয় সরকার, পল্লী উন্নয়ন ও সমবায় মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Local Government, Rural Development and Co-operatives",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-09",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013006901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013020001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013003701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013015501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013020501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013029101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013026201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013033501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013002001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006501"
+   }
+  ]
+ },
+ {
   "id": "82",
   "slug": "standing-committee-on-ministry-of-planning",
   "nameBn": "পরিকল্পনা মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Planning",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-06-13",
+  "startDate": "2026-09-01",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -1292,12 +1965,224 @@
   ]
  },
  {
+  "id": "110",
+  "slug": "standing-committee-on-ministry-of-power-energy-and-mineral-resources",
+  "nameBn": "বিদ্যুৎ, জ্বালানী ও খনিজ সম্পদ মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Power, Energy and Mineral Resources",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-16",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013022301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013008701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013015901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013019101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013021301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013032801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013025201"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "123",
+  "slug": "standing-committee-on-ministry-of-primary-and-mass-education",
+  "nameBn": "প্রাথমিক ও গণশিক্ষা মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Primary and Mass Education",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-09",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013031301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013026001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013018601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013016401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013013201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013000401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013000701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013021101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013009001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013034101"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "116",
+  "slug": "standing-committee-on-ministry-of-public-administration",
+  "nameBn": "জনপ্রশাসন মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Public Administration",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-16",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013022101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013003501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013027701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013029701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013011801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013015601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013030401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013029201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013004501"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "114",
+  "slug": "standing-committee-on-ministry-of-railways",
+  "nameBn": "রেলপথ মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Railways",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-10",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013010301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013018301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013018201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013003801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013012601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013005701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013013501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013004401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013008501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013002301"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
   "id": "92",
   "slug": "standing-committee-on-ministry-of-religious-affairs",
   "nameBn": "ধর্ম বিষয়ক মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Religious Affairs",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-09-06",
+  "startDate": "2026-09-16",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -1319,11 +2204,11 @@
    },
    {
     "role": "Member",
-    "memberId": "013027801"
+    "memberId": "013000501"
    },
    {
     "role": "Member",
-    "memberId": "013031101"
+    "memberId": "013027801"
    },
    {
     "role": "Member",
@@ -1398,12 +2283,223 @@
   "previousStartDate": "2024-02-07"
  },
  {
+  "id": "107",
+  "slug": "standing-committee-on-ministry-of-science-and-technology",
+  "nameBn": "বিজ্ঞান ও প্রযুক্তি মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Science and Technology",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-10",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013005901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013013001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013001001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013014401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013021601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013031501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013019701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013034401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013007601"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "121",
+  "slug": "standing-committee-on-ministry-of-shipping",
+  "nameBn": "নৌ-পরিবহন মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Shipping",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-09",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013026901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013018301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013012201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013011601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013014501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013033101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013007401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013027301"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "113",
+  "slug": "standing-committee-on-ministry-of-social-welfare",
+  "nameBn": "সমাজকল্যাণ মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Social Welfare",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-10",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013027101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013001101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013005801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013029001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013014601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013033001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013031101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013005201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013002901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013002801"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "111",
+  "slug": "standing-committee-on-ministry-of-textiles-and-jute",
+  "nameBn": "বস্ত্র ও পাট মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Textiles and Jute",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-08",
+  "rosterCurrent": true,
+  "memberCount": 10,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013000901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013016701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013024201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013017101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013033601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013007801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013010701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013034801"
+   }
+  ]
+ },
+ {
   "id": "84",
   "slug": "standing-committee-on-ministry-of-water-resources",
   "nameBn": "পানি সম্পদ মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Water Resources",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-07-14",
+  "startDate": "2026-09-10",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -1421,10 +2517,6 @@
    },
    {
     "role": "Member",
-    "memberId": "013019801"
-   },
-   {
-    "role": "Member",
     "memberId": "013013901"
    },
    {
@@ -1433,7 +2525,11 @@
    },
    {
     "role": "Member",
-    "memberId": "013026501"
+    "memberId": "013016201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013014101"
    },
    {
     "role": "Member",
@@ -1441,11 +2537,11 @@
    },
    {
     "role": "Member",
-    "memberId": "013009501"
+    "memberId": "013010901"
    },
    {
     "role": "Member",
-    "memberId": "013010901"
+    "memberId": "013009501"
    }
   ],
   "previousStartDate": "2024-02-07"
@@ -1456,7 +2552,7 @@
   "nameBn": "মহিলা ও শিশু বিষয়ক মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Women and Children Affairs",
   "type": "Ministry Related Standing Committee",
-  "startDate": "2026-09-06",
+  "startDate": "2026-09-16",
   "rosterCurrent": true,
   "memberCount": 10,
   "members": [
@@ -1490,15 +2586,64 @@
    },
    {
     "role": "Member",
-    "memberId": "013001301"
-   },
-   {
-    "role": "Member",
     "memberId": "013033701"
    },
    {
     "role": "Member",
     "memberId": "013033901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013035001"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
+ },
+ {
+  "id": "108",
+  "slug": "standing-committee-on-ministry-of-youth-and-sports",
+  "nameBn": "যুব ও ক্রীড়া মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Ministry of Youth and Sports",
+  "type": "Ministry Related Standing Committee",
+  "startDate": "2026-09-16",
+  "rosterCurrent": true,
+  "memberCount": 9,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013027501"
+   },
+   {
+    "role": "Member",
+    "memberId": "013004201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013016301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013028601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013004801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013022401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013001301"
+   },
+   {
+    "role": "Member",
+    "memberId": "013009601"
+   },
+   {
+    "role": "Member",
+    "memberId": "013009401"
    }
   ],
   "previousStartDate": "2024-02-07"
@@ -1509,7 +2654,7 @@
   "nameBn": "সরকারী হিসাব সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Public Accounts",
   "type": "Parliamentary Committee",
-  "startDate": "2026-07-14",
+  "startDate": "2026-09-01",
   "rosterCurrent": true,
   "memberCount": 15,
   "members": [
@@ -1574,6 +2719,67 @@
     "memberId": "013008001"
    }
   ]
+ },
+ {
+  "id": "103",
+  "slug": "standing-committee-on-rules-of-procedure",
+  "nameBn": "কার্যপ্রণালী-বিধি সম্পর্কিত স্থায়ী কমিটি",
+  "nameEn": "Standing Committee on Rules of Procedure",
+  "type": "Parliamentary Committee",
+  "startDate": "2026-09-16",
+  "rosterCurrent": true,
+  "memberCount": 12,
+  "members": [
+   {
+    "role": "Chairman",
+    "memberId": "013011701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013015701"
+   },
+   {
+    "role": "Member",
+    "memberId": "013029401"
+   },
+   {
+    "role": "Member",
+    "memberId": "013011001"
+   },
+   {
+    "role": "Member",
+    "memberId": "013008101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013026801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013000101"
+   },
+   {
+    "role": "Member",
+    "memberId": "013030801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013025901"
+   },
+   {
+    "role": "Member",
+    "memberId": "013029201"
+   },
+   {
+    "role": "Member",
+    "memberId": "013006801"
+   },
+   {
+    "role": "Member",
+    "memberId": "013002201"
+   }
+  ],
+  "previousStartDate": "2024-02-07"
  },
  {
   "id": "76",
@@ -1684,50 +2890,6 @@
   ]
  },
  {
-  "id": "54",
-  "slug": "committee-on-estimates",
-  "nameBn": "অনুমিত হিসাব সম্পর্কিত কমিটি",
-  "nameEn": "Committee on Estimates",
-  "type": "Parliamentary Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "55",
-  "slug": "committee-on-government-assurances",
-  "nameBn": "সরকারি প্রতিশ্রুতি সম্পর্কিত স্থায়ী কমিটি",
-  "nameEn": "Committee on Government Assurances",
-  "type": "Parliamentary Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 8,
-  "members": []
- },
- {
-  "id": "49",
-  "slug": "committee-on-petitions",
-  "nameBn": "পিটিশন কমিটি",
-  "nameEn": "Committee on Petitions",
-  "type": "Parliamentary Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "53",
-  "slug": "committee-on-public-undertakings",
-  "nameBn": "সরকারি প্রতিষ্ঠান কমিটি",
-  "nameEn": "Committee on Public Undertakings",
-  "type": "Parliamentary Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
   "id": "56",
   "slug": "public-accounts-committee-pac",
   "nameBn": "সরকারি হিসাব সম্পর্কিত স্থায়ী কমিটি",
@@ -1736,39 +2898,6 @@
   "startDate": "2024-02-07",
   "rosterCurrent": false,
   "memberCount": 15,
-  "members": []
- },
- {
-  "id": "13",
-  "slug": "standing-committee-on-ministry-of-chittagong-hill-tracts-affairs",
-  "nameBn": "পার্বত্য চট্টগ্রাম বিষয়ক মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Chittagong Hill Tracts Affairs",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "14",
-  "slug": "standing-committee-on-ministry-of-cultural-affairs",
-  "nameBn": "সংস্কৃতি বিষয়ক মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Cultural Affairs",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "11",
-  "slug": "standing-committee-on-ministry-of-defence",
-  "nameBn": "প্রতিরক্ষা মন্ত্রণালয় সম্পর্কিত সংসদীয় স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Defence",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
   "members": []
  },
  {
@@ -1805,17 +2934,6 @@
   "members": []
  },
  {
-  "id": "16",
-  "slug": "standing-committee-on-ministry-of-food",
-  "nameBn": "খাদ্য মন্ত্রণালয় সম্পর্কিত সংসদীয় স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Food",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
   "id": "37",
   "slug": "standing-committee-on-ministry-of-health-and-family-welfare",
   "nameBn": "স্বাস্থ্য ও পরিবার কল্যাণ মন্ত্রণালয় সম্পর্কিত সংসদীয় স্থায়ী কমিটি",
@@ -1831,17 +2949,6 @@
   "slug": "standing-committee-on-ministry-of-information-broadcasting",
   "nameBn": "তথ্য ও সম্প্রচার মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
   "nameEn": "Standing Committee on Ministry of Information & Broadcasting",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "26",
-  "slug": "standing-committee-on-ministry-of-labour-and-employment",
-  "nameBn": "শ্রম ও কর্মসংস্থান মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Labour and Employment",
   "type": "Ministry Related Standing Committee",
   "startDate": "2024-02-07",
   "rosterCurrent": false,
@@ -1871,83 +2978,6 @@
   "members": []
  },
  {
-  "id": "40",
-  "slug": "standing-committee-on-ministry-of-power-energy-and-mineral-resources",
-  "nameBn": "বিদ্যুৎ, জ্বালানি ও খনিজ সম্পদ মন্ত্রণালয় সম্পর্কিত সংসদীয় স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Power, Energy and Mineral Resources",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "43",
-  "slug": "standing-committee-on-ministry-of-primary-and-mass-education",
-  "nameBn": "প্রাথমিক ও গণশিক্ষা মন্ত্রণালয় সম্পর্কিত সংসদীয় স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Primary and Mass Education",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "15",
-  "slug": "standing-committee-on-ministry-of-public-administration",
-  "nameBn": "জনপ্রশাসন মন্ত্রণালয় সম্পর্কিত সংসদীয় স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Public Administration",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "44",
-  "slug": "standing-committee-on-ministry-of-railways",
-  "nameBn": "রেলপথ মন্ত্রণালয় সম্পর্কিত সংসদীয় স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Railways",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "23",
-  "slug": "standing-committee-on-ministry-of-science-and-technology",
-  "nameBn": "বিজ্ঞান ও প্রযুক্তি মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Science and Technology",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 9,
-  "members": []
- },
- {
-  "id": "21",
-  "slug": "standing-committee-on-ministry-of-shipping",
-  "nameBn": "নৌ পরিবহন মন্ত্রণালয় সম্পর্কিত সংসদীয় স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Shipping",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "22",
-  "slug": "standing-committee-on-ministry-of-social-welfare",
-  "nameBn": "সমাজকল্যাণ মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Social Welfare",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
   "id": "12",
   "slug": "standing-committee-on-ministry-of-textile-and-jute",
   "nameBn": "বস্ত্র ও পাট মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি",
@@ -1956,28 +2986,6 @@
   "startDate": "2024-02-07",
   "rosterCurrent": false,
   "memberCount": 10,
-  "members": []
- },
- {
-  "id": "46",
-  "slug": "standing-committee-on-ministry-of-youth-and-sports",
-  "nameBn": "যুব ও ক্রীড়া মন্ত্রণালয় সম্পর্কিত সংসদীয় স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Ministry of Youth and Sports",
-  "type": "Ministry Related Standing Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 10,
-  "members": []
- },
- {
-  "id": "57",
-  "slug": "standing-committee-on-rules-of-procedure",
-  "nameBn": "কার্যপ্রণালী বিধি সম্পর্কিত স্থায়ী কমিটি",
-  "nameEn": "Standing Committee on Rules of Procedure",
-  "type": "Parliamentary Committee",
-  "startDate": "2024-02-07",
-  "rosterCurrent": false,
-  "memberCount": 11,
   "members": []
  },
  {

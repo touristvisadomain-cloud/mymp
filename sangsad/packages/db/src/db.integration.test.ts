@@ -49,7 +49,8 @@ const ROWS: SrcConstituency[] = [
 beforeAll(async () => {
   // Supabase's roles do not exist in a bare Postgres; the RLS file grants to them.
   await pg.exec('create role anon nologin; create role authenticated nologin; create role service_role nologin;');
-  await migrate(db, { migrationsFolder: resolve(import.meta.dirname, '../migrations') });
+  await pg.exec('create schema if not exists sangsad;');
+  await migrate(db, { migrationsFolder: resolve(import.meta.dirname, '../migrations'), migrationsSchema: 'drizzle', migrationsTable: '__drizzle_migrations' });
   await pg.exec(await readFile(resolve(import.meta.dirname, '../sql/rls.sql'), 'utf8'));
 }, 60_000);
 
@@ -60,14 +61,14 @@ afterAll(async () => {
 describe('migration + RLS + seed on real Postgres (PGlite)', () => {
   it('creates every table the brief asks for', async () => {
     const r = await pg.query<{ n: number }>(
-      "select count(*)::int as n from pg_tables where schemaname = 'public' and tablename not like '__drizzle%'",
+      "select count(*)::int as n from pg_tables where schemaname = 'sangsad' and tablename not like '__drizzle%'",
     );
     expect(r.rows[0]?.n).toBe(28);
   });
 
   it('enables RLS on every public table', async () => {
     const r = await pg.query<{ tablename: string }>(
-      "select tablename from pg_tables where schemaname = 'public' and tablename not like '__drizzle%' and not rowsecurity",
+      "select tablename from pg_tables where schemaname = 'sangsad' and tablename not like '__drizzle%' and not rowsecurity",
     );
     expect(r.rows.map((x) => x.tablename)).toEqual([]);
   });
@@ -107,14 +108,14 @@ describe('migration + RLS + seed on real Postgres (PGlite)', () => {
   it('lets the public read reference data but nothing private', async () => {
     await pg.exec('set role anon');
     try {
-      const seats = await pg.query<{ n: number }>('select count(*)::int as n from constituencies');
+      const seats = await pg.query<{ n: number }>('select count(*)::int as n from sangsad.constituencies');
       expect(seats.rows[0]?.n).toBe(5);
-      const sittings = await pg.query<{ n: number }>('select count(*)::int as n from sittings');
+      const sittings = await pg.query<{ n: number }>('select count(*)::int as n from sangsad.sittings');
       expect(sittings.rows[0]?.n).toBe(0);
       // Private tables carry no SELECT grant at all, so the refusal is explicit rather than an empty result.
-      await expect(pg.query('select count(*) from admin_users')).rejects.toThrow(/permission denied/i);
-      await expect(pg.query('select count(*) from audit_log')).rejects.toThrow(/permission denied/i);
-      await expect(pg.query('select count(*) from member_aliases')).rejects.toThrow(/permission denied/i);
+      await expect(pg.query('select count(*) from sangsad.admin_users')).rejects.toThrow(/permission denied/i);
+      await expect(pg.query('select count(*) from sangsad.audit_log')).rejects.toThrow(/permission denied/i);
+      await expect(pg.query('select count(*) from sangsad.member_aliases')).rejects.toThrow(/permission denied/i);
     } finally {
       await pg.exec('reset role');
     }
@@ -123,11 +124,11 @@ describe('migration + RLS + seed on real Postgres (PGlite)', () => {
   it('refuses public writes except an open correction', async () => {
     await pg.exec('set role anon');
     try {
-      await expect(pg.exec("insert into members (slug, name_bn) values ('test-x', 'TEST_X')")).rejects.toThrow(/permission denied/i);
-      await expect(pg.exec("update constituencies set name_bn = 'TEST_hack'")).rejects.toThrow(/permission denied/i);
-      await pg.exec("insert into corrections (message, page_path) values ('TEST_ ভুল আছে', '/sangsad')");
+      await expect(pg.exec("insert into sangsad.members (slug, name_bn) values ('test-x', 'TEST_X')")).rejects.toThrow(/permission denied/i);
+      await expect(pg.exec("update sangsad.constituencies set name_bn = 'TEST_hack'")).rejects.toThrow(/permission denied/i);
+      await pg.exec("insert into sangsad.corrections (message, page_path) values ('TEST_ ভুল আছে', '/sangsad')");
       await expect(
-        pg.exec("insert into corrections (message, status, resolution) values ('TEST_', 'resolved', 'done')"),
+        pg.exec("insert into sangsad.corrections (message, status, resolution) values ('TEST_', 'resolved', 'done')"),
       ).rejects.toThrow(/row-level security|policy/i);
     } finally {
       await pg.exec('reset role');
@@ -145,7 +146,7 @@ describe('migration + RLS + seed on real Postgres (PGlite)', () => {
     ]);
     await pg.exec('set role anon');
     try {
-      const r = await pg.query<{ candidate_name: string }>('select candidate_name from election_results');
+      const r = await pg.query<{ candidate_name: string }>('select candidate_name from sangsad.election_results');
       expect(r.rows.map((x) => x.candidate_name)).toEqual(['TEST_B']);
     } finally {
       await pg.exec('reset role');

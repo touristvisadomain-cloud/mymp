@@ -9,8 +9,8 @@
  *
  * Matches ≥ 0.85 go to mymp.bd as published (editors can unpublish or reject
  * them in the admin); 0.50–0.85 go as drafts for an editor. NEWS_AUTO_PUBLISH=false
- * sends everything as drafts. Without MYMP_SUPABASE_URL and
- * MYMP_SUPABASE_SERVICE_ROLE_KEY the matches stay in this database only.
+ * sends everything as drafts. Without NEXT_PUBLIC_SUPABASE_URL and
+ * SUPABASE_SERVICE_ROLE_KEY the matches stay in this database only.
  */
 import { createClient } from '@supabase/supabase-js';
 import { and, eq, gte, inArray, ne } from 'drizzle-orm';
@@ -175,8 +175,8 @@ interface Delivery {
 }
 
 async function deliverToMymp(items: Delivery[]): Promise<{ published: number; drafts: number; skipped: number } | null> {
-  const url = process.env.MYMP_SUPABASE_URL;
-  const key = process.env.MYMP_SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key || !items.length) return url && key ? { published: 0, drafts: 0, skipped: 0 } : null;
   const autoPublish = process.env.NEWS_AUTO_PUBLISH !== 'false';
   const mymp = createClient(url, key, { auth: { persistSession: false } });
@@ -308,7 +308,7 @@ export async function runNewsRematch(db: Db): Promise<{ itemsFound: number; item
   process.stdout.write(
     delivered
       ? `  mymp.bd news: ${delivered.published} published, ${delivered.drafts} drafts, ${delivered.skipped} already there\n`
-      : '  mymp.bd news: not delivered (MYMP_SUPABASE_URL / MYMP_SUPABASE_SERVICE_ROLE_KEY not set)\n',
+      : '  mymp.bd news: not delivered (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set)\n',
   );
   return { itemsFound: recent.length, itemsNew: auto + pending };
 }
@@ -376,7 +376,7 @@ export async function runNews(db: Db): Promise<{ itemsFound: number; itemsNew: n
   process.stdout.write(
     delivered
       ? `  mymp.bd news: ${delivered.published} published, ${delivered.drafts} drafts, ${delivered.skipped} already there\n`
-      : '  mymp.bd news: not delivered (MYMP_SUPABASE_URL / MYMP_SUPABASE_SERVICE_ROLE_KEY not set)\n',
+      : '  mymp.bd news: not delivered (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set)\n',
   );
   return { itemsFound: itemsSeen, itemsNew: inserted.length };
 }
