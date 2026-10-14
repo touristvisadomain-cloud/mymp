@@ -32,8 +32,11 @@ const YOUTUBE_KEY = () => process.env.YOUTUBE_API_KEY;
  * twice as often. YOUTUBE_MEMBERS_PER_RUN raises it if the key's quota is.
  */
 const SEARCH_COST = 100;
-/** The 13th parliament's election day, the earliest a member's video search reaches. */
-const ELECTION_DAY = '2026-02-12T00:00:00Z';
+/**
+ * The earliest a member's video search reaches: the start of the election
+ * year, so the campaign months before the 13th parliament sat are in too.
+ */
+const FEED_START = '2026-01-01T00:00:00Z';
 /** channels.list and playlistItems.list cost one unit each. */
 const CHEAP_COST = 1;
 const PER_RUN = () => Math.max(0, Number(process.env.YOUTUBE_MEMBERS_PER_RUN ?? 3));
@@ -122,12 +125,12 @@ export async function runYoutubeCollector(opts: { trigger?: string; perRun?: num
     url.searchParams.set('order', 'date');
     url.searchParams.set('maxResults', '10');
     url.searchParams.set('relevanceLanguage', 'bn');
-    // A member with no video yet is searched back to the election: a thirty-day
-    // window left most of the House with an empty video strip for good.
+    // A member with no video yet is searched back to the start of the year: a
+    // thirty-day window left most of the House with an empty video strip for good.
     let after = published;
     if (!opts.since) {
       const had = await db().get<unknown[]>(`feed_item_mps?mp_id=eq.${encodeURIComponent(t.id)}&select=feed_item_id,feed_items!inner(type)&feed_items.type=eq.video&limit=1`).catch(() => [1]);
-      if (!had.length) after = ELECTION_DAY;
+      if (!had.length) after = FEED_START;
     }
     url.searchParams.set('publishedAfter', after);
     url.searchParams.set('key', key);
