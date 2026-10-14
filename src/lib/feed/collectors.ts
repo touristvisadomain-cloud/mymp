@@ -310,44 +310,50 @@ export async function runSearchCollector(opts: { trigger?: string; perRun?: numb
   const slice = sliceFor(targets(), perRun, await turnOf('search', run, 60));
   const index = await buildIndex();
   const sites = SEARCH_ONLY_SOURCES.map((s) => new URL(s.homepage).hostname.replace(/^www\./, ''));
+  // Ten site: terms a query: a search engine truncates or ignores a longer
+  // one, so the outlets are asked in groups and a member costs a few queries.
+  const groups = Array.from({ length: Math.ceil(sites.length / 10) }, (_, i) => sites.slice(i * 10, i * 10 + 10));
+  const queries = slice.length * groups.length;
   const items: FeedItemInput[] = [];
 
   for (const t of slice) {
     if (!t.nameBn) continue;
-    // "নাম" seat (site:… OR site:…) keeps the search on the outlets we cannot read.
-    const q = `"${t.nameBn}" ${t.seatBn ?? ''} (${sites.map((s) => `site:${s}`).join(' OR ')})`.trim();
-    try {
-      const hits = await provider.search(q, { limit: 20 });
-      for (const h of hits) {
-        const where = h.outletHost ?? h.url;
-        const outlet = SEARCH_ONLY_SOURCES.find((s) => where.includes(new URL(s.homepage).hostname.replace(/^www\./, '')));
-        // A hit from somewhere else is a search engine ignoring site:, not news.
-        if (!outlet) continue;
-        items.push({
-          type: 'news',
-          title: h.title,
-          url: h.url,
-          summary: h.summary,
-          outletName: outlet.nameBn,
-          outletId: outlet.key,
-          publishedAt: h.publishedAt ?? new Date().toISOString(),
-          source: 'search',
-        });
+    for (const group of groups) {
+      // "নাম" seat (site:… OR site:…) keeps the search on the outlets we cannot read.
+      const q = `"${t.nameBn}" ${t.seatBn ?? ''} (${group.map((s) => `site:${s}`).join(' OR ')})`.trim();
+      try {
+        const hits = await provider.search(q, { limit: 20 });
+        for (const h of hits) {
+          const where = h.outletHost ?? h.url;
+          const outlet = SEARCH_ONLY_SOURCES.find((s) => where.includes(new URL(s.homepage).hostname.replace(/^www\./, '')));
+          // A hit from somewhere else is a search engine ignoring site:, not news.
+          if (!outlet) continue;
+          items.push({
+            type: 'news',
+            title: h.title,
+            url: h.url,
+            summary: h.summary,
+            outletName: outlet.nameBn,
+            outletId: outlet.key,
+            publishedAt: h.publishedAt ?? new Date().toISOString(),
+            source: 'search',
+          });
+        }
+      } catch (e) {
+        errors.push({ source: 'search', message: `${t.nameBn}: ${(e as Error).message}` });
       }
-    } catch (e) {
-      errors.push({ source: 'search', message: `${t.nameBn}: ${(e as Error).message}` });
+      // A short gap between queries, so the provider sees a trickle.
+      await new Promise((r) => setTimeout(r, 400));
     }
-    // About one member a minute, so the provider sees a trickle.
-    await new Promise((r) => setTimeout(r, 400));
   }
 
   await ingest(items, index, counts);
   // A provider that refuses every call on permission grounds is a credential
   // waiting to be sorted, not a broken collector: the run says so and the
   // schedule stays green rather than turning red every hour.
-  const allRefused = errors.length >= slice.length && errors.every((e) => /403|PERMISSION_DENIED|401/.test(e.message));
+  const allRefused = queries > 0 && errors.length >= queries && errors.every((e) => /403|PERMISSION_DENIED|401/.test(e.message));
   const result: RunResult = {
-    status: allRefused ? 'aborted' : errors.length === slice.length ? 'failed' : 'ok',
+    status: allRefused ? 'aborted' : queries > 0 && errors.length >= queries ? 'failed' : 'ok',
     itemsFound: counts.found,
     itemsNew: counts.stored,
     itemsAttached: counts.attached,
@@ -356,7 +362,7 @@ export async function runSearchCollector(opts: { trigger?: string; perRun?: numb
     errors: allRefused
       ? [{ source: 'search', message: `the search provider refused every call: ${errors[0]!.message.replace(/^[^:]*: /, '')}` }]
       : errors,
-    detail: { members: slice.length, provider: provider.name, searches: slice.length },
+    detail: { members: slice.length, provider: provider.name, searches: queries },
   };
   await finishRun(run, result);
   return { ...result, runId: run.id };
