@@ -10,7 +10,7 @@
  * only the articles that name a member are opened, once, for their real
  * headline, picture and time. Nothing else about an article is kept.
  *
- *   npm run feed:archive                       since the election (2026-02-01)
+ *   npm run feed:archive                       since the election year began (2026-01-01)
  *   npm run feed:archive -- --since 2026-08-01
  *   npm run feed:archive -- --only samakal     one outlet
  *   npm run feed:archive -- --dry-run          count matches, write nothing
@@ -90,7 +90,7 @@ async function get(url: string, timeoutMs: number): Promise<{ status: number; te
 }
 
 async function main() {
-  const since = argOf('since') ?? '2026-02-01';
+  const since = argOf('since') ?? '2026-01-01';
   const only = argOf('only');
   const gap = Number(argOf('gap') ?? 8) * 1000;
   const dryRun = process.argv.includes('--dry-run');
