@@ -302,11 +302,11 @@ export async function runSearchCollector(opts: { trigger?: string; perRun?: numb
     return result;
   }
 
-  // Google Programmable Search gives 100 queries a day free and charges past
-  // that, so this keeps to four an hour like the video collector: 96 a day,
-  // inside the free tier, a full pass over the House every three and a half
-  // days. FEED_SEARCH_PER_RUN raises it when the budget allows.
-  const perRun = opts.perRun ?? Math.max(1, Number(process.env.FEED_SEARCH_PER_RUN ?? 4));
+  // Brave's free plan gives 2,000 queries a month, about 65 a day, so this
+  // keeps to two an hour: 48 a day, inside the allowance, a full pass over
+  // the House in about a week. FEED_SEARCH_PER_RUN raises it when the budget
+  // allows (a paid plan, or SerpAPI).
+  const perRun = opts.perRun ?? Math.max(1, Number(process.env.FEED_SEARCH_PER_RUN ?? 2));
   const slice = sliceFor(targets(), perRun, await turnOf('search', run, 60));
   const index = await buildIndex();
   const sites = SEARCH_ONLY_SOURCES.map((s) => new URL(s.homepage).hostname.replace(/^www\./, ''));

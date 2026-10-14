@@ -30,7 +30,7 @@ is never fetched, and every item links out to the source.
 | `sitemap` | the news sitemaps of 23 outlets | every 30 min, eight outlets per run | nothing |
 | `press` | parliament notices already in `data/activity.json` | daily | nothing |
 | `youtube` | YouTube Data API v3, four members an hour | hourly | `YOUTUBE_API_KEY` |
-| `search` | the ten outlets with no feed, four members an hour | hourly | `FEED_SEARCH_KEY` (+ `FEED_SEARCH_PROVIDER`, `FEED_SEARCH_CX` for Google) |
+| `search` | the ten outlets with no feed, two members an hour | hourly | `FEED_SEARCH_KEY` (Brave Search API; `FEED_SEARCH_PROVIDER` picks serpapi or google instead) |
 | `learn` | the editors' decisions | weekly | nothing |
 
 From the terminal:
@@ -87,15 +87,18 @@ pass over 348 members in one go costs more than a day's allowance.
 | | allowance | cost each | so a run takes | a full pass |
 |---|---|---|---|---|
 | YouTube `search.list` | 10,000 units a day | 100 units | 4 members an hour (9,600 a day) | ~3.5 days |
-| Google Programmable Search | 100 queries a day free | 1 query | 4 members an hour (96 a day) | ~3.5 days |
+| Brave Search API | 2,000 queries a month free | 1 query | 2 members an hour (48 a day) | ~1 week |
 
 Members holding a government or House post sit in the cycle twice, so they come
 round twice as often. Raise `YOUTUBE_MEMBERS_PER_RUN` or `FEED_SEARCH_PER_RUN`
 when an allowance is raised. What a run spent is written to
 `feed_runs.quota_used` and shown on `/admin/feed/runs`.
 
-Bing News Search is still in `searchProvider.ts` but Microsoft retired the Bing
-Search APIs, so Google Programmable Search or SerpAPI are the live choices.
+Brave Search API is the live provider (free plan: 2,000 queries a month, a key
+from api-dashboard.search.brave.com). Google closed the Custom Search JSON API
+to new customers, so every call from a new project answers 403, and Microsoft
+retired the Bing Search APIs; both are kept in `searchProvider.ts` only for a
+project that still has access. SerpAPI works too.
 
 ## The matcher
 

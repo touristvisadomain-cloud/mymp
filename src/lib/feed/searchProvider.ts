@@ -7,9 +7,14 @@
  * pages is to ask a search engine, so the provider sits behind this interface
  * and can be swapped by setting one environment variable.
  *
- *   FEED_SEARCH_PROVIDER = bing | serpapi | google
+ *   FEED_SEARCH_PROVIDER = brave | serpapi | google | bing
  *   FEED_SEARCH_KEY      = the provider's key
  *   FEED_SEARCH_CX       = Google Programmable Search only: the engine id
+ *
+ * Brave is the live choice. Google closed the Custom Search JSON API to new
+ * customers (every call answers 403 "does not have the access") and retires it
+ * on 2027-01-01; Microsoft retired Bing Search. Brave's free plan gives 2,000
+ * queries a month, about 65 a day.
  *
  * Without a key the collector reports that it is not configured and changes
  * nothing, exactly as the mailer does.
@@ -128,16 +133,57 @@ function google(key: string, cx: string): SearchProvider {
   };
 }
 
+/**
+ * Brave Search API, web search with the news cluster folded in. `site:` terms
+ * in the query keep it on the outlets without a feed, as with Google.
+ */
+function brave(key: string): SearchProvider {
+  interface BraveResult { title: string; url: string; description?: string; page_age?: string; age?: string; meta_url?: { hostname?: string } }
+  return {
+    name: 'brave',
+    async search(query, { limit = 20 }) {
+      const url = new URL('https://api.search.brave.com/res/v1/web/search');
+      url.searchParams.set('q', query);
+      url.searchParams.set('count', String(Math.min(limit, 20)));
+      url.searchParams.set('country', 'BD');
+      url.searchParams.set('search_lang', 'bn');
+      url.searchParams.set('text_decorations', '0');
+      const res = await fetch(url, {
+        headers: { 'user-agent': UA, accept: 'application/json', 'x-subscription-token': key },
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!res.ok) throw new Error(`brave ${res.status}: ${await why(res)}`);
+      const json = (await res.json()) as { web?: { results?: BraveResult[] }; news?: { results?: BraveResult[] } };
+      const seen = new Set<string>();
+      const out: SearchHit[] = [];
+      for (const v of [...(json.news?.results ?? []), ...(json.web?.results ?? [])]) {
+        if (!v.url || seen.has(v.url)) continue;
+        seen.add(v.url);
+        out.push({
+          title: v.title,
+          url: v.url,
+          summary: v.description ?? null,
+          publishedAt: iso(v.page_age) ?? iso(v.age),
+          outletName: v.meta_url?.hostname?.replace(/^www\./, '') ?? null,
+        });
+      }
+      return out;
+    },
+  };
+}
+
 /** The configured provider, or null when no key is set. */
 export function searchProvider(): SearchProvider | null {
   const key = process.env.FEED_SEARCH_KEY;
   if (!key) return null;
-  switch ((process.env.FEED_SEARCH_PROVIDER ?? 'bing').toLowerCase()) {
+  switch ((process.env.FEED_SEARCH_PROVIDER ?? 'brave').toLowerCase()) {
+    case 'brave': return brave(key);
+    case 'bing': return bing(key);
     case 'serpapi': return serpapi(key);
     case 'google': {
       const cx = process.env.FEED_SEARCH_CX;
       return cx ? google(key, cx) : null;
     }
-    default: return bing(key);
+    default: return brave(key);
   }
 }
