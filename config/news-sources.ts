@@ -112,6 +112,40 @@ export const NEWS_SOURCES: NewsSource[] = [
   { key: 'kalbela', nameBn: 'কালবেলা', homepage: 'https://www.kalbela.com', searchOnly: true, lang: 'bn' },
   { key: 'banglanews24', nameBn: 'বাংলানিউজ২৪', homepage: 'https://www.banglanews24.com', searchOnly: true, sitemaps: [{ url: 'https://www.banglanews24.com/daily-sitemap/{d}/sitemap.xml', daily: true }], lang: 'bn' },
   { key: 'nayadiganta', nameBn: 'নয়া দিগন্ত', homepage: 'https://www.dailynayadiganta.com', searchOnly: true, lang: 'bn' },
+
+  // ---- Outlets from the owner's list of eighty that publish a news sitemap
+  // (checked 2026-10-15; the old engine's inspection in sangsad/config/sources.json).
+  { key: 'bhorerkagoj', nameBn: 'ভোরের কাগজ', homepage: 'https://www.bhorerkagoj.net', sitemaps: [{ url: 'https://www.bhorerkagoj.net/news_sitemap.xml' }], lang: 'bn' },
+  { key: 'protidinerbangladesh', nameBn: 'প্রতিদিনের বাংলাদেশ', homepage: 'https://protidinerbangladesh.com', sitemaps: [{ url: 'https://protidinerbangladesh.com/news_sitemap.xml' }], lang: 'bn' },
+  { key: 'prothomaloen', nameBn: 'প্রথম আলো ইংরেজি', homepage: 'https://en.prothomalo.com', sitemaps: [{ url: 'https://en.prothomalo.com/news_sitemap.xml' }], lang: 'en' },
+  { key: 'dailystarbangla', nameBn: 'ডেইলি স্টার বাংলা', homepage: 'https://bangla.thedailystar.net', sitemaps: [{ url: 'https://bangla.thedailystar.net/googlenews.xml' }], lang: 'bn' },
+  { key: 'ntv', nameBn: 'এনটিভি', homepage: 'https://www.ntvbd.com', sitemaps: [{ url: 'https://www.ntvbd.com/googlenews.xml' }], lang: 'bn' },
+  { key: 'deshtv', nameBn: 'দেশ টিভি', homepage: 'https://www.desh.tv', sitemaps: [{ url: 'https://www.desh.tv/sitemap/news-sitemap.xml' }], lang: 'bn' },
+
+  // ---- Outlets from the owner's list with no feed or sitemap we can read
+  // (bot challenges, 404s, dead feeds); Google News indexes them, so the
+  // search collector reaches them.
+  { key: 'rtv', nameBn: 'আরটিভি', homepage: 'https://www.rtvonline.com', searchOnly: true, lang: 'bn' },
+  { key: 'ekhontv', nameBn: 'এখন টিভি', homepage: 'https://www.ekhon.tv', searchOnly: true, lang: 'bn' },
+  { key: 'dbcnews', nameBn: 'ডিবিসি নিউজ', homepage: 'https://dbcnews.tv', searchOnly: true, lang: 'bn' },
+  { key: 'dhakatimes', nameBn: 'ঢাকা টাইমস', homepage: 'https://www.dhakatimes24.com', searchOnly: true, lang: 'bn' },
+  { key: 'dailysun', nameBn: 'ডেইলি সান', homepage: 'https://www.daily-sun.com', searchOnly: true, lang: 'en' },
+  { key: 'newage', nameBn: 'নিউ এজ', homepage: 'https://www.newagebd.net', searchOnly: true, lang: 'en' },
+  { key: 'bonikbarta', nameBn: 'বণিক বার্তা', homepage: 'https://bonikbarta.com', searchOnly: true, lang: 'bn' },
+  { key: 'unb', nameBn: 'ইউএনবি', homepage: 'https://unb.com.bd', searchOnly: true, lang: 'en' },
+  { key: 'financialexpress', nameBn: 'দ্য ফিন্যান্সিয়াল এক্সপ্রেস', homepage: 'https://thefinancialexpress.com.bd', searchOnly: true, lang: 'en' },
+  { key: 'bangladeshpost', nameBn: 'বাংলাদেশ পোস্ট', homepage: 'https://bangladeshpost.net', searchOnly: true, lang: 'en' },
+  { key: 'independentbd', nameBn: 'দ্য ইনডিপেনডেন্ট', homepage: 'https://theindependentbd.com', searchOnly: true, lang: 'en' },
+  { key: 'dainikbangla', nameBn: 'দৈনিক বাংলা', homepage: 'https://www.dainikbangla.com.bd', searchOnly: true, lang: 'bn' },
+  { key: 'jaijaidin', nameBn: 'যায়যায়দিন', homepage: 'https://www.jaijaidinbd.com', searchOnly: true, lang: 'bn' },
+  { key: 'nayashatabdi', nameBn: 'নয়া শতাব্দী', homepage: 'https://www.dailynayashatabdi.com', searchOnly: true, lang: 'bn' },
+  { key: 'banglavision', nameBn: 'বাংলাভিশন', homepage: 'https://www.banglavision.tv', searchOnly: true, lang: 'bn' },
+  { key: 'maasranga', nameBn: 'মাছরাঙা টেলিভিশন', homepage: 'https://www.maasranga.tv', searchOnly: true, lang: 'bn' },
+  { key: 'atnbangla', nameBn: 'এটিএন বাংলা', homepage: 'https://www.atnbangla.tv', searchOnly: true, lang: 'bn' },
+  { key: 'atnnews', nameBn: 'এটিএন নিউজ', homepage: 'https://www.atnnewstv.com', searchOnly: true, lang: 'bn' },
+  { key: 'boishakhi', nameBn: 'বৈশাখী টিভি', homepage: 'https://www.boishakhi.tv', searchOnly: true, lang: 'bn' },
+  { key: 'nagorik', nameBn: 'নাগরিক টিভি', homepage: 'https://www.nagorik.com', searchOnly: true, lang: 'bn' },
+  { key: 'btv', nameBn: 'বিটিভি', homepage: 'https://www.btv.gov.bd', searchOnly: true, lang: 'bn' },
 ];
 
 export const RSS_SOURCES = NEWS_SOURCES.filter((s) => s.rss?.length);
