@@ -45,7 +45,17 @@ interface Engine {
   destroy(): void;
 }
 
-const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
+/** Baked in at build when the build had it; otherwise asked of the running site (api/maps-key). */
+const BUILT_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
+let keyAsked: Promise<string> | null = null;
+function googleKey(): Promise<string> {
+  if (BUILT_KEY) return Promise.resolve(BUILT_KEY);
+  keyAsked ??= fetch('/api/maps-key')
+    .then((r) => (r.ok ? (r.json() as Promise<{ key?: string }>) : { key: '' }))
+    .then((j) => j.key ?? '')
+    .catch(() => '');
+  return keyAsked;
+}
 const GREY = '#6b7570';
 const BN = (n: number) => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[Number(d)]!);
 
@@ -119,8 +129,8 @@ interface Drawing {
   onHover: (text: string | null) => void;
 }
 
-async function startGoogle(el: HTMLElement, d: Drawing): Promise<Engine> {
-  const g = await loadGoogle(GOOGLE_KEY);
+async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<Engine> {
+  const g = await loadGoogle(key);
   const map = new g.maps.Map(el, {
     mapTypeControl: true,
     mapTypeControlOptions: { mapTypeIds: ['roadmap', 'hybrid'] },
@@ -271,6 +281,7 @@ export default function SeatMap({
   const [hover, setHover] = useState<string | null>(null);
   const [summary, setSummary] = useState<{ whole: string[]; part: string[] }>({ whole: [], part: [] });
   const [failed, setFailed] = useState(false);
+  const [usingGoogle, setUsingGoogle] = useState(!!BUILT_KEY);
 
   // Start when the map comes into view, a screen early, unless it waits for a tap.
   useEffect(() => {
@@ -346,7 +357,10 @@ export default function SeatMap({
       };
       (window as unknown as { gm_authFailure?: () => void }).gm_authFailure = () => void fallBack();
       try {
-        engine.current = GOOGLE_KEY ? await startGoogle(box.current, drawing) : await startLeaflet(box.current, drawing);
+        const key = await googleKey();
+        if (cancelled || !box.current) return;
+        setUsingGoogle(!!key);
+        engine.current = key ? await startGoogle(box.current, drawing, key) : await startLeaflet(box.current, drawing);
       } catch {
         await fallBack();
       }
@@ -395,7 +409,7 @@ export default function SeatMap({
     );
   }
 
-  const source = GOOGLE_KEY && !failed ? 'Google Maps' : 'OpenStreetMap';
+  const source = usingGoogle && !failed ? 'Google Maps' : 'OpenStreetMap';
   const places = [...summary.whole, ...summary.part.map((p) => `${p}-এর একাংশ`)];
 
   return (
