@@ -12,8 +12,12 @@ import { allMembers, currentPosts, districtOf, getMemberById } from '@/lib/data'
 import { matchItem, type FeedIndex } from './matchMp';
 import { buildIndex, ingest, type IngestCounts } from './collect';
 import { searchProvider } from './searchProvider';
-import { SEARCH_ONLY_SOURCES } from '../../../config/news-sources';
+import { NEWS_SOURCES, SEARCH_ONLY_SOURCES } from '../../../config/news-sources';
 import { TRUSTED_CHANNELS } from '../../../config/feed-matching';
+import { OFFICIAL_CHANNELS, OFFICIAL_CHANNEL_IDS } from '../../../config/video-channels';
+
+/** The outlet a channel belongs to, by its Bangla name, so a video reads "যুগান্তর" and not "Daily Jugantor". */
+const CHANNEL_OUTLET = new Map(OFFICIAL_CHANNELS.map((c) => [c.id, NEWS_SOURCES.find((s) => s.key === c.source)?.nameBn ?? null]));
 import { attach, finishRun, startRun, turnOf, upsertItem, type FeedItemInput, type RunResult } from './store';
 import { restDb, type Db } from '@/lib/posts/db';
 
@@ -123,13 +127,16 @@ export async function runYoutubeCollector(opts: { trigger?: string; perRun?: num
     url.searchParams.set('q', q);
     url.searchParams.set('type', 'video');
     url.searchParams.set('order', 'date');
-    url.searchParams.set('maxResults', '10');
+    // A search costs the same 100 units whatever the page size, and only the
+    // official channels' results are kept, so take the most it gives.
+    url.searchParams.set('maxResults', '50');
     url.searchParams.set('relevanceLanguage', 'bn');
-    // A member with no video yet is searched back to the start of the year: a
-    // thirty-day window left most of the House with an empty video strip for good.
+    // A member with no video on the page yet (hidden ones do not count) is
+    // searched back to the start of the year: a thirty-day window left most of
+    // the House with an empty video strip for good.
     let after = published;
     if (!opts.since) {
-      const had = await db().get<unknown[]>(`feed_item_mps?mp_id=eq.${encodeURIComponent(t.id)}&select=feed_item_id,feed_items!inner(type)&feed_items.type=eq.video&limit=1`).catch(() => [1]);
+      const had = await db().get<unknown[]>(`feed_item_mps?mp_id=eq.${encodeURIComponent(t.id)}&status=eq.visible&select=feed_item_id,feed_items!inner(type)&feed_items.type=eq.video&limit=1`).catch(() => [1]);
       if (!had.length) after = FEED_START;
     }
     url.searchParams.set('publishedAfter', after);
@@ -147,12 +154,15 @@ export async function runYoutubeCollector(opts: { trigger?: string; perRun?: num
       const json = (await res.json()) as { items?: YtItem[] };
       for (const v of json.items ?? []) {
         if (!v.id.videoId) continue;
+        // Only the listed outlets' own channels (config/video-channels.ts): a
+        // party page, a fan channel or a stranger saying the name is dropped.
+        if (!OFFICIAL_CHANNEL_IDS.has(v.snippet.channelId)) continue;
         items.push({
           type: 'video',
           title: v.snippet.title,
           url: `https://www.youtube.com/watch?v=${v.id.videoId}`,
           summary: v.snippet.description?.slice(0, 600) ?? null,
-          outletName: v.snippet.channelTitle,
+          outletName: CHANNEL_OUTLET.get(v.snippet.channelId) ?? v.snippet.channelTitle,
           outletId: 'youtube',
           channelId: v.snippet.channelId,
           thumbnailUrl: v.snippet.thumbnails?.high?.url ?? `https://i.ytimg.com/vi/${v.id.videoId}/hqdefault.jpg`,
