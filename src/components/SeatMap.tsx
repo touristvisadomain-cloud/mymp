@@ -65,6 +65,34 @@ function inFeature(pt: [number, number], f: Feature): boolean {
 }
 const placeName = (f: Feature) => (f.properties.kind === 'city' ? f.properties.name : `${f.properties.name} উপজেলা`);
 
+/**
+ * Where a place's Bangla name sits: the centroid of its largest polygon, or
+ * the middle of its outline when the centroid falls outside (a bent coast).
+ */
+function labelPoint(f: Feature): [number, number] {
+  let best: number[][] = [];
+  let bestArea = -1;
+  for (const rings of polygonsOf(f)) {
+    const ring = rings[0]!;
+    let a = 0;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) a += ring[j]![0]! * ring[i]![1]! - ring[i]![0]! * ring[j]![1]!;
+    if (Math.abs(a) > bestArea) { bestArea = Math.abs(a); best = ring; }
+  }
+  let a = 0, cx = 0, cy = 0;
+  for (let i = 0, j = best.length - 1; i < best.length; j = i++) {
+    const k = best[j]![0]! * best[i]![1]! - best[i]![0]! * best[j]![1]!;
+    a += k;
+    cx += (best[j]![0]! + best[i]![0]!) * k;
+    cy += (best[j]![1]! + best[i]![1]!) * k;
+  }
+  const c: [number, number] = a ? [cx / (3 * a), cy / (3 * a)] : [best[0]![0]!, best[0]![1]!];
+  if (inRing(c, best)) return c;
+  const mid = best[Math.floor(best.length / 2)]!;
+  return [(best[0]![0]! + mid[0]!) / 2, (best[0]![1]! + mid[1]!) / 2];
+}
+/** The name written on the map: our own, in Bangla, whatever language the base map is in. */
+const shortName = (f: Feature) => f.properties.name.replace(/ সিটি কর্পোরেশন$/, ' সিটি');
+
 /** The Maps JavaScript API, loaded once per page, in Bangla. */
 let googleLoading: Promise<typeof google> | null = null;
 function loadGoogle(key: string): Promise<typeof google> {
@@ -114,6 +142,18 @@ async function startGoogle(el: HTMLElement, d: Drawing): Promise<Engine> {
   const bounds = new g.maps.LatLngBounds();
   for (const f of d.focus) for (const rings of polygonsOf(f)) for (const [lng, lat] of rings[0]!) bounds.extend({ lat: lat!, lng: lng! });
   map.fitBounds(bounds, 18);
+  // Every upazila and city named in Bangla on top of Google's own labels.
+  const labels = d.features.map((f) => {
+    const [lng, lat] = labelPoint(f);
+    return new g.maps.Marker({
+      position: { lat, lng },
+      map,
+      clickable: false,
+      icon: { path: g.maps.SymbolPath.CIRCLE, scale: 0 },
+      label: { text: shortName(f), className: 'seatmap-label', color: '#17201b', fontSize: '13px', fontWeight: '700' },
+      zIndex: 1000,
+    });
+  });
   let here: google.maps.Marker | null = null;
   return {
     showHere(lat, lng) {
@@ -132,6 +172,7 @@ async function startGoogle(el: HTMLElement, d: Drawing): Promise<Engine> {
     },
     destroy() {
       here?.setMap(null);
+      for (const l of labels) l.setMap(null);
     },
   };
 }
@@ -154,6 +195,10 @@ async function startLeaflet(el: HTMLElement, d: Drawing): Promise<Engine> {
     },
   }).addTo(m);
   void layer;
+  for (const f of d.features) {
+    const [lng, lat] = labelPoint(f);
+    L.marker([lat, lng], { interactive: false, icon: L.divIcon({ className: 'seatmap-label seatmap-label-osm', html: shortName(f), iconSize: undefined }) }).addTo(m);
+  }
   const focus = L.geoJSON({ type: 'FeatureCollection', features: d.focus } as never);
   const bounds = focus.getBounds();
   // The box may still be laid out when the map starts: fit again once it has a size.
@@ -356,6 +401,7 @@ export default function SeatMap({
   return (
     <div
       ref={frame}
+      data-seatmap
       className={big ? 'fixed inset-0 z-[60] bg-paper flex flex-col' : 'relative flex flex-col bg-surface border border-rule rounded-card shadow-card overflow-hidden'}
     >
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-rule bg-surface">
@@ -375,6 +421,7 @@ export default function SeatMap({
           </div>
         )}
       </div>
+      <style>{`.seatmap-label{font-family:var(--font-body),'Noto Sans Bengali',sans-serif;font-weight:700;font-size:13px;color:#17201b;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;background:none;border:0;}.seatmap-label-osm{transform:translate(-50%,-50%);}`}</style>
       {/* The base map adds its own classes to its box, so only the wrapper's size changes. */}
       <div className={big ? 'grow min-h-0' : 'relative h-[420px] sm:h-[480px] bg-sunk'}>
         <div ref={box} className="h-full w-full" role="region" aria-label={`${title} মানচিত্র`} />
