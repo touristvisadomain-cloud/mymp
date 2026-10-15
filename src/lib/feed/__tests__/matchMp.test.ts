@@ -259,3 +259,31 @@ test('an office that names an institution is not the officeholder', () => {
   // Naming the member still works, and the office still adds to the name.
   assert.ok(scoreOf('দিল্লিতে ব্রিকস সম্মেলনে যাচ্ছেন না প্রধানমন্ত্রী তারেক রহমান', 'tarique') >= 90);
 });
+
+test('a namesake word inside the member\'s own name is the name', () => {
+  // The কবির of খায়রুল কবির খোকন read as কবি (a poet) + র, and every story
+  // about him was taken for someone else's (2026-10-15).
+  const members = [
+    { id: 'khokon', nameBn: 'খায়রুল কবির খোকন', nameEn: 'Khairul Kabir Khokon', seatBn: 'নরসিংদী-১', seatEn: 'Narsingdi-1', districtBn: 'নরসিংদী', districtEn: 'Narsingdi', partyBn: 'বাংলাদেশ জাতীয়তাবাদী দল', partyAbbr: 'BNP', posts: [], ministries: [], variants: [] },
+  ];
+  const index = buildFeedIndex(members);
+  const ids = (title: string) => matchItem(index, { title }).map((m) => m.mpId);
+  assert.deepEqual(ids('দুর্গাপূজায় সব মণ্ডপে পাহারায় থাকবেন বিএনপির নেতাকর্মীরা: খায়রুল কবির খোকন'), ['khokon']);
+  // A poet elsewhere in the headline still counts against the name.
+  assert.deepEqual(ids('কবি খায়রুল কবির খোকনের নতুন কাব্যগ্রন্থ'), []);
+});
+
+test('a name written with initials keeps them', () => {
+  // "এস এম জিলানী" is one word without its initials, and one word names nobody.
+  const members = [
+    { id: 'jilani', nameBn: 'এস, এম, জিলানী', nameEn: 'S M Zilany', seatBn: 'গোপালগঞ্জ-৩', seatEn: 'Gopalganj-3', districtBn: 'গোপালগঞ্জ', districtEn: 'Gopalganj', partyBn: 'বাংলাদেশ জাতীয়তাবাদী দল', partyAbbr: 'BNP', posts: [], ministries: [], variants: [] },
+    { id: 'gouse', nameBn: 'আলহাজ্ব মোঃ জি কে গউছ', nameEn: 'ALHAJ MD. G.K. GOUSE', seatBn: 'হবিগঞ্জ-৩', seatEn: 'Habiganj-3', districtBn: 'হবিগঞ্জ', districtEn: 'Habiganj', partyBn: 'বাংলাদেশ জাতীয়তাবাদী দল', partyAbbr: 'BNP', posts: [], ministries: [], variants: [] },
+  ];
+  const index = buildFeedIndex(members);
+  const ids = (title: string) => matchItem(index, { title }).map((m) => m.mpId);
+  assert.deepEqual(ids('বাল্যবিয়ে বর্তমানে সমাজে একটি ব্যাধিতে পরিণত হয়েছে: এস এম জিলানী'), ['jilani']);
+  assert.deepEqual(ids('হবিগঞ্জে জি কে গউছের গণসংযোগ'), ['gouse']);
+  // The last word alone is still nobody.
+  assert.deepEqual(ids('লক্ষ্যহীন মানুষ মাঝি ছাড়া নৌকার মত: জিলানী'), []);
+});
+

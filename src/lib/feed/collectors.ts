@@ -45,7 +45,7 @@ const FEED_START = '2026-01-01T00:00:00Z';
 const CHEAP_COST = 1;
 const PER_RUN = () => Math.max(0, Number(process.env.YOUTUBE_MEMBERS_PER_RUN ?? 3));
 
-interface Target {
+export interface Target {
   id: string;
   nameBn: string | null;
   seatBn: string | null;
@@ -77,6 +77,36 @@ export function sliceFor(list: Target[], perRun: number, tick: number): Target[]
   return out;
 }
 
+/**
+ * A run's members: three in four from those with no video on their page,
+ * walked in their own cycle, and the rest from the whole House's cycle.
+ */
+export function emptyFirst(empty: Target[], all: Target[], perRun: number, tick: number): Target[] {
+  const fromEmpty = empty.length ? Math.min(empty.length, Math.ceil((perRun * 3) / 4)) : 0;
+  const out = sliceFor(empty, fromEmpty, tick);
+  for (const t of sliceFor(all, perRun, tick)) {
+    if (out.length >= perRun) break;
+    if (!out.some((x) => x.id === t.id)) out.push(t);
+  }
+  return out;
+}
+
+/**
+ * Sitting members with no visible video. Video links are a few thousand rows,
+ * so reading them all is a handful of requests.
+ */
+async function withoutVideo(): Promise<Target[]> {
+  const have = new Set<string>();
+  for (let from = 0; ; from += 1000) {
+    const rows = await db().get<{ mp_id: string }[]>(
+      `feed_item_mps?status=eq.visible&select=mp_id,feed_items!inner(type)&feed_items.type=eq.video&order=feed_item_id,mp_id&offset=${from}&limit=1000`,
+    );
+    for (const r of rows) have.add(r.mp_id);
+    if (rows.length < 1000 || from > 50_000) break;
+  }
+  return targets().filter((t) => !have.has(t.id)).map((t) => ({ ...t, priority: false }));
+}
+
 /* ---------------------------------------------------------------- YouTube */
 
 interface YtItem {
@@ -106,7 +136,10 @@ export async function runYoutubeCollector(opts: { trigger?: string; perRun?: num
 
   const perRun = opts.perRun ?? PER_RUN();
   const turn = await turnOf('youtube', run, 60);
-  const slice = perRun ? sliceFor(targets(), perRun, turn) : [];
+  // Most of a run's searches go to members whose page has no video at all;
+  // the rest keep walking the whole House, so nobody is searched only once.
+  const empty = perRun ? await withoutVideo().catch(() => [] as Target[]) : [];
+  const slice = perRun ? emptyFirst(empty, targets(), perRun, turn) : [];
   const index = await buildIndex();
   let quota = 0;
 
@@ -185,7 +218,7 @@ export async function runYoutubeCollector(opts: { trigger?: string; perRun?: num
     lowConfidence: counts.lowConfidence,
     quotaUsed: quota,
     errors,
-    detail: { members: slice.length, channels: uploads.channels, searches: slice.length },
+    detail: { members: slice.length, channels: uploads.channels, searches: slice.length, withoutVideo: empty.length },
   };
   await finishRun(run, result);
   return { ...result, runId: run.id };

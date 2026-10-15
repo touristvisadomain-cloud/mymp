@@ -22,7 +22,8 @@
     "feed:hide-channels": "tsx scripts/feed-hide-channels.ts",
     "feed:backfill": "tsx scripts/feed-backfill.ts",
     "feed:thumbs": "tsx scripts/feed-thumbnails.ts",
-    "feed:archive": "tsx scripts/feed-archive.ts"
+    "feed:archive": "tsx scripts/feed-archive.ts",
+    "feed:fill": "tsx scripts/feed-fill.ts"
   },
   "dependencies": {
     "@expo-google-fonts/noto-sans-bengali": "^0.4.4",

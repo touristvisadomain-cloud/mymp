@@ -28,16 +28,17 @@ import { buildIndex } from '../src/lib/feed/collect';
 import { matchItem } from '../src/lib/feed/matchMp';
 import { attach } from '../src/lib/feed/store';
 import { allMembers } from '../src/lib/data';
+import { OFFICIAL_CHANNEL_IDS } from '../config/video-channels';
 
 const URL_BASE = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!URL_BASE || !KEY) throw new Error('.env.local needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
 const HEAD = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 
-interface Item { id: number; title: string; summary: string | null }
+interface Item { id: number; type: string; channel_id: string | null; title: string; summary: string | null }
 
 async function page(offset: number, size: number): Promise<Item[]> {
-  const res = await fetch(`${URL_BASE}/rest/v1/feed_items?select=id,title,summary&order=id.asc&offset=${offset}&limit=${size}`, { headers: HEAD });
+  const res = await fetch(`${URL_BASE}/rest/v1/feed_items?select=id,type,channel_id,title,summary&order=id.asc&offset=${offset}&limit=${size}`, { headers: HEAD });
   if (!res.ok) throw new Error(`feed_items -> ${res.status} ${await res.text()}`);
   return (await res.json()) as Item[];
 }
@@ -60,6 +61,9 @@ async function main() {
     offset += items.length;
     for (const item of items) {
       scanned++;
+      // A video from a channel outside config/video-channels.ts stays off every
+      // page (owner, 2026-10-15): the table still holds them, hidden.
+      if (item.type === 'video' && !(item.channel_id && OFFICIAL_CHANNEL_IDS.has(item.channel_id))) continue;
       for (const m of matchItem(index, { title: item.title, summary: item.summary })) {
         // `attach` leaves an existing row alone, so only genuinely new links
         // are counted here and an editor's ruling is never overwritten.
