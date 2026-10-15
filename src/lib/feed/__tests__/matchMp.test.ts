@@ -57,6 +57,8 @@ test('an office title adds to a name and never stands in for one', () => {
   assert.deepEqual(who('ভারতের প্রধানমন্ত্রীর সঙ্গে বৈঠক হবে নভেম্বরে'), []);
   assert.deepEqual(who('সাবেক প্রধানমন্ত্রীর বিরুদ্ধে নতুন মামলা'), []);
   assert.deepEqual(who('বন্যা পরিস্থিতি নিয়ে মন্ত্রীর বৈঠক'), []);
+  // The deputy's office is not the speaker's.
+  assert.deepEqual(who('কমনওয়েলথ পার্লামেন্টারি সম্মেলনে যোগ দিতে বার্বাডোস যাচ্ছেন ডেপুটি স্পিকার'), []);
 });
 
 test('a name in the summary carries the office title over the floor', () => {
