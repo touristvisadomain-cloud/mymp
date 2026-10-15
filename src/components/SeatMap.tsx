@@ -1,24 +1,41 @@
 'use client';
 
 /**
- * A member's constituency on a street map, every village, market, road and
- * river named. The seat's upazilas are filled in the party's colour; the
- * district's other upazilas are outlined and named with their seat.
+ * Constituencies on a street map, every village, market, road and river
+ * named.
+ *
+ * - On a member's or a seat's page (`seat`): the seat's upazilas are filled in
+ *   the party's colour, solid where the seat holds the whole upazila and pale
+ *   where it holds only some unions or wards; the district's other upazilas
+ *   are outlined and named with their seats.
+ * - On a district's page (`colors` for every seat): each upazila in the colour
+ *   of the party holding its seat; a tap opens the seat's page.
  *
  * The base map is Google Maps, in Bangla, when NEXT_PUBLIC_GOOGLE_MAPS_KEY is
- * set (owner, 2026-10-15), and OpenStreetMap otherwise, so the page never
- * shows an empty box for want of a key.
+ * set (owner, 2026-10-15), and OpenStreetMap otherwise or when Google refuses
+ * the key, so the page never shows an empty box. The map starts only when it
+ * scrolls into view (or, with `startOnClick`, when asked), because Google
+ * counts every map it draws.
  *
- * Boundaries are OpenStreetMap's upazila polygons (public/geo/<district>.json,
- * ODbL), matched to seats by the Election Commission's boundary text.
+ * Boundaries: public/geo/<district>.json, built by scripts/build-seat-geo.ts
+ * from OpenStreetMap's upazilas (ODbL) and OCHA's city corporations (CC BY-IGO).
  */
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import 'leaflet/dist/leaflet.css';
 
+type Part = 'whole' | 'part';
 interface Feature {
   type: 'Feature';
-  properties: { name: string; seat: string };
+  properties: { name: string; kind: 'upazila' | 'city'; seats: Record<string, Part> };
   geometry: { type: 'Polygon' | 'MultiPolygon'; coordinates: number[][][] | number[][][][] };
+}
+interface Look {
+  fill: string;
+  fillOpacity: number;
+  stroke: string;
+  weight: number;
+  dashed: boolean;
 }
 
 /** What either base map does for the frame around it. */
@@ -29,6 +46,8 @@ interface Engine {
 }
 
 const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
+const GREY = '#6b7570';
+const BN = (n: number) => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[Number(d)]!);
 
 /** Is [lng, lat] inside a polygon ring? Ray casting, enough for an upazila. */
 function inRing(pt: [number, number], ring: number[][]): boolean {
@@ -44,6 +63,35 @@ const polygonsOf = (f: Feature) => (f.geometry.type === 'Polygon' ? [f.geometry.
 function inFeature(pt: [number, number], f: Feature): boolean {
   return polygonsOf(f).some((rings) => inRing(pt, rings[0]!) && !rings.slice(1).some((hole) => inRing(pt, hole)));
 }
+const placeName = (f: Feature) => (f.properties.kind === 'city' ? f.properties.name : `${f.properties.name} উপজেলা`);
+
+/**
+ * Where a place's Bangla name sits: the centroid of its largest polygon, or
+ * the middle of its outline when the centroid falls outside (a bent coast).
+ */
+function labelPoint(f: Feature): [number, number] {
+  let best: number[][] = [];
+  let bestArea = -1;
+  for (const rings of polygonsOf(f)) {
+    const ring = rings[0]!;
+    let a = 0;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) a += ring[j]![0]! * ring[i]![1]! - ring[i]![0]! * ring[j]![1]!;
+    if (Math.abs(a) > bestArea) { bestArea = Math.abs(a); best = ring; }
+  }
+  let a = 0, cx = 0, cy = 0;
+  for (let i = 0, j = best.length - 1; i < best.length; j = i++) {
+    const k = best[j]![0]! * best[i]![1]! - best[i]![0]! * best[j]![1]!;
+    a += k;
+    cx += (best[j]![0]! + best[i]![0]!) * k;
+    cy += (best[j]![1]! + best[i]![1]!) * k;
+  }
+  const c: [number, number] = a ? [cx / (3 * a), cy / (3 * a)] : [best[0]![0]!, best[0]![1]!];
+  if (inRing(c, best)) return c;
+  const mid = best[Math.floor(best.length / 2)]!;
+  return [(best[0]![0]! + mid[0]!) / 2, (best[0]![1]! + mid[1]!) / 2];
+}
+/** The name written on the map: our own, in Bangla, whatever language the base map is in. */
+const shortName = (f: Feature) => f.properties.name.replace(/ সিটি কর্পোরেশন$/, ' সিটি');
 
 /** The Maps JavaScript API, loaded once per page, in Bangla. */
 let googleLoading: Promise<typeof google> | null = null;
@@ -61,7 +109,17 @@ function loadGoogle(key: string): Promise<typeof google> {
   return googleLoading;
 }
 
-async function startGoogle(el: HTMLElement, fc: { features: Feature[] }, seatSlug: string, color: string, label: (f: Feature) => string, onHover: (t: string | null) => void): Promise<Engine> {
+interface Drawing {
+  features: Feature[];
+  /** The features the map opens on. */
+  focus: Feature[];
+  look: (f: Feature) => Look;
+  label: (f: Feature) => string;
+  onClick?: (f: Feature) => void;
+  onHover: (text: string | null) => void;
+}
+
+async function startGoogle(el: HTMLElement, d: Drawing): Promise<Engine> {
   const g = await loadGoogle(GOOGLE_KEY);
   const map = new g.maps.Map(el, {
     mapTypeControl: true,
@@ -69,23 +127,33 @@ async function startGoogle(el: HTMLElement, fc: { features: Feature[] }, seatSlu
     streetViewControl: false,
     fullscreenControl: false,
     gestureHandling: 'cooperative',
-    clickableIcons: true,
   });
-  map.data.addGeoJson(fc);
-  map.data.setStyle((f) =>
-    f.getProperty('seat') === seatSlug
-      ? { fillColor: color, fillOpacity: 0.14, strokeColor: color, strokeWeight: 3.5, clickable: true }
-      : { fillColor: '#6b7570', fillOpacity: 0.04, strokeColor: '#6b7570', strokeWeight: 1.5, clickable: true },
-  );
-  map.data.addListener('mouseover', (e: google.maps.Data.MouseEvent) =>
-    onHover(label({ properties: { name: String(e.feature.getProperty('name')), seat: String(e.feature.getProperty('seat')) } } as Feature)),
-  );
-  map.data.addListener('mouseout', () => onHover(null));
+  const byName = new Map(d.features.map((f) => [`${f.properties.kind}:${f.properties.name}`, f]));
+  const own = (gf: google.maps.Data.Feature) => byName.get(`${gf.getProperty('kind')}:${gf.getProperty('name')}`)!;
+  map.data.addGeoJson({ type: 'FeatureCollection', features: d.features });
+  map.data.setStyle((gf) => {
+    const l = d.look(own(gf));
+    // The data layer draws no dashes: a part is told apart by its paler fill and thinner line.
+    return { fillColor: l.fill, fillOpacity: l.fillOpacity, strokeColor: l.stroke, strokeWeight: l.weight, strokeOpacity: l.dashed ? 0.7 : 1, cursor: d.onClick ? 'pointer' : undefined };
+  });
+  map.data.addListener('mouseover', (e: google.maps.Data.MouseEvent) => d.onHover(d.label(own(e.feature))));
+  map.data.addListener('mouseout', () => d.onHover(null));
+  if (d.onClick) map.data.addListener('click', (e: google.maps.Data.MouseEvent) => d.onClick!(own(e.feature)));
   const bounds = new g.maps.LatLngBounds();
-  for (const f of fc.features.filter((x) => x.properties.seat === seatSlug)) {
-    for (const rings of polygonsOf(f)) for (const [lng, lat] of rings[0]!) bounds.extend({ lat: lat!, lng: lng! });
-  }
+  for (const f of d.focus) for (const rings of polygonsOf(f)) for (const [lng, lat] of rings[0]!) bounds.extend({ lat: lat!, lng: lng! });
   map.fitBounds(bounds, 18);
+  // Every upazila and city named in Bangla on top of Google's own labels.
+  const labels = d.features.map((f) => {
+    const [lng, lat] = labelPoint(f);
+    return new g.maps.Marker({
+      position: { lat, lng },
+      map,
+      clickable: false,
+      icon: { path: g.maps.SymbolPath.CIRCLE, scale: 0 },
+      label: { text: shortName(f), className: 'seatmap-label', color: '#17201b', fontSize: '13px', fontWeight: '700' },
+      zIndex: 1000,
+    });
+  });
   let here: google.maps.Marker | null = null;
   return {
     showHere(lat, lng) {
@@ -104,26 +172,35 @@ async function startGoogle(el: HTMLElement, fc: { features: Feature[] }, seatSlu
     },
     destroy() {
       here?.setMap(null);
+      for (const l of labels) l.setMap(null);
     },
   };
 }
 
-async function startLeaflet(el: HTMLElement, fc: { features: Feature[] }, seatSlug: string, color: string, label: (f: Feature) => string): Promise<Engine> {
+async function startLeaflet(el: HTMLElement, d: Drawing): Promise<Engine> {
   const L = (await import('leaflet')).default;
   const m = L.map(el, { zoomControl: true, scrollWheelZoom: false, attributionControl: true });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
   }).addTo(m);
-  L.geoJSON(fc.features.filter((f) => f.properties.seat !== seatSlug) as never, {
-    style: { color: '#6b7570', weight: 1.5, dashArray: '5 5', fillOpacity: 0.04, fillColor: '#6b7570' },
-    onEachFeature: (f, layer) => layer.bindTooltip(label(f as unknown as Feature), { sticky: true }),
+  const layer = L.geoJSON({ type: 'FeatureCollection', features: d.features } as never, {
+    style: (f) => {
+      const l = d.look(f as unknown as Feature);
+      return { color: l.stroke, weight: l.weight, fillColor: l.fill, fillOpacity: l.fillOpacity, dashArray: l.dashed ? '6 5' : undefined };
+    },
+    onEachFeature: (f, lyr) => {
+      lyr.bindTooltip(d.label(f as unknown as Feature), { sticky: true });
+      if (d.onClick) lyr.on('click', () => d.onClick!(f as unknown as Feature));
+    },
   }).addTo(m);
-  const seatLayer = L.geoJSON(fc.features.filter((f) => f.properties.seat === seatSlug) as never, {
-    style: { color, weight: 3.5, fillColor: color, fillOpacity: 0.14 },
-    onEachFeature: (f, layer) => layer.bindTooltip(label(f as unknown as Feature), { sticky: true }),
-  }).addTo(m);
-  const bounds = seatLayer.getBounds();
+  void layer;
+  for (const f of d.features) {
+    const [lng, lat] = labelPoint(f);
+    L.marker([lat, lng], { interactive: false, icon: L.divIcon({ className: 'seatmap-label seatmap-label-osm', html: shortName(f), iconSize: undefined }) }).addTo(m);
+  }
+  const focus = L.geoJSON({ type: 'FeatureCollection', features: d.focus } as never);
+  const bounds = focus.getBounds();
   // The box may still be laid out when the map starts: fit again once it has a size.
   const fit = () => {
     m.invalidateSize();
@@ -154,54 +231,123 @@ async function startLeaflet(el: HTMLElement, fc: { features: Feature[] }, seatSl
   };
 }
 
+/** A CSS custom property's value, for map libraries that take colours as text. */
+function resolve(color: string): string {
+  const v = color.match(/^var\((--[^)]+)\)$/)?.[1];
+  return (v && getComputedStyle(document.documentElement).getPropertyValue(v).trim()) || color;
+}
+
 export default function SeatMap({
   geoUrl,
-  seatSlug,
-  seatName,
-  color,
+  seat,
+  colors,
   seatNames,
+  title,
+  note,
+  startOnClick = false,
 }: {
   geoUrl: string;
-  seatSlug: string;
-  seatName: string;
-  color: string;
-  /** Other seats' names by slug, for the neighbours' labels. */
+  /** A seat's own map: its slug and the party colour it is drawn in. */
+  seat?: { slug: string; color: string };
+  /** A district's map: every seat's colour by slug. */
+  colors?: Record<string, string>;
+  /** Every seat in the district, by slug, for the labels. */
   seatNames: Record<string, string>;
+  /** Shown in the bar above the map. */
+  title: string;
+  /** The Election Commission's words, shown when the seat holds only part of a place. */
+  note?: string | null;
+  /** Draw the map only when asked (the district page), not when it scrolls into view. */
+  startOnClick?: boolean;
 }) {
+  const router = useRouter();
+  const frame = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const engine = useRef<Engine | null>(null);
   const features = useRef<Feature[]>([]);
+  const [wanted, setWanted] = useState(false);
   const [big, setBig] = useState(false);
   const [where, setWhere] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
-  const [upazilas, setUpazilas] = useState<string[]>([]);
+  const [summary, setSummary] = useState<{ whole: string[]; part: string[] }>({ whole: [], part: [] });
   const [failed, setFailed] = useState(false);
 
+  // Start when the map comes into view, a screen early, unless it waits for a tap.
   useEffect(() => {
+    if (startOnClick || wanted || !frame.current) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        setWanted(true);
+        io.disconnect();
+      }
+    }, { rootMargin: '600px 0px' });
+    io.observe(frame.current);
+    return () => io.disconnect();
+  }, [startOnClick, wanted]);
+
+  useEffect(() => {
+    if (!wanted) return;
     let cancelled = false;
     (async () => {
       const res = await fetch(geoUrl);
       const fc = (await res.json()) as { features: Feature[] };
       if (cancelled || !box.current) return;
       features.current = fc.features;
-      setUpazilas(fc.features.filter((f) => f.properties.seat === seatSlug).map((f) => f.properties.name));
-      const resolved = getComputedStyle(document.documentElement).getPropertyValue(color.replace(/^var\((--[^)]+)\)$/, '$1')).trim() || color;
-      const label = (f: Feature) => `${f.properties.name} উপজেলা · ${f.properties.seat === seatSlug ? seatName : seatNames[f.properties.seat] ?? f.properties.seat}`;
+      const names = (f: Feature) => Object.keys(f.properties.seats).map((s) => seatNames[s] ?? s).join(', ');
+      let drawing: Drawing;
+      if (seat) {
+        const color = resolve(seat.color);
+        const mine = fc.features.filter((f) => f.properties.seats[seat.slug]);
+        setSummary({
+          whole: mine.filter((f) => f.properties.seats[seat.slug] === 'whole').map(placeName),
+          part: mine.filter((f) => f.properties.seats[seat.slug] === 'part').map(placeName),
+        });
+        drawing = {
+          features: fc.features,
+          focus: mine.length ? mine : fc.features,
+          look: (f) => {
+            const p = f.properties.seats[seat.slug];
+            if (p === 'whole') return { fill: color, fillOpacity: 0.16, stroke: color, weight: 3.5, dashed: false };
+            if (p === 'part') return { fill: color, fillOpacity: 0.07, stroke: color, weight: 2.5, dashed: true };
+            return { fill: GREY, fillOpacity: 0.03, stroke: GREY, weight: 1.2, dashed: true };
+          },
+          label: (f) => {
+            const p = f.properties.seats[seat.slug];
+            return `${placeName(f)} · ${p === 'whole' ? 'পুরোটা এই আসনে' : p === 'part' ? 'একাংশ এই আসনে' : names(f)}`;
+          },
+          onHover: setHover,
+        };
+      } else {
+        const tone = Object.fromEntries(Object.entries(colors ?? {}).map(([k, v]) => [k, resolve(v)]));
+        drawing = {
+          features: fc.features,
+          focus: fc.features,
+          look: (f) => {
+            const first = Object.keys(f.properties.seats)[0];
+            const c = (first && tone[first]) || GREY;
+            const shared = Object.keys(f.properties.seats).length > 1;
+            return { fill: c, fillOpacity: shared ? 0.12 : 0.22, stroke: c, weight: 2, dashed: shared };
+          },
+          label: (f) => `${placeName(f)} · ${names(f)}`,
+          onClick: (f) => {
+            const only = Object.keys(f.properties.seats);
+            if (only.length === 1) router.push(`/ason/${only[0]}`);
+          },
+          onHover: setHover,
+        };
+      }
       // A key Google refuses loads the script and then greys the map; Google calls this instead of failing.
       const fallBack = async () => {
         if (cancelled || !box.current) return;
         engine.current?.destroy();
         box.current.replaceChildren();
         setFailed(true);
-        engine.current = await startLeaflet(box.current, fc, seatSlug, resolved, label);
+        engine.current = await startLeaflet(box.current, drawing);
       };
       (window as unknown as { gm_authFailure?: () => void }).gm_authFailure = () => void fallBack();
       try {
-        engine.current = GOOGLE_KEY
-          ? await startGoogle(box.current, fc, seatSlug, resolved, label, setHover)
-          : await startLeaflet(box.current, fc, seatSlug, resolved, label);
+        engine.current = GOOGLE_KEY ? await startGoogle(box.current, drawing) : await startLeaflet(box.current, drawing);
       } catch {
-        // A blocked script: the free map instead of an empty box.
         await fallBack();
       }
       if (cancelled) engine.current?.destroy();
@@ -211,7 +357,7 @@ export default function SeatMap({
       engine.current?.destroy();
       engine.current = null;
     };
-  }, [geoUrl, seatSlug, seatName, color, seatNames]);
+  }, [wanted, geoUrl, seat, colors, seatNames, router]);
 
   // The map's box changes size when it goes full screen.
   useEffect(() => {
@@ -233,12 +379,15 @@ export default function SeatMap({
         const pt: [number, number] = [pos.coords.longitude, pos.coords.latitude];
         const inside = features.current.find((f) => inFeature(pt, f));
         engine.current?.showHere(pt[1], pt[0]);
+        if (!inside) return setWhere('আপনি এই জেলার বাইরে আছেন।');
+        const p = seat ? inside.properties.seats[seat.slug] : undefined;
+        const others = Object.keys(inside.properties.seats).map((s) => seatNames[s] ?? s).join(', ');
         setWhere(
-          !inside
-            ? 'আপনি এই জেলার বাইরে আছেন।'
-            : inside.properties.seat === seatSlug
-              ? `আপনি ${inside.properties.name} উপজেলায়, এই আসনের ভেতরে।`
-              : `আপনি ${inside.properties.name} উপজেলায়, ${seatNames[inside.properties.seat] ?? 'অন্য'} আসনে।`,
+          p === 'whole'
+            ? `আপনি ${placeName(inside)}, এই আসনের ভেতরে।`
+            : p === 'part'
+              ? `আপনি ${placeName(inside)}। এর একাংশ এই আসনে; নিচের ইউনিয়ন বা ওয়ার্ডের তালিকা মিলিয়ে দেখুন।`
+              : `আপনি ${placeName(inside)}, ${others} আসনে।`,
         );
       },
       () => setWhere('অবস্থান পাওয়া যায়নি বা অনুমতি দেওয়া হয়নি।'),
@@ -247,31 +396,57 @@ export default function SeatMap({
   }
 
   const source = GOOGLE_KEY && !failed ? 'Google Maps' : 'OpenStreetMap';
+  const places = [...summary.whole, ...summary.part.map((p) => `${p}-এর একাংশ`)];
 
   return (
-    <div className={big ? 'fixed inset-0 z-[60] bg-paper flex flex-col' : 'relative flex flex-col bg-surface border border-rule rounded-card shadow-card overflow-hidden'}>
+    <div
+      ref={frame}
+      data-seatmap
+      className={big ? 'fixed inset-0 z-[60] bg-paper flex flex-col' : 'relative flex flex-col bg-surface border border-rule rounded-card shadow-card overflow-hidden'}
+    >
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-rule bg-surface">
         <div className="min-w-0 flex items-center gap-2.5 text-[14px]">
-          <span className="w-3.5 h-3.5 rounded-sm shrink-0" style={{ background: color, opacity: 0.85 }} aria-hidden="true" />
-          <span className="font-bold">{seatName}</span>
-          <span className="text-muted truncate">{hover ?? (upazilas.length ? `${upazilas.join(' ও ')} উপজেলা` : '')}</span>
+          {seat && <span className="w-3.5 h-3.5 rounded-sm shrink-0" style={{ background: seat.color, opacity: 0.85 }} aria-hidden="true" />}
+          <span className="font-bold shrink-0">{title}</span>
+          <span className="text-muted truncate">{hover ?? places.join(', ')}</span>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <button type="button" onClick={locate} className="h-9 px-3 rounded-lg border border-rule text-[13px] font-semibold hover:border-brand hover:text-brand">
-            আমি কোথায়
-          </button>
-          <button type="button" onClick={() => setBig((b) => !b)} className="h-9 px-3 rounded-lg bg-brand text-white text-[13px] font-semibold hover:bg-brand/90">
-            {big ? 'বন্ধ করুন' : 'বড় করে দেখুন'}
-          </button>
-        </div>
+        {wanted && (
+          <div className="flex gap-2 shrink-0">
+            <button type="button" onClick={locate} className="h-9 px-3 rounded-lg border border-rule text-[13px] font-semibold hover:border-brand hover:text-brand">
+              আমি কোথায়
+            </button>
+            <button type="button" onClick={() => setBig((b) => !b)} className="h-9 px-3 rounded-lg bg-brand text-white text-[13px] font-semibold hover:bg-brand/90">
+              {big ? 'বন্ধ করুন' : 'বড় করে দেখুন'}
+            </button>
+          </div>
+        )}
       </div>
+      <style>{`.seatmap-label{font-family:var(--font-body),'Noto Sans Bengali',sans-serif;font-weight:700;font-size:13px;color:#17201b;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;background:none;border:0;}.seatmap-label-osm{transform:translate(-50%,-50%);}`}</style>
       {/* The base map adds its own classes to its box, so only the wrapper's size changes. */}
-      <div className={big ? 'grow min-h-0' : 'h-[420px] sm:h-[480px]'}>
-        <div ref={box} className="h-full w-full" role="region" aria-label={`${seatName} আসনের মানচিত্র`} />
+      <div className={big ? 'grow min-h-0' : 'relative h-[420px] sm:h-[480px] bg-sunk'}>
+        <div ref={box} className="h-full w-full" role="region" aria-label={`${title} মানচিত্র`} />
+        {!wanted && (
+          <div className="absolute inset-0 grid place-items-center">
+            <button
+              type="button"
+              onClick={() => setWanted(true)}
+              className="h-11 px-5 rounded-xl bg-brand text-white font-bold text-[14.5px] shadow-card hover:bg-brand/90"
+            >
+              ম্যাপ দেখুন
+            </button>
+          </div>
+        )}
       </div>
       {where && <p className="px-4 py-2.5 text-[13.5px] border-t border-rule bg-surface" role="status">{where}</p>}
+      {seat && summary.part.length > 0 && note && (
+        <p className="px-4 py-2.5 text-[13px] text-inksoft border-t border-rule bg-surface leading-relaxed">
+          <span className="font-semibold">নির্বাচন কমিশনের বর্ণনা:</span> {note}
+          <span className="block text-[12px] text-muted pt-1">ইউনিয়ন ও সিটি ওয়ার্ডের আলাদা সীমানা প্রকাশিত নেই, তাই হালকা রঙে পুরো উপজেলা বা সিটি দেখানো হয়েছে।</span>
+        </p>
+      )}
       <p className="px-4 py-2.5 text-[12px] text-muted border-t border-rule bg-surface leading-relaxed">
-        সীমানা OpenStreetMap-এর উপজেলা মানচিত্র ও নির্বাচন কমিশনের আসনের বর্ণনা মিলিয়ে, আনুমানিক। পটভূমির মানচিত্র {source}-এর।
+        সীমানা নির্বাচন কমিশনের আসনের বর্ণনা থেকে, উপজেলা OpenStreetMap ও সিটি কর্পোরেশন OCHA-র মানচিত্রে; আনুমানিক। পটভূমির মানচিত্র {source}-এর।
+        {colors && ` ${BN(Object.keys(colors).length)}টি আসন; এলাকায় চাপ দিলে সেই আসনের পাতা।`}
       </p>
     </div>
   );

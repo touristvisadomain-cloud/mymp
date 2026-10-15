@@ -8,6 +8,7 @@ import {
 import { Page, Card, Breadcrumb, Empty, PartyDot } from '@/components/ui';
 import type { Seat } from '@/lib/data';
 import MemberPhoto from '@/components/MemberPhoto';
+import SeatMap from '@/components/SeatMap';
 import { ResultCard } from '@/components/results';
 import { seatHolders, resultsForSeat, resultForSeat, parliamentLabel, SAME_AREA_SINCE, electionYear } from '@/lib/history';
 
@@ -180,6 +181,14 @@ export default async function SeatPage({ params }: PageProps<'/ason/[slug]'>) {
               <Card className="p-5">
                 <p className="text-[15.5px] leading-relaxed">{seat.boundaryBn}</p>
               </Card>
+              {!seat.reserved && district && (
+                <SeatMap
+                  geoUrl={`/geo/${district.slug}.json`}
+                  seat={{ slug: seat.slug, color: partyColor(member?.party?.abbr) }}
+                  title={seat.nameBn ?? seat.nameEn ?? ''}
+                  seatNames={Object.fromEntries(seats.filter((x) => districtOf(x)?.slug === district.slug).map((x) => [x.slug, x.nameBn ?? x.nameEn ?? x.slug]))}
+                />
+              )}
             </section>
           )}
 
