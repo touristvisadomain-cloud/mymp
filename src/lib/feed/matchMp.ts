@@ -39,6 +39,7 @@ export const POINTS = {
   district: 10,
   party: 5,
   post: 30,
+  soleOffice: 30,
   negative: -30,
 } as const;
 
@@ -55,6 +56,8 @@ export interface FeedMp {
   partyAbbr: string | null;
   /** Office titles the member holds now: প্রধানমন্ত্রী, স্পিকার, চিফ হুইপ… */
   posts: string[];
+  /** A national party office as headlines write it: "জামায়াত আমির", "বিএনপি চেয়ারম্যান". */
+  partyOffices?: string[];
   /** The ministries they hold, as the cabinet list writes them. */
   ministries: string[];
   /** Extra spellings from mp_name_variants; the official name is added here. */
@@ -114,6 +117,12 @@ export function textTokensWithBreaks(raw: string): { tokens: string[]; breaks: b
  * Words that carry a name on into a longer one, as in Arabic names: "আব্দুল
  * মালিক আল-হুথি" is not the member আব্দুল মালিক.
  */
+/** Words a summary may open with before the member's name: "জাতীয় সংসদের স্পিকার …", "বিএনপি চেয়ারম্যান …". */
+const SUBJECT_LEAD_WORDS = new Set(['জাতীয়', 'সংসদের', 'সংসদ', 'সদস্য', 'আসনের', 'মাননীয়', 'চেয়ারম্যান', 'মহাসচিব', 'আমির', 'আমীর', 'সভাপতি', 'সাধারণ', 'সম্পাদক', 'নেতা', 'দলের', 'সরকারের', 'বাংলাদেশের', 'বর্তমান', 'ও', 'এবং']);
+
+/** The verbs that make the name just before them the one speaking or acting. */
+const SPEECH_WORDS = new Set(['বলেছেন', 'বলেন', 'বললেন', 'বলেছে', 'জানিয়েছেন', 'জানান', 'জানালেন', 'মন্তব্য', 'আহ্বান', 'দাবি', 'অভিযোগ', 'নির্দেশ', 'নির্দেশনা', 'উদ্বোধন', 'said', 'says']);
+
 const NAME_PARTICLES = new Set(['আল', 'এল', 'বিন', 'ইবনে', 'ইবন', 'al', 'el', 'bin', 'ibn', 'ben', 'abu']);
 
 /** The words of a name: honorifics, initials and gallantry titles are not part of it. */
@@ -191,6 +200,12 @@ export interface FeedIndex {
    * "মনোয়ার হোসেন চৌধুরী" is not a mention of "আলতাফ হোসেন চৌধুরী".
    */
   nameWords: Set<string>;
+  /**
+   * Offices exactly one member holds (প্রধানমন্ত্রী, স্পিকার, চিফ হুইপ, জামায়াত
+   * আমির). A headline that calls someone by one of these and leaves the name
+   * out ("…উদ্যোগ নেওয়া হবে: প্রধানমন্ত্রী") is about that member.
+   */
+  soleOffices: Set<string>;
 }
 
 export function buildFeedIndex(mps: FeedMp[]): FeedIndex {
@@ -218,8 +233,10 @@ export function buildFeedIndex(mps: FeedMp[]): FeedIndex {
       seat: [...some(mp.seatBn), ...some(mp.seatEn)],
       district: [...some(mp.districtBn), ...some(mp.districtEn)],
       party: [...some(mp.partyBn), ...some(mp.partyAbbr)],
-      posts: POST_WORDS.filter((w) => mp.posts.some((post) => w.matches(post, null)))
-        .map((w) => ({ word: w.word, tokens: phraseTokens(w.word) })),
+      posts: [
+        ...POST_WORDS.filter((w) => mp.posts.some((post) => w.matches(post, null))).map((w) => w.word),
+        ...(mp.partyOffices ?? []),
+      ].map((word) => ({ word, tokens: phraseTokens(word) })),
       ministries: mp.ministries
         .map((m) => ministryWord(m))
         .filter((w): w is string => Boolean(w))
@@ -235,7 +252,10 @@ export function buildFeedIndex(mps: FeedMp[]): FeedIndex {
   for (const e of entries) for (const n of e.names) for (const t of n.tokens) if (!HONORIFICS.has(t) && !INITIALS.has(t)) nameWords.add(t);
   const byTrigger = new Map<string, FeedIndexEntry[]>();
   for (const e of entries) for (const t of e.triggers) byTrigger.set(t, [...(byTrigger.get(t) ?? []), e]);
-  return { entries, nameWords, byTrigger };
+  const holders = new Map<string, Set<string>>();
+  for (const e of entries) for (const p of [...e.phrases.posts, ...e.phrases.ministries]) holders.set(p.word, (holders.get(p.word) ?? new Set()).add(e.mp.id));
+  const soleOffices = new Set([...holders].filter(([, ids]) => ids.size === 1).map(([word]) => word));
+  return { entries, nameWords, byTrigger, soleOffices };
 }
 
 export interface FeedItemText {
@@ -254,6 +274,20 @@ const INSTITUTION_WORDS = ['কার্যালয়', 'দপ্তর', '�
  * Does an office title appear as the person holding it, somewhere in the text?
  * "প্রধানমন্ত্রী বলেছেন" does; "প্রধানমন্ত্রীর কার্যালয়ের তার চুরি" does not.
  */
+/** A sole office in a headline, unless another country owns it: "ভারতের প্রধানমন্ত্রী", "পাকিস্তানের স্পিকার". */
+function ownOfficeIn(tokens: string[], office: string[]): boolean {
+  if (!personalOffice(tokens, office)) return false;
+  for (let i = 0; i + office.length <= tokens.length; i++) {
+    if (!office.every((w, j) => wordEq(tokens[i + j]!, w, j === office.length - 1))) continue;
+    const prev = tokens[i - 1];
+    if (prev && FOREIGN_OWNERS.some((c) => prev.startsWith(c))) return false;
+  }
+  return true;
+}
+
+/** Countries whose prime minister, speaker or president a headline may name by office. */
+const FOREIGN_OWNERS = ['ভারত', 'পাকিস্তান', 'যুক্তরাজ্য', 'ব্রিটিশ', 'ব্রিটেন', 'যুক্তরাষ্ট্র', 'মার্কিন', 'চীন', 'জাপান', 'মালয়েশিয়া', 'সিঙ্গাপুর', 'শ্রীলঙ্কা', 'নেপাল', 'ভুটান', 'মিয়ানমার', 'থাইল্যান্ড', 'কানাডা', 'অস্ট্রেলিয়া', 'ইসরায়েল', 'ইসরাইল', 'ইতালি', 'ফ্রান্স', 'জার্মান', 'রাশিয়া', 'তুরস্ক', 'সৌদি', 'ইরান', 'ইরাক', 'কাতার', 'ভিয়েতনাম', 'কোরিয়া', 'নিউজিল্যান্ড', 'স্পেন', 'পর্তুগাল', 'গ্রিস', 'ইউক্রেন', 'লেবানন', 'মিসর', 'মিশর', 'কম্বোডিয়া', 'লাওস', 'ফিলিস্তিন', 'বিদেশি', 'সাবেক', 'তৎকালীন', 'প্রয়াত'].map((w) => foldBangla(w));
+
 function personalOffice(tokens: string[], office: string[]): boolean {
   if (!office.length) return false;
   for (let i = 0; i + office.length <= tokens.length; i++) {
@@ -356,15 +390,35 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
     const { phrases } = entry;
     const inHeadline = (p: { tokens: string[] }) => (longerNames ? personalOffice(titleTokens, p.tokens) : hasTokens(titleTokens, p.tokens));
     const officeInHeadline = phrases.posts.some(inHeadline) || phrases.ministries.some(inHeadline);
+    // Called by an office only they hold, and not another country's ("ভারতের প্রধানমন্ত্রী").
+    const soleOffice = [...phrases.posts, ...phrases.ministries].find((p) => index.soleOffices.has(p.word) && ownOfficeIn(titleTokens, p.tokens));
+    const soleOfficeInHeadline = !!soleOffice;
     const headlinePointsAtThem =
       officeInHeadline || phrases.seat.some((p) => hasTokens(titleTokens, p)) || phrases.district.some((p) => hasTokens(titleTokens, p));
+
+    // With nothing in the headline pointing at them, the summary must open
+    // with the member, as the subject ("প্রধানমন্ত্রী তারেক রহমান বলেছেন"), or
+    // name their own seat in that first sentence. "এমন পরিস্থিতিতে
+    // প্রধানমন্ত্রী … নির্দেশনায়" is a story about someone else.
+    const ownWords = new Set([...[...phrases.posts, ...phrases.ministries].flatMap((p) => p.tokens), ...phrases.party.flat()]);
+    const opensWith = (at: number) => summaryTokens.slice(0, at).every((t) => HONORIFICS.has(t) || INITIALS.has(t) || ownWords.has(t) || SUBJECT_LEAD_WORDS.has(t));
+    // Bangla news often puts the speaker last: "…বলে মন্তব্য করেছেন প্রধানমন্ত্রী
+    // তারেক রহমান।", or names them right before the verb: "…তারেক রহমান বলেছেন".
+    const speaks = (at: number, length: number) => {
+      const after = at + length;
+      return after >= leadLength || SPEECH_WORDS.has(summaryTokens[after] ?? '') || SPEECH_WORDS.has(summaryTokens[after + 1] ?? '');
+    };
+    const leadNamesSeat = phrases.seat.some((p) => hasTokens(summaryTokens.slice(0, leadLength), p));
 
     let best: { weight: number; label: string; inTitle: boolean; at: number; length: number } | null = null;
     for (const n of entry.names) {
       const atTitle = findRun(titleTokens, n.tokens);
       const atSummary = findRun(summaryTokens, n.tokens);
       const inTitle = atTitle >= 0 && standsAlone(title, atTitle, n.tokens.length);
-      const inSummary = !inTitle && atSummary >= 0 && (atSummary < leadLength || headlinePointsAtThem) && standsAlone(summary, atSummary, n.tokens.length);
+      const inSummary =
+        !inTitle && atSummary >= 0 &&
+        (headlinePointsAtThem || (atSummary < leadLength && (opensWith(atSummary) || speaks(atSummary, n.tokens.length) || leadNamesSeat))) &&
+        standsAlone(summary, atSummary, n.tokens.length);
       if (!inTitle && !inSummary) continue;
       if (!best || (inTitle && !best.inTitle) || (inTitle === best.inTitle && n.weight > best.weight)) {
         best = { weight: n.weight, label: n.label, inTitle, at: inTitle ? atTitle : atSummary, length: n.tokens.length };
@@ -375,6 +429,11 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
       const points = Math.round((best.inTitle ? POINTS.nameInTitle : POINTS.nameInSummary) * best.weight);
       score += points;
       signals.push({ signal: best.inTitle ? 'name-in-title' : 'name-in-summary', points, detail: best.label });
+    } else if (soleOfficeInHeadline) {
+      // The office stands for the name; with the office's own points it reaches the floor.
+      named = true;
+      score += POINTS.soleOffice;
+      signals.push({ signal: 'sole-office-in-title', points: POINTS.soleOffice, detail: soleOffice?.word ?? '' });
     }
 
     if (phrases.seat.some((p) => hasTokens(allTokens, p))) {
@@ -407,7 +466,7 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
       found.push({ mpId: mp.id, score, lowConfidence: score < AUTO_SCORE, named, nameLabel: best?.label ?? null, signals });
       if (best) spans.set(found[found.length - 1]!, { inTitle: best.inTitle, at: best.at, end: best.at + best.length });
       // Named in the summary but called by their office in the headline: also a subject.
-      if (best && (best.inTitle || officeInHeadline)) subjects.add(found[found.length - 1]!);
+      if ((best && (best.inTitle || officeInHeadline)) || (!best && soleOfficeInHeadline)) subjects.add(found[found.length - 1]!);
     }
   }
 
@@ -415,8 +474,9 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
   // happen to describe, and one that names nobody is nobody's.
   // An item that names one member is not about another member the same words
   // happen to describe. Context-only matches drop out as soon as anyone is named.
-  const anyNamed = found.some((f) => f.named);
-  let kept = anyNamed ? found.filter((f) => f.named) : found;
+  // A story that names no member belongs to none: an office and a district
+  // ("প্রধানমন্ত্রীর নির্দেশে … উত্তরায়") add up to the review floor and nothing more.
+  let kept = found.filter((f) => f.named);
 
   // The story belongs to whoever the headline names. A member the summary
   // also mentions (the prime minister whose adviser came home, the leader who

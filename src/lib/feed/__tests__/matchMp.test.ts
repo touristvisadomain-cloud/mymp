@@ -50,8 +50,13 @@ test('an article naming two members attaches to both', () => {
 
 test('an office title adds to a name and never stands in for one', () => {
   assert.ok(scoreOf('দিল্লিতে ব্রিকস সম্মেলনে যাচ্ছেন না প্রধানমন্ত্রী তারেক রহমান', 'tarique') >= 90);
-  // The office alone is 30, under the floor: nobody is named, so nobody is attached.
-  assert.deepEqual(who('বাকস্বাধীনতা যেন বাকশালীনতার সীমা লঙ্ঘন না করে: প্রধানমন্ত্রী'), []);
+  // An office one member alone holds stands for the name (owner, 2026-10-15):
+  // "…: প্রধানমন্ত্রী" is the prime minister's own story.
+  assert.deepEqual(who('বাকস্বাধীনতা যেন বাকশালীনতার সীমা লঙ্ঘন না করে: প্রধানমন্ত্রী'), ['tarique']);
+  // Another country's, a former one's, or an office several members hold is nobody's.
+  assert.deepEqual(who('ভারতের প্রধানমন্ত্রীর সঙ্গে বৈঠক হবে নভেম্বরে'), []);
+  assert.deepEqual(who('সাবেক প্রধানমন্ত্রীর বিরুদ্ধে নতুন মামলা'), []);
+  assert.deepEqual(who('বন্যা পরিস্থিতি নিয়ে মন্ত্রীর বৈঠক'), []);
 });
 
 test('a name in the summary carries the office title over the floor', () => {
@@ -90,6 +95,27 @@ test('one member named and another called by office in the headline are both its
 test('a headline that names only the office still belongs to its holder', () => {
   assert.deepEqual(
     who('বিএনপির সংসদীয় দলের বৈঠক ডেকেছেন প্রধানমন্ত্রী', 'আগামী শনিবার সংসদীয় দলের বৈঠক হবে। বৈঠকে সভাপতিত্ব করবেন প্রধানমন্ত্রী তারেক রহমান।'),
+    ['tarique'],
+  );
+});
+
+test('a story that names nobody belongs to nobody, office and place notwithstanding', () => {
+  assert.deepEqual(
+    who('৩ ঘণ্টা পর উত্তরায় অবরোধ তুলে নেন পোশাক শ্রমিকরা', 'রাজধানীর উত্তরায় প্রায় ৩ ঘণ্টা অবরোধের পর প্রধানমন্ত্রীর নির্দেশে অবরোধ তুলে নিয়েছেন পোশাক শ্রমিকরা। ঢাকা মহানগরে যান চলাচল স্বাভাবিক হয়।'),
+    [],
+  );
+});
+
+test('a member mentioned in passing in the first sentence is not its subject', () => {
+  assert.deepEqual(
+    who('তিন ঘণ্টা পর উত্তরায় অবরোধ তুলে নিলেন পোষাক শ্রমিকেরা', 'এমন পরিস্থিতিতে প্রধানমন্ত্রী তারেক রহমান এবং স্থানীয় নেতাদের নির্দেশনায় নেতাকর্মীরা ঘটনাস্থলে যান।'),
+    [],
+  );
+});
+
+test('the speaker named last in the first sentence is its subject', () => {
+  assert.deepEqual(
+    who('সবার অধিকার ও নিরাপত্তা নিশ্চিত করা আমার দায়িত্ব', 'সবার অধিকার ও নিরাপত্তা নিশ্চিত করা নিজের দায়িত্ব বলে মন্তব্য করেছেন প্রধানমন্ত্রী তারেক রহমান। শনিবার এক অনুষ্ঠানে তিনি এ কথা বলেন।'),
     ['tarique'],
   );
 });
