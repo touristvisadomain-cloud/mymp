@@ -152,7 +152,8 @@ export const NEWS_SOURCES: NewsSource[] = [
   { key: 'bangladeshpost', nameBn: 'বাংলাদেশ পোস্ট', homepage: 'https://bangladeshpost.net', searchOnly: true, lang: 'en' },
   { key: 'independentbd', nameBn: 'দ্য ইনডিপেনডেন্ট', homepage: 'https://theindependentbd.com', searchOnly: true, lang: 'en' },
   { key: 'dainikbangla', nameBn: 'দৈনিক বাংলা', homepage: 'https://www.dainikbangla.com.bd', searchOnly: true, lang: 'bn' },
-  { key: 'jaijaidin', nameBn: 'যায়যায়দিন', homepage: 'https://www.jaijaidinbd.com', searchOnly: true, lang: 'bn' },
+  // যায়যায়দিন moved to jaijaidin.news; Google News files it there, so the old address matched nothing.
+  { key: 'jaijaidin', nameBn: 'যায়যায়দিন', homepage: 'https://jaijaidin.news', searchOnly: true, lang: 'bn' },
   { key: 'nayashatabdi', nameBn: 'নয়া শতাব্দী', homepage: 'https://www.dailynayashatabdi.com', searchOnly: true, lang: 'bn' },
   { key: 'banglavision', nameBn: 'বাংলাভিশন', homepage: 'https://www.banglavision.tv', searchOnly: true, lang: 'bn' },
   { key: 'maasranga', nameBn: 'মাছরাঙা টেলিভিশন', homepage: 'https://www.maasranga.tv', searchOnly: true, lang: 'bn' },
@@ -161,6 +162,67 @@ export const NEWS_SOURCES: NewsSource[] = [
   { key: 'boishakhi', nameBn: 'বৈশাখী টিভি', homepage: 'https://www.boishakhi.tv', searchOnly: true, lang: 'bn' },
   { key: 'nagorik', nameBn: 'নাগরিক টিভি', homepage: 'https://www.nagorik.com', searchOnly: true, lang: 'bn' },
   { key: 'btv', nameBn: 'বিটিভি', homepage: 'https://www.btv.gov.bd', searchOnly: true, lang: 'bn' },
+
+  // ---- Fifty more, chosen 2026-10-15 by how many members they cover: 58
+  // members were searched on Google News and these were the outlets outside
+  // the list that named them most. Feeds were read the same day; an outlet
+  // with none is reached by the search collector. Small outlets carry a lot
+  // that is not about a member, so only headlines that name one are kept.
+  // National dailies and portals with a feed or news sitemap
+  // ঢাকা মেইল's feed answered on the 15th and refused (403) an hour later; search reaches it either way.
+  { key: 'dhakamail', nameBn: 'ঢাকা মেইল', homepage: 'https://dhakamail.com', rss: ['https://dhakamail.com/rss/rss.xml'], searchOnly: true, onlyMatched: true, lang: 'bn' },
+  { key: 'bartabazar', nameBn: 'বার্তা বাজার', homepage: 'https://bartabazar.com', rss: ['https://bartabazar.com/feed'], onlyMatched: true, lang: 'bn' },
+  { key: 'bangladeshtimes', nameBn: 'বাংলাদেশ টাইমস', homepage: 'https://bangladeshtimes.com', rss: ['https://bangladeshtimes.com/feed'], onlyMatched: true, lang: 'bn' },
+  { key: 'rupalibangladesh', nameBn: 'রূপালী বাংলাদেশ', homepage: 'https://rupalibangladesh.com', rss: ['https://rupalibangladesh.com/rss/rss.xml'], onlyMatched: true, lang: 'bn' },
+  { key: 'somoyerkonthosor', nameBn: 'সময়ের কণ্ঠস্বর', homepage: 'https://somoyerkonthosor.com', rss: ['https://somoyerkonthosor.com/feed'], onlyMatched: true, lang: 'bn' },
+  { key: 'banglastream', nameBn: 'বাংলা স্ট্রিম', homepage: 'https://banglastream.net', sitemaps: [{ url: 'https://banglastream.net/news-sitemap.xml' }], onlyMatched: true, lang: 'bn' },
+  { key: 'amarsangbad', nameBn: 'আমার সংবাদ', homepage: 'https://amarsangbad.com', rss: ['https://amarsangbad.com/rss/rss.xml'], sitemaps: [{ url: 'https://amarsangbad.com/googlenews.xml' }], onlyMatched: true, lang: 'bn' },
+  { key: 'banglatelegraph', nameBn: 'বাংলা টেলিগ্রাফ', homepage: 'https://banglatelegraph.com', rss: ['https://banglatelegraph.com/feed'], onlyMatched: true, lang: 'bn' },
+  { key: 'janobani', nameBn: 'জনবাণী', homepage: 'https://janobani.com', rss: ['https://janobani.com/rss/rss.xml'], onlyMatched: true, lang: 'bn' },
+  { key: 'sangbadsarabela', nameBn: 'সংবাদ সারাবেলা', homepage: 'https://sangbadsarabela.com', rss: ['https://sangbadsarabela.com/rss'], sitemaps: [{ url: 'https://sangbadsarabela.com/news_sitemap.xml' }], onlyMatched: true, lang: 'bn' },
+  { key: 'dailybanglapost', nameBn: 'ডেইলি বাংলা পোস্ট', homepage: 'https://dailybanglapost.com', rss: ['https://dailybanglapost.com/rss/rss.xml'], onlyMatched: true, lang: 'bn' },
+  { key: 'banijjoprotidin', nameBn: 'বাণিজ্য প্রতিদিন', homepage: 'https://banijjoprotidin.com', rss: ['https://banijjoprotidin.com/feed'], onlyMatched: true, lang: 'bn' },
+  { key: 'deshebideshe', nameBn: 'দেশে বিদেশে', homepage: 'https://deshebideshe.com', rss: ['https://deshebideshe.com/rss.xml'], onlyMatched: true, lang: 'bn' },
+  { key: 'bd24live', nameBn: 'বিডি২৪লাইভ', homepage: 'https://bd24live.com', rss: ['https://bd24live.com/feed'], onlyMatched: true, lang: 'bn' },
+  // National dailies and portals reached through search
+  { key: 'shomoyeralo', nameBn: 'সময়ের আলো', homepage: 'https://shomoyeralo.com', searchOnly: true, lang: 'bn' },
+  { key: 'dailycampus', nameBn: 'দ্য ডেইলি ক্যাম্পাস', homepage: 'https://thedailycampus.com', searchOnly: true, lang: 'bn' },
+  { key: 'protidinersangbad', nameBn: 'প্রতিদিনের সংবাদ', homepage: 'https://protidinersangbad.com', searchOnly: true, lang: 'bn' },
+  { key: 'bhorerdak', nameBn: 'দৈনিক ভোরের ডাক', homepage: 'https://dailybhorerdak.com', searchOnly: true, lang: 'bn' },
+  { key: 'kholakagoj', nameBn: 'খোলা কাগজ', homepage: 'https://kholakagojbd.com', searchOnly: true, lang: 'bn' },
+  { key: 'manobkantha', nameBn: 'মানবকণ্ঠ', homepage: 'https://manobkantha.com.bd', searchOnly: true, lang: 'bn' },
+  { key: 'amadershomoy', nameBn: 'আমাদের সময়', homepage: 'https://dainikamadershomoy.com', searchOnly: true, lang: 'bn' },
+  { key: 'gonokantho', nameBn: 'গণকণ্ঠ', homepage: 'https://gonokantho.com', searchOnly: true, lang: 'bn' },
+  { key: 'dainikshiksha', nameBn: 'দৈনিক শিক্ষা', homepage: 'https://dainikshiksha.com', searchOnly: true, lang: 'bn' },
+  { key: 'dhakaprokash', nameBn: 'ঢাকা প্রকাশ', homepage: 'https://dhakaprokash24.com', searchOnly: true, lang: 'bn' },
+  { key: 'bangladeshtoday', nameBn: 'দ্য বাংলাদেশ টুডে', homepage: 'https://thebangladeshtoday.com', searchOnly: true, lang: 'en' },
+  { key: 'bangladesherkhabor', nameBn: 'বাংলাদেশের খবর', homepage: 'https://bangladesherkhabor.net', searchOnly: true, lang: 'bn' },
+  { key: 'dailysangram', nameBn: 'দৈনিক সংগ্রাম', homepage: 'https://dailysangram.com', searchOnly: true, lang: 'bn' },
+  { key: 'swadeshpratidin', nameBn: 'স্বদেশ প্রতিদিন', homepage: 'https://swadeshpratidin.com', searchOnly: true, lang: 'bn' },
+  { key: 'bdjournal', nameBn: 'বাংলাদেশ জার্নাল', homepage: 'https://bd-journal.com', searchOnly: true, lang: 'bn' },
+  { key: 'khaborerkagoj', nameBn: 'খবরের কাগজ', homepage: 'https://khaborerkagoj.com', searchOnly: true, lang: 'bn' },
+  // Regional
+  { key: 'dinajpurtv', nameBn: 'দিনাজপুর টিভি', homepage: 'https://dinajpurtv.com', searchOnly: true, lang: 'bn' },
+  { key: 'dainikazadi', nameBn: 'দৈনিক আজাদী', homepage: 'https://dainikazadi.net', rss: ['https://dainikazadi.net/feed'], onlyMatched: true, lang: 'bn' },
+  { key: 'cvoice24', nameBn: 'সিভয়েস২৪', homepage: 'https://cvoice24.com', rss: ['https://cvoice24.com/rss/rss.xml'], onlyMatched: true, lang: 'bn' },
+  { key: 'suprobhat', nameBn: 'সুপ্রভাত বাংলাদেশ', homepage: 'https://suprobhat.com', rss: ['https://suprobhat.com/feed'], onlyMatched: true, lang: 'bn' },
+  { key: 'purbokone', nameBn: 'দৈনিক পূর্বকোণ', homepage: 'https://dailypurbokone.net', searchOnly: true, lang: 'bn' },
+  { key: 'chandpurtimes', nameBn: 'চাঁদপুর টাইমস', homepage: 'https://chandpurtimes.com', rss: ['https://chandpurtimes.com/feed'], onlyMatched: true, lang: 'bn' },
+  { key: 'karatoa', nameBn: 'দৈনিক করতোয়া', homepage: 'https://dailykaratoa.com', searchOnly: true, lang: 'bn' },
+  { key: 'comillarkagoj', nameBn: 'কুমিল্লার কাগজ', homepage: 'https://comillarkagoj.com', searchOnly: true, lang: 'bn' },
+  { key: 'pressnarayanganj', nameBn: 'প্রেস নারায়ণগঞ্জ', homepage: 'https://pressnarayanganj24.net', rss: ['https://pressnarayanganj24.net/rss/rss.xml'], onlyMatched: true, lang: 'bn' },
+  { key: 'shyamalsylhet', nameBn: 'শ্যামল সিলেট', homepage: 'https://shyamalsylhet.net', searchOnly: true, lang: 'bn' },
+  { key: 'sylhettoday', nameBn: 'সিলেট টুডে ২৪', homepage: 'https://sylhettoday24.news', searchOnly: true, lang: 'bn' },
+  { key: 'barishaltimes', nameBn: 'বরিশাল টাইমস', homepage: 'https://barishaltimes.com', searchOnly: true, lang: 'bn' },
+  { key: 'sonalisangbad', nameBn: 'সোনালী সংবাদ', homepage: 'https://sonalisangbad.com', rss: ['https://sonalisangbad.com/feed'], onlyMatched: true, lang: 'bn' },
+  { key: 'purbanchal', nameBn: 'পূর্বাঞ্চল', homepage: 'https://purbanchal.com', rss: ['https://purbanchal.com/feed'], onlyMatched: true, lang: 'bn' },
+  // Television
+  { key: 'channels', nameBn: 'চ্যানেল এস', homepage: 'https://channels.com.bd', sitemaps: [{ url: 'https://channels.com.bd/sitemap-news.xml' }], onlyMatched: true, lang: 'bn' },
+  { key: 'banglatv', nameBn: 'বাংলা টিভি', homepage: 'https://banglatv.tv', rss: ['https://banglatv.tv/feed'], onlyMatched: true, lang: 'bn' },
+  { key: 'satv', nameBn: 'এসএ টিভি', homepage: 'https://satv.tv', rss: ['https://satv.tv/feed'], onlyMatched: true, lang: 'bn' },
+  // মাই টিভি's feed is its whole archive (ten thousand items), too heavy every half hour: read once by hand, then searched.
+  { key: 'mytv', nameBn: 'মাই টিভি', homepage: 'https://mytvbd.tv', searchOnly: true, lang: 'bn' },
+  { key: 'mohona', nameBn: 'মোহনা টিভি', homepage: 'https://mohona.tv', rss: ['https://mohona.tv/feed'], onlyMatched: true, lang: 'bn' },
 ];
 
 export const RSS_SOURCES = NEWS_SOURCES.filter((s) => s.rss?.length);
