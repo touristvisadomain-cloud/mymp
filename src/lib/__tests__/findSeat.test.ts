@@ -45,3 +45,14 @@ test('a district, a seat name, and no prefix noise', () => {
 test('an OpenStreetMap address gives the names to try, most precise first', () => {
   assert.deepEqual(placeNames({ village: 'আমিনবাজার', county: 'সাভার উপজেলা', state_district: 'ঢাকা জেলা' }), ['আমিনবাজার', 'সাভার', 'ঢাকা']);
 });
+
+test('a place typed in English is looked up in Bangla', async () => {
+  const { toBangla } = await import('../findSeat');
+  const table: [string, string][] = [['Savar', 'সাভার'], ['Doulatkhan', 'দৌলতখান'], ['Charfasson', 'চরফ্যাশন'], ['Keraniganj', 'কেরাণীগঞ্জ']];
+  assert.equal(toBangla('Savar', table), 'সাভার');
+  assert.equal(toBangla('daulatkhan upazila', table), 'দৌলতখান'); // a letter off, and the kind word dropped
+  assert.equal(toBangla('charfason', table), 'চরফ্যাশন');
+  assert.equal(toBangla('দৌলতখান', table), 'দৌলতখান'); // Bangla stays as it is
+  assert.deepEqual(where(toBangla('ward 15 dhaka south', table)), ['ঢাকা-১০:ward']);
+  assert.deepEqual(where(toBangla('Doulatkhan', table)), ['ভোলা-২:upazila']);
+});

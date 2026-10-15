@@ -192,3 +192,58 @@ export function placeNames(address: Record<string, string | undefined>): string[
   }
   return out;
 }
+
+/* ---------------------------------------------------------------- English */
+
+/** City and direction words a person may type in English, for a ward search. */
+const EN_WORDS: Record<string, string> = {
+  dhaka: 'ঢাকা', south: 'দক্ষিণ', north: 'উত্তর', dakshin: 'দক্ষিণ', uttar: 'উত্তর',
+  chittagong: 'চট্টগ্রাম', chattogram: 'চট্টগ্রাম', ctg: 'চট্টগ্রাম', khulna: 'খুলনা', rajshahi: 'রাজশাহী',
+  sylhet: 'সিলেট', barishal: 'বরিশাল', barisal: 'বরিশাল', rangpur: 'রংপুর', mymensingh: 'ময়মনসিংহ',
+  gazipur: 'গাজীপুর', narayanganj: 'নারায়ণগঞ্জ', cumilla: 'কুমিল্লা', comilla: 'কুমিল্লা', city: 'সিটি',
+  ward: 'ওয়ার্ড', no: '',
+};
+const EN_DROP = new Set(['upazila', 'upazilla', 'thana', 'union', 'district', 'zila', 'zilla', 'corporation', 'of', 'the']);
+
+const latin = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+function editDistance(a: string, b: string): number {
+  const d = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let prev = d[0]!;
+    d[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const tmp = d[j]!;
+      d[j] = Math.min(d[j]! + 1, d[j - 1]! + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = tmp;
+    }
+  }
+  return d[b.length]!;
+}
+
+/**
+ * A query typed in English, put in the Bangla the boundary text uses:
+ * "Savar" → সাভার, "doulatkhan upazila" → দৌলতখান, "ward 15 dhaka south" →
+ * ওয়ার্ড ১৫ ঢাকা দক্ষিণ. `upazilas` is [English, Bangla] pairs
+ * (data/upazila-en.json, from OpenStreetMap). A query with no Latin letters
+ * comes back as it is.
+ */
+export function toBangla(query: string, upazilas: [string, string][]): string {
+  if (!/[a-z]/i.test(query)) return query;
+  const words = query.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w && !EN_DROP.has(w));
+  if (words.some((w) => w === 'ward' || w === 'wd')) {
+    return words.map((w) => (w === 'wd' ? 'ওয়ার্ড' : /^\d+$/.test(w) ? w : EN_WORDS[w] ?? w)).join(' ');
+  }
+  const typed = words.join('');
+  if (typed.length < 3) return query;
+  let best: { bn: string; d: number } | null = null;
+  for (const [en, bn] of upazilas) {
+    const key = latin(en);
+    if (key === typed) return bn;
+    // Half typed, or a letter or two off: "doulatkhan" / "daulatkhan", "charfason".
+    const d = key.startsWith(typed) && typed.length >= 4 ? 0.5 : editDistance(typed, key);
+    const tol = key.length >= 8 ? 2 : 1;
+    if (d <= tol && (!best || d < best.d)) best = { bn, d };
+  }
+  return best?.bn ?? query;
+}
