@@ -63,8 +63,14 @@ function plainName(raw: string): string | null {
   return kept.length >= 2 ? kept.join(' ') : words.length >= 2 ? words.join(' ') : null;
 }
 
-const spellings = (raws: (string | null | undefined)[]) =>
-  [...new Set(raws.filter((r): r is string => !!r && /[ঀ-৿]/.test(r)).map(plainName).filter((x): x is string => !!x))].slice(0, 4);
+/** The name as the roll writes it, less the bracketed nickname and the commas between initials. */
+const asWritten = (raw: string) => raw.replace(/\([^)]*\)/g, ' ').replace(/[,]/g, ' ').replace(/^(মোঃ|মো\.|আলহাজ্ব|এডভোকেট|অ্যাডভোকেট|মিসেস|মোছাঃ|মোসাম্মৎ|ডাঃ|ডা\.)\s+/u, '').replace(/\s+/g, ' ').trim();
+
+const spellings = (raws: (string | null | undefined)[]) => {
+  const bn = raws.filter((r): r is string => !!r && /[ঀ-৿]/.test(r));
+  const all = [...bn.map(plainName), ...bn.map(asWritten)].filter((x): x is string => !!x && x.split(' ').length >= 2);
+  return [...new Set(all)].slice(0, 5);
+};
 
 /**
  * A search for a name brings back everyone who shares it: an actor, a
