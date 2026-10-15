@@ -1160,7 +1160,7 @@
    "id": "4353816d6384",
    "memberId": "013024201",
    "category": "fields",
-   "text": "professionBn 'ব‌্যবসা' contains a zero-width non-joiner character between ব and ্; it may display or search oddly (same pattern appears on other members in this batch).",
+   "text": "professionBn 'ব্যবসা' contains a zero-width non-joiner character between ব and ্; it may display or search oddly (same pattern appears on other members in this batch).",
    "sources": []
   },
   {
@@ -1267,7 +1267,7 @@
    "id": "68ded00dfa57",
    "memberId": "013026301",
    "category": "fields",
-   "text": "professionBn is duplicated on the site: 'ব‌্যবসা ব‌্যবসা' (also contains zero-width non-joiners).",
+   "text": "professionBn is duplicated on the site: 'ব্যবসা ব্যবসা' (also contains zero-width non-joiners).",
    "sources": []
   },
   {
@@ -1331,7 +1331,7 @@
    "id": "8531a290f217",
    "memberId": "013027301",
    "category": "fields",
-   "text": "Site profession is 'ব‌্যবসা' (with a stray zero-width non-joiner) but the only source describes him as a student leader still studying at Dhaka University; worth checking against the affidavit.",
+   "text": "Site profession is 'ব্যবসা' (with a stray zero-width non-joiner) but the only source describes him as a student leader still studying at Dhaka University; worth checking against the affidavit.",
    "sources": []
   },
   {
@@ -1650,7 +1650,7 @@
    "id": "f111303eba90",
    "memberId": "013031101",
    "category": "names",
-   "text": "Name: the site's nameBn '‌নিপুন রায় চৌধুরী' starts with an invisible zero-width non-joiner (U+200C) and spells নিপুন with ন; Prothom Alo and English Wikipedia write 'নিপুণ রায় চৌধুরী'. Suggest removing the hidden character and checking the spelling.",
+   "text": "Name: the site's nameBn 'নিপুন রায় চৌধুরী' starts with an invisible zero-width non-joiner (U+200C) and spells নিপুন with ন; Prothom Alo and English Wikipedia write 'নিপুণ রায় চৌধুরী'. Suggest removing the hidden character and checking the spelling.",
    "sources": []
   },
   {

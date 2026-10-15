@@ -7,6 +7,7 @@
  * imported. No browser ever holds these keys: the public feed is served by the
  * site's own route handler.
  */
+import { fixJoiners } from '@/lib/joiners.mjs';
 import { createHash } from 'node:crypto';
 import { isGenericThumbnail } from '../../../config/feed-matching';
 import { restDb, DbError, type Db } from '@/lib/posts/db';
@@ -133,8 +134,8 @@ export async function upsertItem(input: FeedItemInput): Promise<UpsertResult | n
     const gainedPicture = !existing.thumbnail_url && !!input.thumbnailUrl;
     if (existing.content_hash !== hash || gainedPicture) {
       await sb.patch(`feed_items?id=eq.${existing.id}`, {
-        title: input.title,
-        summary: input.summary ?? null,
+        title: fixJoiners(input.title),
+        summary: input.summary ? fixJoiners(input.summary) : null,
         ...(gainedPicture ? { thumbnail_url: input.thumbnailUrl } : {}),
         content_hash: hash,
         updated_at: new Date().toISOString(),
@@ -164,7 +165,7 @@ export async function upsertItem(input: FeedItemInput): Promise<UpsertResult | n
   try {
     const [row] = await sb.insert<{ id: number }>('feed_items', {
       type: input.type,
-      title: input.title,
+      title: fixJoiners(input.title),
       url: input.url,
       canonical_url: canonical,
       summary: input.summary ?? null,
@@ -361,9 +362,9 @@ const toEntry = (r: JoinRow): FeedEntry | null => {
   return {
     id: i.id,
     type: i.type,
-    title: i.title,
+    title: fixJoiners(i.title),
     url: i.url,
-    summary: i.summary,
+    summary: i.summary ? fixJoiners(i.summary) : i.summary,
     outletName: i.outlet_name,
     thumbnailUrl: i.thumbnail_url,
     durationSeconds: i.duration_seconds,

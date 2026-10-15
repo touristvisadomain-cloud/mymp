@@ -12,6 +12,7 @@ import { allStories, dayLabel, type StoryView, type StoryMember } from '@/lib/ne
 import { latestItems, canonicalUrl, type LatestEntry } from './store';
 import { isMissingTable } from '@/lib/posts/db';
 import { FEED_FROM } from './window';
+import { fixJoiners } from '@/lib/joiners.mjs';
 import { allMembers } from '@/lib/data';
 
 /** Slugs of members who have left the House: their news is not on the news page. */
@@ -34,8 +35,8 @@ export function toStory(item: LatestEntry): StoryView {
     date,
     dateLabel: dayLabel(date),
     publishedAt: item.publishedAt,
-    lead: { title: item.title, source: item.outletName ?? '', url: item.url },
-    also: item.alsoIn.map((a) => ({ title: item.title, source: a.outletName ?? '', url: a.url })),
+    lead: { title: fixJoiners(item.title), source: item.outletName ?? '', url: item.url },
+    also: item.alsoIn.map((a) => ({ title: fixJoiners(item.title), source: a.outletName ?? '', url: a.url })),
     member: members[0] ?? null,
     members,
     kind: item.type === 'video' ? 'video' : item.type === 'press' ? 'press' : 'news',
