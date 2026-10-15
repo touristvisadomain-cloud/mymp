@@ -141,7 +141,7 @@ function wordEq(inText: string, inName: string, last: boolean): boolean {
 }
 
 /** Where a name's words appear together, in order. */
-function findRun(tokens: string[], name: string[]): number {
+export function findRun(tokens: string[], name: string[]): number {
   if (name.length < 2) return -1; // one word is never a mention
   for (let i = 0; i + name.length <= tokens.length; i++) {
     let ok = true;
@@ -157,6 +157,16 @@ function findRun(tokens: string[], name: string[]): number {
 function phraseTokens(phrase: string | null | undefined): string[] {
   if (!phrase) return [];
   return textTokens(phrase).filter((t) => !HONORIFICS.has(t) && !INITIALS.has(t));
+}
+
+/** Does the phrase appear anywhere but over tokens [from, to)? */
+function occursOutside(tokens: string[], p: string[], from: number, to: number): boolean {
+  if (!p.length) return false;
+  for (let i = 0; i + p.length <= tokens.length; i++) {
+    if (i < to && i + p.length > from) continue;
+    if (p.every((w, j) => wordEq(tokens[i + j]!, w, j === p.length - 1))) return true;
+  }
+  return false;
 }
 
 /** Does this phrase (a seat, a party, an office) appear as whole words? */
@@ -214,7 +224,14 @@ export function buildFeedIndex(mps: FeedMp[]): FeedIndex {
     const names: FeedIndexEntry['names'] = [];
     const add = (raw: string | null | undefined, weight: number) => {
       if (!raw) return;
-      const tokens = variantTokens(raw);
+      let tokens = variantTokens(raw);
+      if (tokens.length < 2) {
+        // "এস এম জিলানী", "কে এম বাবর": without the initials one word is left,
+        // and one word names nobody. Headlines write these names with the
+        // initials, so here they are part of the name.
+        const whole = textTokens(raw.replace(/\([^)]*\)/g, ' ').replace(/ঃ/g, ' ')).filter((t) => !HONORIFICS.has(t));
+        if (whole.length >= 2 && whole.some((t) => !INITIALS.has(t))) tokens = whole;
+      }
       if (tokens.length < 2) return; // a single word names nobody
       const key = tokens.join(' ');
       if (seen.has(key)) return;
@@ -463,9 +480,15 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
       signals.push({ signal: 'post', points: POINTS.post, detail: office.word });
     }
 
-    if (named && negative.length) {
+    // A namesake's word inside the member's own name is the name: the কবির of
+    // "খায়রুল কবির খোকন" is not a poet (কবি + র).
+    const nameAt = best ? (best.inTitle ? best.at : titleTokens.length + best.at) : -1;
+    const negativeHere = best
+      ? NEGATIVE_TOKENS.filter((w) => occursOutside(allTokens, w.tokens, nameAt, nameAt + best!.length)).map((w) => w.word)
+      : negative;
+    if (named && negativeHere.length) {
       score += POINTS.negative;
-      signals.push({ signal: 'namesake-context', points: POINTS.negative, detail: negative.join(', ') });
+      signals.push({ signal: 'namesake-context', points: POINTS.negative, detail: negativeHere.join(', ') });
     }
 
     if (score >= REVIEW_SCORE) {
@@ -488,6 +511,10 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
   // also mentions (the prime minister whose adviser came home, the leader who
   // sent condolences) is not given someone else's story.
   if (kept.some((f) => subjects.has(f))) kept = kept.filter((f) => subjects.has(f));
+
+  // An office stands for the name only when the headline names nobody:
+  // "…ফ্যামিলি কার্ড দিয়েছেন প্রধানমন্ত্রী: এস এম জিলানী" is জিলানী speaking.
+  if (kept.some((f) => f.nameLabel && spans.get(f)?.inTitle)) kept = kept.filter((f) => f.nameLabel);
 
   // Where one member's name sits inside a longer name of another member at the
   // same place, the text names the longer one: "রফিকুল ইসলাম হিলালী" is
