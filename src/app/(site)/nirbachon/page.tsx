@@ -6,6 +6,8 @@ import { Page, PageHead, Card, Stat, CompositionBar, Empty, PartyDot } from '@/c
 import { parliament } from '@/lib/activity';
 import { parliamentsWithRecords, partySeatsOf, parliamentLabel, resultForSeat } from '@/lib/history';
 import { partyColor } from '@/lib/data';
+import DistrictMap, { type MapDistrict } from '@/components/DistrictMap';
+import { DISTRICT_TILES, TILE_COLUMNS } from '@/lib/districtTiles';
 
 // Seats of this parliament with a published result, and each seat's winner.
 const winnerOf = (seatNo: number) => {
@@ -15,6 +17,60 @@ const winnerOf = (seatNo: number) => {
   return top ? { votes: top.votes } : null;
 };
 const publishedSeats = seats.filter((s) => !s.reserved && winnerOf(s.no)).length;
+
+/** The winner's votes and lead over the runner-up, where the result is published. */
+const marginOf = (seatNo: number) => {
+  const r = resultForSeat(seatNo, 13);
+  if (!r) return null;
+  const [a, b] = [...r.candidates].sort((x, y) => y.votes - x.votes);
+  return a ? { votes: a.votes, margin: b ? a.votes - b.votes : null } : null;
+};
+
+/** Each district for the tile map: its seats, who holds them, and the parties by seats held. */
+function mapDistricts(): { districts: MapDistrict[]; legend: { abbr: string; name: string; color: string; districts: number }[] } {
+  const bySlug = new Map<string, MapDistrict>();
+  for (const seat of seats) {
+    if (seat.reserved) continue;
+    const d = districtOf(seat);
+    const tile = d ? DISTRICT_TILES[d.slug] : undefined;
+    if (!d || !tile) continue;
+    const e = bySlug.get(d.slug) ?? { slug: d.slug, name: d.bn, tile, seats: [], parties: [] };
+    const m = seat.memberId ? getMemberById(seat.memberId) : undefined;
+    const sitting = m && !m.resignedOn ? m : undefined;
+    const r = marginOf(seat.no);
+    e.seats.push({
+      no: seat.no,
+      seat: seat.nameBn ?? seat.nameEn ?? '',
+      slug: seat.slug,
+      member: sitting ? { name: sitting.nameBn ?? sitting.nameEn ?? '', slug: sitting.slug } : null,
+      party: sitting?.party?.abbr ?? null,
+      partyBn: sitting ? partyShortBn(sitting.party) : null,
+      color: sitting ? partyColor(sitting.party?.abbr) : 'var(--color-rule)',
+      votes: r?.votes ?? null,
+      margin: r?.margin ?? null,
+    });
+    bySlug.set(d.slug, e);
+  }
+  const lead = new Map<string, { abbr: string; name: string; color: string; districts: number }>();
+  for (const d of bySlug.values()) {
+    d.seats.sort((a, b) => a.no - b.no);
+    const count = new Map<string, MapDistrict['parties'][number]>();
+    for (const s of d.seats) {
+      if (!s.party) continue;
+      const p = count.get(s.party) ?? { abbr: s.party, name: s.partyBn ?? s.party, color: s.color, seats: 0 };
+      p.seats++;
+      count.set(s.party, p);
+    }
+    d.parties = [...count.values()].sort((a, b) => b.seats - a.seats);
+    const [a, b] = d.parties;
+    if (a && !(b && b.seats === a.seats)) {
+      const l = lead.get(a.abbr) ?? { abbr: a.abbr, name: a.name, color: a.color, districts: 0 };
+      l.districts++;
+      lead.set(a.abbr, l);
+    }
+  }
+  return { districts: [...bySlug.values()], legend: [...lead.values()].sort((a, b) => b.districts - a.districts) };
+}
 export const metadata: Metadata = {
   alternates: { canonical: '/nirbachon' },
   openGraph: shareGraph('/nirbachon'),
@@ -37,6 +93,7 @@ export default function ElectionPage() {
     byDistrict.set(d.en, e);
   }
   const districts = [...byDistrict.values()].sort((a, b) => a.bn.localeCompare(b.bn, 'bn'));
+  const map = mapDistricts();
 
   return (
     <Page>
@@ -191,6 +248,16 @@ export default function ElectionPage() {
           সাধারণ (আসনভিত্তিক) আসনে সংসদের তথ্যভান্ডারে নথিভুক্ত সদস্য অনুযায়ী; সংরক্ষিত নারী আসন বাদ। উপনির্বাচন ও অসম্পূর্ণ রেকর্ডের কারণে
           কোনো কোনো সংসদে সংখ্যা সরকারি ফলের সঙ্গে সামান্য ভিন্ন হতে পারে; “নথিভুক্ত” কলামে সেটি দেখা যায়। ১ম থেকে ৩য় ও ৬ষ্ঠ সংসদের রেকর্ড সেখানে নেই।
         </p>
+      </section>
+
+      <section id="manchitro" className="mt-10 flex flex-col gap-4 scroll-mt-24">
+        <div className="flex flex-col gap-1.5">
+          <h2 className="display text-[26px] font-bold">কোন জেলায় কে জিতল</h2>
+          <p className="text-[14.5px] text-inksoft text-pretty">
+            {bn(map.districts.length)} জেলার টাইল-মানচিত্র, মোটামুটি দেশের আকারে সাজানো। রং সেই জেলার বেশিরভাগ আসন যে দলের বর্তমান সংসদ সদস্যদের। জেলায় চাপ দিলে তার আসন ও বিজয়ী।
+          </p>
+        </div>
+        <DistrictMap districts={map.districts} columns={TILE_COLUMNS} legend={map.legend} />
       </section>
 
       <section id="jela" className="mt-10 pb-14 flex flex-col gap-5">
