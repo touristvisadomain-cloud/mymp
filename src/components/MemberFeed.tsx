@@ -49,6 +49,14 @@ const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
 const bn = (n: number | string) => String(n).replace(/\d/g, (d) => BN_DIGITS[Number(d)]!);
 const MONTHS_BN = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
 
+const WEEKDAYS_BN = ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'];
+/** "বুধবার, ১৫ অক্টোবর ২০২৬" for a yyyy-mm-dd day. */
+const dateLabel = (day: string) => {
+  const [y, m, d] = day.split('-').map(Number);
+  const date = new Date(Date.UTC(y ?? 2026, (m ?? 1) - 1, d ?? 1));
+  return `${WEEKDAYS_BN[date.getUTCDay()]}, ${bn(d ?? 1)} ${MONTHS_BN[(m ?? 1) - 1]} ${bn(y ?? 0)}`;
+};
+
 const monthLabel = (month: string) => {
   const [y, m] = month.split('-').map(Number);
   return `${MONTHS_BN[(m ?? 1) - 1]} ${bn(y ?? 0)}`;
@@ -119,6 +127,10 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
   const setType = (v: string | null) => setTypeParam(v ?? "");
   const [openMonth, setOpenMonthParam] = useQueryParam("m");
   const setOpenMonth = (v: string | null) => setOpenMonthParam(v ?? "");
+  // One day, picked from the calendar: its month is fetched and the day's items shown on top.
+  const [dayParam, setDayParam] = useQueryParam("d");
+  const day = dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : '';
+  const dayMonth = day ? day.slice(0, 7) : '';
   const [outlet, setOutlet] = useState('');
   const [monthData, setMonthData] = useState<Record<string, FeedEntry[]>>({});
   const [playing, setPlaying] = useState<FeedEntry | null>(null);
@@ -142,20 +154,33 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
     return () => { live = false; };
   }, [slug, typeParam]);
 
-  // A month is fetched when a reader opens it, or on load when the address names one.
+  // A month is fetched when a reader opens it, picks a day in it, or on load when the address names one.
+  // Fetched months are kept per type filter, so switching the filter never shows the other kind's list.
+  const cacheKey = (month: string) => `${month}${typeParam}`;
+  const wanted = [openMonth, dayMonth].filter((m): m is string => !!m && /^\d{4}-\d{2}$/.test(m) && !monthData[cacheKey(m)]);
+  const wantedKey = wanted.join(',');
   useEffect(() => {
-    if (!openMonth || monthData[openMonth]) return;
+    if (!wantedKey) return;
     let live = true;
-    void (async () => {
-      const r = await fetch(`/api/feed/${slug}?m=${openMonth}${typeParam}`);
-      if (!r.ok || !live) return;
-      const j = (await r.json()) as { items: FeedEntry[] };
-      if (live) setMonthData((prev) => ({ ...prev, [openMonth]: j.items }));
-    })();
+    for (const month of wantedKey.split(',')) {
+      void (async () => {
+        const r = await fetch(`/api/feed/${slug}?m=${month}${typeParam}`);
+        if (!r.ok || !live) return;
+        const j = (await r.json()) as { items: FeedEntry[] };
+        if (live) setMonthData((prev) => ({ ...prev, [`${month}${typeParam}`]: j.items }));
+      })();
+    }
     return () => { live = false; };
-  }, [openMonth, monthData, slug, typeParam]);
+  }, [wantedKey, slug, typeParam]);
 
   const byOutlet = (items: FeedEntry[]) => (outlet ? items.filter((i) => i.outletName === outlet) : items);
+  const dhakaDay = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+  /** "২০৫টি: ১৯০ সংবাদ, ১৫ ভিডিও", or just the one kind when the other is nil. */
+  const countLabel = (m: MonthCount) => {
+    if (!m.total) return 'কোনো সংবাদ নেই';
+    const parts = [m.news ? `${bn(m.news)} সংবাদ` : '', m.video ? `${bn(m.video)} ভিডিও` : ''].filter(Boolean);
+    return parts.length > 1 ? `${bn(m.total)}টি: ${parts.join(', ')}` : parts[0]!;
+  };
 
   const settled = state.key === key;
   if (settled && state.error) {
@@ -169,6 +194,9 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
   const current = data.months.find((m) => m.month === data.month);
   const earlier = data.months.filter((m) => m.month !== data.month);
   const items = byOutlet(data.items);
+  // The picked day's items come from the current month's list or the month fetched for it.
+  const dayPool = day ? (dayMonth === data.month ? data.items : monthData[cacheKey(dayMonth)]) : undefined;
+  const dayItems = dayPool ? byOutlet(dayPool.filter((i) => dhakaDay(i.publishedAt) === day)) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -187,17 +215,49 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
             {label}
           </button>
         ))}
-        {data.outlets.length > 5 && (
-          <select
-            value={outlet}
-            onChange={(e) => setOutlet(e.target.value)}
-            className="h-9 rounded-full border border-rule bg-surface px-3 text-[13.5px] focus:border-brand focus:ring-4 focus:ring-brandring outline-none"
-          >
-            <option value="">সব সংবাদমাধ্যম</option>
-            {data.outlets.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
+        {data.outlets.length > 1 && (
+          <label className="flex items-center gap-1.5 text-[13px] text-muted">
+            <span className="sr-only">সংবাদমাধ্যম</span>
+            <select
+              value={outlet}
+              onChange={(e) => setOutlet(e.target.value)}
+              className="h-9 max-w-[220px] rounded-full border border-rule bg-surface px-3 text-[13.5px] text-ink focus:border-brand focus:ring-4 focus:ring-brandring outline-none"
+            >
+              <option value="">সব সংবাদমাধ্যম</option>
+              {data.outlets.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+        )}
+        <label className="flex items-center gap-1.5 text-[13px] text-muted">
+          <span>তারিখ</span>
+          <input
+            type="date"
+            value={day}
+            min={data.startsAt ? data.startsAt.slice(0, 10) : '2026-01-01'}
+            max={dhakaDay(new Date().toISOString())}
+            onChange={(e) => setDayParam(e.target.value)}
+            className="h-9 rounded-full border border-rule bg-surface px-3 text-[13.5px] text-ink focus:border-brand focus:ring-4 focus:ring-brandring outline-none"
+          />
+        </label>
+        {day && (
+          <button type="button" onClick={() => setDayParam('')} className="h-9 px-3 rounded-full border border-rule text-[13px] hover:border-ink">
+            তারিখ সরান
+          </button>
         )}
       </div>
+
+      {day && (
+        <div className="rounded-card border border-brandring bg-brandsoft/30 px-4 py-2">
+          <h3 className="display text-[16px] py-1">{dateLabel(day)}</h3>
+          {dayItems === null ? (
+            <p className="py-2 text-[13.5px] text-muted">আনা হচ্ছে…</p>
+          ) : dayItems.length ? (
+            dayItems.map((i) => <Row key={i.id} item={i} onPlay={setPlaying} />)
+          ) : (
+            <p className="py-2 text-[13.5px] text-muted">এই দিনে কোনো সংবাদ বা ভিডিও নেই{outlet ? ` (${outlet})` : ''}।</p>
+          )}
+        </div>
+      )}
 
       {data.pinned.length > 0 && (
         <div className="rounded-card border border-brandring bg-brandsoft/40 px-4">
@@ -206,7 +266,10 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
       )}
 
       <div>
-        <h3 className="display text-[17px] pb-1">{monthLabel(data.month)}</h3>
+        <h3 className="display text-[17px] pb-1 flex flex-wrap items-baseline gap-x-3">
+          {monthLabel(data.month)}
+          {current && <span className="text-[13px] font-normal text-muted">{countLabel(current)}</span>}
+        </h3>
         {items.length ? (
           <div>{items.map((i) => <Row key={i.id} item={i} onPlay={setPlaying} />)}</div>
         ) : (
@@ -225,7 +288,7 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
         <ul className="flex flex-col border-t border-rulesoft">
           {earlier.map((m) => {
             const open = openMonth === m.month;
-            const list = byOutlet(monthData[m.month] ?? []);
+            const list = byOutlet(monthData[cacheKey(m.month)] ?? []);
             return (
               <li key={m.month} className="border-b border-rulesoft">
                 <button
@@ -235,14 +298,14 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
                   className="w-full flex items-center justify-between gap-3 py-2.5 text-[15px] hover:text-brand transition-colors"
                 >
                   <span className="font-semibold">{monthLabel(m.month)}</span>
-                  <span className="flex items-center gap-2 text-muted text-[13.5px]">
-                    {m.total ? `${bn(m.total)}টি` : 'কোনো সংবাদ নেই'}
+                  <span className="flex items-center gap-2 text-muted text-[13.5px] text-end">
+                    {countLabel(m)}
                     <Icon name="arrow" size={15} className={open ? 'rotate-90 transition-transform' : 'transition-transform'} />
                   </span>
                 </button>
                 {open && (
                   <div className="pb-2">
-                    {monthData[m.month] === undefined ? (
+                    {monthData[cacheKey(m.month)] === undefined ? (
                       <p className="py-2 text-[13.5px] text-muted">আনা হচ্ছে…</p>
                     ) : list.length ? (
                       list.map((i) => <Row key={i.id} item={i} onPlay={setPlaying} />)
