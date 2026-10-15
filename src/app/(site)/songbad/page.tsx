@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { shareGraph } from '@/lib/seo';
 import { bn, initial, getMember } from '@/lib/data';
 import { newsPageStories } from '@/lib/feed/storyView';
+import { siteCounts, type SiteCounts } from '@/lib/feed/store';
+import { NEWS_SOURCES } from '../../../../config/news-sources';
 import { Page, PageHead, Card, Empty, Stat } from '@/components/ui';
 import NewsBrowser from '@/components/NewsBrowser';
 import VideoStrip from '@/components/VideoStrip';
@@ -25,10 +27,26 @@ const LIMIT = 400;
  */
 export const revalidate = 300;
 
+const MONTHS_BN = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+const monthName = (m: string) => `${MONTHS_BN[Number(m.slice(5, 7)) - 1]} ${bn(m.slice(0, 4))}`;
+/** "১০,২৪৫": a thousands comma, the way the newspapers print a large figure. */
+const bnCount = (n: number) => bn(n.toLocaleString('en-US'));
+/** The first and last day of a month, the last being today in the current month. */
+const monthSpan = (m: string, today: string) => {
+  const [y, mo] = m.split('-').map(Number);
+  const last = new Date(Date.UTC(y!, mo!, 0)).toISOString().slice(0, 10);
+  return `${m}-01~${last < today ? last : today}`;
+};
+
 export default async function NewsPage() {
-  const { stories } = await newsPageStories(LIMIT);
+  const [{ stories }, figures] = await Promise.all([
+    newsPageStories(LIMIT),
+    // The figures are a nicety: if they cannot be read the page still lists the news.
+    siteCounts().catch((e): SiteCounts | null => { console.error('the news counts could not be read', e); return null; }),
+  ]);
   const videos = stories.filter((s) => s.kind === 'video');
-  const newsCount = stories.length - videos.length;
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+  const firstYear = Number((figures?.months.at(-1)?.month ?? today).slice(0, 4));
 
   // Who is in the news, by number of stories; the list's member filter and the side card both use it.
   const counts = new Map<string, { slug: string; name: string; count: number }>();
@@ -52,11 +70,11 @@ export default async function NewsPage() {
         title="সংবাদ"
         lede="সংসদ সদস্য ও আসন নিয়ে সংবাদমাধ্যমের শিরোনাম ও টেলিভিশনের ভিডিও, প্রতিটির সঙ্গে মূল সংবাদের লিংক। একই খবর কয়েকটি সংবাদমাধ্যমে এলে তা একসঙ্গে দেখানো হয়।"
         aside={
-          stories.length ? (
+          figures ? (
             <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
-              <Stat label="খবর" value={bn(newsCount)} />
-              <Stat label="ভিডিও" value={bn(videos.length)} />
-              <Stat label="সংবাদমাধ্যম" value={bn(outlets.length)} />
+              <Stat label="আজ খবর" value={bn(figures.today.news)} note={`মোট ${bnCount(figures.total.news)}`} />
+              <Stat label="আজ ভিডিও" value={bn(figures.today.video)} note={`মোট ${bnCount(figures.total.video)}`} />
+              <Stat label="আজ সংবাদমাধ্যম" value={bn(figures.today.outlets)} note={`তালিকায় ${bn(NEWS_SOURCES.length)}টি`} />
             </div>
           ) : undefined
         }
@@ -66,7 +84,7 @@ export default async function NewsPage() {
         <div className="min-w-0 flex flex-col gap-8">
           {videos.length > 0 && <VideoStrip videos={videos} moreHref="?type=video" />}
           {stories.length ? (
-            <NewsBrowser stories={stories} members={members} outlets={outlets} />
+            <NewsBrowser stories={stories} members={members} outlets={outlets} today={today} firstYear={firstYear} />
           ) : (
             <Empty
               title="এখনো কোনো সংবাদ প্রকাশ করা হয়নি"
@@ -97,16 +115,33 @@ export default async function NewsPage() {
             </Card>
           )}
 
+          {figures && figures.months.length > 0 && (
+            <Card className="p-5 flex flex-col gap-3">
+              <h2 className="display text-[18px] font-bold">মাস অনুযায়ী</h2>
+              <ul className="flex flex-col">
+                {figures.months.map((m) => (
+                  <li key={m.month}>
+                    <a href={`?d=${monthSpan(m.month, today)}`} className="flex items-baseline justify-between gap-3 py-2 border-b border-rulesoft last:border-0 hover:text-brand transition-colors">
+                      <span className="text-[14.5px] font-semibold">{monthName(m.month)}</span>
+                      <span className="text-[12.5px] text-muted text-end">{bnCount(m.news)} সংবাদ, {bnCount(m.video)} ভিডিও</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[12.5px] text-muted leading-relaxed">মাসে চাপ দিলে সেই মাসের খবর দেখাবে। জানুয়ারি ২০২৬ থেকে গোনা।</p>
+            </Card>
+          )}
+
           <Card className="p-5 flex flex-col gap-3">
             <h2 className="display text-[18px] font-bold">সংবাদ কীভাবে যুক্ত হয়</h2>
             <ol className="flex flex-col gap-3 text-[14px] leading-relaxed text-inksoft">
               <li className="flex gap-3">
                 <span className="shrink-0 w-6 h-6 rounded-full bg-brandsoft text-brand text-[12px] font-bold grid place-items-center tnum">১</span>
-                <span>দেশি-বিদেশি ৮০টি সংবাদমাধ্যমের তালিকা থেকে শিরোনাম নেওয়া হয়, শুধু সেই সাইটগুলো থেকে যেগুলো নিজেরাই ফিড বা নিউজ সাইটম্যাপ প্রকাশ করে এবং যাদের robots.txt তা অনুমতি দেয়।</span>
+                <span>দেশি-বিদেশি {bn(NEWS_SOURCES.length)}টি সংবাদমাধ্যমের তালিকা থেকে শিরোনাম নেওয়া হয়: যাদের ফিড বা নিউজ সাইটম্যাপ আছে সেখান থেকে সরাসরি, বাকিদের Google News-এর খোঁজ থেকে। ভিডিও আসে শুধু এই সংবাদমাধ্যমগুলোর নিজস্ব ইউটিউব চ্যানেল থেকে।</span>
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-6 h-6 rounded-full bg-brandsoft text-brand text-[12px] font-bold grid place-items-center tnum">২</span>
-                <span>একজন সংসদ সদস্যের সঙ্গে যুক্ত হতে শিরোনামে তাঁর নাম এবং তাঁর পদ, আসন বা “এমপি”-র মতো প্রসঙ্গ দুটোই লাগে। শুধু নামের মিলে কোনো শিরোনাম কারও সঙ্গে যুক্ত হয় না।</span>
+                <span>একটি খবর সেই সংসদ সদস্যের পাতায় যায়, খবরটি যাঁকে নিয়ে: শিরোনামে তাঁর নাম বা শুধু তাঁরই পদ (প্রধানমন্ত্রী, স্পিকার…) থাকলে, অথবা প্রথম বাক্যে তিনিই মূল ব্যক্তি হলে। খবরে শুধু নাম উল্লেখ থাকলে যায় না।</span>
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-6 h-6 rounded-full bg-brandsoft text-brand text-[12px] font-bold grid place-items-center tnum">৩</span>
