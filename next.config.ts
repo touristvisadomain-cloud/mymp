@@ -55,7 +55,35 @@ const legacyRedirects = [
 
 const HARFBUZZ_WASM = "./node_modules/harfbuzzjs/dist/harfbuzz.wasm";
 
+/**
+ * Security headers on every response (2026-10-15, after the database was
+ * reached through an open Supabase Studio). The policy leaves scripts alone:
+ * a nonce would make every page dynamic and end the prerendering. What it
+ * does stop: the site being framed by another (clickjacking), a form or a
+ * <base> pointing elsewhere, plugins, plain-HTTP loads, MIME sniffing, and
+ * the browser sending full addresses to other sites.
+ */
+const securityHeaders = [
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "upgrade-insecure-requests",
+    ].join("; "),
+  },
+  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+];
+
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   ...(staticExport
     ? {
         output: "export",
@@ -65,6 +93,13 @@ const nextConfig: NextConfig = {
     : {
         async redirects() {
           return legacyRedirects;
+        },
+        async headers() {
+          return [
+            { source: "/:path*", headers: securityHeaders },
+            // The admin is never cached by a browser or a proxy.
+            { source: "/admin/:path*", headers: [{ key: "Cache-Control", value: "no-store" }, { key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+          ];
         },
       }),
   trailingSlash: staticExport,

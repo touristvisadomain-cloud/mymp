@@ -37,26 +37,32 @@ export const adminIdentity = cache(async (): Promise<AdminIdentity | null> => {
   if (!user) return null;
   const db = supabaseAdmin();
 
-  const { data: row } = await db
+  const { data: row, error: lookupError } = await db
     .from('admin_users')
     .select('user_id, email, role')
     .eq('user_id', user.id)
     .maybeSingle();
+  // Fail closed: a list that cannot be read admits nobody. Until 2026-10-15 an
+  // error here (the table had gone missing) fell through to the bootstrap,
+  // whose count read as zero, and made the caller a super admin.
+  if (lookupError) {
+    console.error('admin_users could not be read; nobody is admitted', lookupError.message);
+    return null;
+  }
   if (row) return { id: user.id, email: row.email, role: row.role as Role };
 
   const bootstrap = (process.env.ADMIN_BOOTSTRAP_EMAIL ?? '').trim().toLowerCase();
   if (bootstrap && bootstrap === user.email.toLowerCase()) {
-    const { count } = await db.from('admin_users').select('user_id', { count: 'exact', head: true });
-    if (!count) {
+    const { count, error: countError } = await db.from('admin_users').select('user_id', { count: 'exact', head: true });
+    if (!countError && count === 0) {
       // The primary key rejects a second insert, so the audit row is written
       // only by whichever request actually created the admin.
       const { error } = await db.from('admin_users').insert({ user_id: user.id, email: user.email, role: 'super_admin' });
-      if (!error) {
-        await db.from('audit_log').insert({
-          actor: user.id, actor_email: user.email, action: 'user.bootstrap',
-          entity_type: 'admin_user', entity_id: user.id, new_value: 'super_admin',
-        });
-      }
+      if (error) return null;
+      await db.from('audit_log').insert({
+        actor: user.id, actor_email: user.email, action: 'user.bootstrap',
+        entity_type: 'admin_user', entity_id: user.id, new_value: 'super_admin',
+      });
       return { id: user.id, email: user.email, role: 'super_admin' };
     }
   }
