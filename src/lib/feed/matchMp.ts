@@ -267,6 +267,9 @@ export interface FeedItemText {
  * Every member an item is about. Items nobody is named in come back empty:
  * a political story that names a party and no person belongs to nobody.
  */
+/** Words that make an office a lesser one: ডেপুটি স্পিকার, উপ-প্রধানমন্ত্রী. */
+const DEPUTY_WORDS = new Set(['ডেপুটি', 'উপ', 'সহকারী', 'deputy'].map((w) => foldBangla(w)));
+
 /** Words that turn an office into a building or a department: প্রধানমন্ত্রীর কার্যালয়. */
 const INSTITUTION_WORDS = ['কার্যালয়', 'দপ্তর', 'সচিবালয়'].map((w) => foldBangla(w));
 
@@ -298,6 +301,9 @@ function personalOffice(tokens: string[], office: string[]): boolean {
     if (!ok) continue;
     const next = tokens[i + office.length];
     if (next && INSTITUTION_WORDS.some((w) => next.startsWith(w))) continue;
+    // "ডেপুটি স্পিকার" is somebody else's office, not the speaker's.
+    const prev = tokens[i - 1];
+    if (prev && DEPUTY_WORDS.has(prev)) continue;
     return true;
   }
   return false;

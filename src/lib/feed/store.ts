@@ -442,6 +442,120 @@ export async function latestItems(opts: { limit?: number; type?: FeedType } = {}
     .slice(0, limit);
 }
 
+/** Items on at least one member's page: the site's news, as /songbad counts it. */
+const ON_A_PAGE = 'feed_items?select=id,feed_item_mps!inner(mp_id)&feed_item_mps.status=eq.visible';
+
+/** The first month the news page counts and lists. */
+export const FEED_FROM_MONTH = '2026-01';
+
+/** Today in Dhaka, and the instant it began. */
+const dhakaToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+
+export interface SiteCounts {
+  today: { news: number; video: number; outlets: number };
+  total: { news: number; video: number };
+  /** Every month with anything in it, newest first. */
+  months: { month: string; news: number; video: number }[];
+}
+
+/**
+ * The news page's numbers: today's, everything's, and each month's. Counted by
+ * the database (a HEAD request per figure), so they are the real totals and
+ * not the length of whatever list the page happens to show.
+ */
+export async function siteCounts(): Promise<SiteCounts> {
+  const sb = db();
+  const today = dhakaToday();
+  const since = `${today}T00:00:00+06:00`;
+  const span = (from: string, to?: string) => `&published_at=gte.${q(from)}${to ? `&published_at=lt.${q(to)}` : ''}`;
+
+  const [first] = await sb.get<{ published_at: string }[]>(`${ON_A_PAGE.replace('select=id,', 'select=published_at,')}&order=published_at.asc&limit=1`);
+  const months: string[] = [];
+  if (first) {
+    // The feed is collected from January 2026 (the election year); the odd older
+    // story an archive turned up is not a month of news.
+    const earliest = new Date(first.published_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' }).slice(0, 7);
+    const start = earliest > FEED_FROM_MONTH ? earliest : FEED_FROM_MONTH;
+    for (let m = today.slice(0, 7); m >= start; ) {
+      months.push(m);
+      const [y, mo] = m.split('-').map(Number);
+      m = mo === 1 ? `${y! - 1}-12` : `${y}-${String(mo! - 1).padStart(2, '0')}`;
+    }
+  }
+  const nextMonth = (m: string) => {
+    const [y, mo] = m.split('-').map(Number);
+    return mo === 12 ? `${y! + 1}-01` : `${y}-${String(mo! + 1).padStart(2, '0')}`;
+  };
+
+  const [todayNews, todayVideo, todayRows] = await Promise.all([
+    sb.count(`${ON_A_PAGE}&type=neq.video${span(since)}`),
+    sb.count(`${ON_A_PAGE}&type=eq.video${span(since)}`),
+    sb.get<{ outlet_name: string | null }[]>(`${ON_A_PAGE.replace('select=id,', 'select=outlet_name,')}${span(since)}&limit=3000`),
+  ]);
+  // Three months at a time: twenty counts at once is more than the gateway takes.
+  const perMonth: { month: string; news: number; video: number }[] = [];
+  for (let i = 0; i < months.length; i += 3) {
+    perMonth.push(...(await Promise.all(months.slice(i, i + 3).map(async (m) => {
+      const range = span(`${m}-01T00:00:00+06:00`, `${nextMonth(m)}-01T00:00:00+06:00`);
+      const [news, video] = await Promise.all([sb.count(`${ON_A_PAGE}&type=neq.video${range}`), sb.count(`${ON_A_PAGE}&type=eq.video${range}`)]);
+      return { month: m, news, video };
+    }))));
+  }
+  const withItems = perMonth.filter((m) => m.news + m.video > 0);
+  return {
+    today: { news: todayNews, video: todayVideo, outlets: new Set(todayRows.map((r) => r.outlet_name).filter(Boolean)).size },
+    total: { news: withItems.reduce((n, m) => n + m.news, 0), video: withItems.reduce((n, m) => n + m.video, 0) },
+    months: withItems,
+  };
+}
+
+/** How many news items and videos a span holds, both Dhaka days included. */
+export async function rangeCounts(fromDay: string, toDay: string): Promise<{ news: number; video: number }> {
+  const [y, m, d] = toDay.split('-').map(Number);
+  const to = `${new Date(Date.UTC(y!, m! - 1, d! + 1)).toISOString().slice(0, 10)}T00:00:00+06:00`;
+  const span = `&published_at=gte.${q(`${fromDay}T00:00:00+06:00`)}&published_at=lt.${q(to)}`;
+  const [news, video] = await Promise.all([db().count(`${ON_A_PAGE}&type=neq.video${span}`), db().count(`${ON_A_PAGE}&type=eq.video${span}`)]);
+  return { news, video };
+}
+
+/** How many stories the news page's day and month view brings at a time. */
+export const NEWS_RANGE_PAGE = 300;
+
+/**
+ * The items on members' pages between two Dhaka days, both included, newest
+ * first, with everyone each one names: the news page's day and month view.
+ * A month is several thousand, so it comes a page at a time: `before` is the
+ * previous page's `next`, and the last page has none. The database answers at
+ * most a thousand rows a request, so the rows are read in slices.
+ */
+export async function rangeLatest(fromDay: string, toDay: string, before?: string): Promise<{ items: LatestEntry[]; next: string | null }> {
+  const [y, m, d] = toDay.split('-').map(Number);
+  const end = before ?? `${new Date(Date.UTC(y!, m! - 1, d! + 1)).toISOString().slice(0, 10)}T00:00:00+06:00`;
+  const window = `&feed_items.published_at=gte.${q(`${fromDay}T00:00:00+06:00`)}&feed_items.published_at=${before ? 'lte' : 'lt'}.${q(end)}`;
+  const byItem = new Map<number, LatestEntry>();
+  let exhausted = false;
+  for (let offset = 0; byItem.size <= NEWS_RANGE_PAGE; offset += 1000) {
+    const rows = await db().get<(JoinRow & { mp_id: string })[]>(
+      `feed_item_mps?status=eq.visible&select=mp_id,${SELECT_ITEM_INNER}${window}` +
+        `&order=feed_items(published_at).desc,feed_item_id.desc&offset=${offset}&limit=1000`,
+    );
+    for (const r of rows) {
+      const entry = toEntry(r);
+      if (!entry) continue;
+      const seen = byItem.get(entry.id);
+      if (seen) { if (!seen.mpIds.includes(r.mp_id)) seen.mpIds.push(r.mp_id); continue; }
+      byItem.set(entry.id, { ...entry, mpIds: [r.mp_id] });
+    }
+    if (rows.length < 1000) { exhausted = true; break; }
+  }
+  const items = [...byItem.values()].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  const page = items.slice(0, NEWS_RANGE_PAGE);
+  // The next page starts where this one stopped; an item on the boundary may
+  // come twice, and the page drops the repeat by its id.
+  const next = items.length > NEWS_RANGE_PAGE || !exhausted ? (page.at(-1)?.publishedAt ?? null) : null;
+  return { items: page, next };
+}
+
 /** The items pinned to the top of a member's feed. */
 export async function pinnedItems(mpId: string): Promise<FeedEntry[]> {
   const rows = await db().get<JoinRow[]>(

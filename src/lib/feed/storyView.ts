@@ -21,7 +21,7 @@ const member = (id: string): StoryMember | null => {
 const dhakaDay = (iso: string) =>
   new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
 
-function toStory(item: LatestEntry): StoryView {
+export function toStory(item: LatestEntry): StoryView {
   const members = item.mpIds.map(member).filter((m): m is StoryMember => !!m);
   const date = dhakaDay(item.publishedAt);
   return {
