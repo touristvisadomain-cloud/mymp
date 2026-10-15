@@ -454,9 +454,6 @@ export default function SeatMap({
         </div>
         {wanted && (
           <div className="flex gap-2 shrink-0">
-            <button type="button" onClick={locate} className="h-9 px-3 rounded-lg border border-rule text-[13px] font-semibold hover:border-brand hover:text-brand">
-              আমি কোথায়
-            </button>
             <button type="button" onClick={() => setBig((b) => !b)} className="h-9 px-3 rounded-lg bg-brand text-white text-[13px] font-semibold hover:bg-brand/90">
               {big ? 'বন্ধ করুন' : 'বড় করে দেখুন'}
             </button>
@@ -465,8 +462,25 @@ export default function SeatMap({
       </div>
       <style>{`.seatmap-label{font-family:var(--font-body),'Noto Sans Bengali',sans-serif;font-weight:700;font-size:13px;color:#17201b;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;background:none;border:0;}.seatmap-label-osm{transform:translate(-50%,-50%);}`}</style>
       {/* The base map adds its own classes to its box, so only the wrapper's size changes. */}
-      <div className={big ? 'grow min-h-0' : 'relative h-[420px] sm:h-[480px] bg-sunk'}>
+      <div className={big ? 'relative grow min-h-0' : 'relative h-[420px] sm:h-[480px] bg-sunk'}>
         <div ref={box} className="h-full w-full" role="region" aria-label={`${title} মানচিত্র`} />
+        {wanted && (
+          // Where Google Maps keeps its own "my location": on the map, top right, clear of the map-type buttons.
+          <button
+            type="button"
+            onClick={locate}
+            className="absolute right-3 top-3 z-10 h-10 ps-1.5 pe-3.5 rounded-full bg-surface text-ink shadow-[0_1px_4px_rgba(0,0,0,0.3)] inline-flex items-center gap-2 text-[13.5px] font-semibold hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+          >
+            <span className="w-7 h-7 rounded-full bg-brandsoft text-brand grid place-items-center" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="12" r="7" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              </svg>
+            </span>
+            {seat ? 'আমি কি এই আসনে?' : 'আমার আসন কোনটি?'}
+          </button>
+        )}
         {!wanted && (
           <div className="absolute inset-0 grid place-items-center">
             <button
