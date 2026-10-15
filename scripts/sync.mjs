@@ -23,6 +23,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import https from 'node:https';
 import tls from 'node:tls';
+import { fixJoiners } from '../src/lib/joiners.mjs';
 import { PARLIAMENT_CA } from '../src/lib/parliament-ca.mjs';
 import { FLOORS, dataDrop, dataDropError } from '../src/lib/dataFloor.mjs';
 
@@ -258,6 +259,9 @@ async function getAllPagesLive(path, limit = 100) {
 }
 
 const clean = (v) => (typeof v === 'string' ? v.trim() : v) || null;
+
+/** JSON for the site's data files, every string with its stray joiners removed. */
+const json = (value, space) => JSON.stringify(value, (_k, v) => (typeof v === 'string' ? fixJoiners(v) : v), space);
 
 /** Loose Bengali key for matching a person's name inside a notice title. */
 const fold = (v) =>
@@ -892,11 +896,11 @@ async function main() {
 
   await mkdir(OUT, { recursive: true });
   for (const [name, value] of Object.entries({ members, committees, parties, seats, meta, activity, history })) {
-    await writeFile(join(OUT, `${name}.json`), JSON.stringify(value, null, 1), 'utf8');
+    await writeFile(join(OUT, `${name}.json`), json(value, 1), 'utf8');
   }
-  if (posts) await writeFile(join(OUT, 'posts.json'), JSON.stringify(posts, null, 1), 'utf8');
+  if (posts) await writeFile(join(OUT, 'posts.json'), json(posts, 1), 'utf8');
   await mkdir(join(OUT, '..', 'public'), { recursive: true });
-  await writeFile(join(OUT, '..', 'public', 'search-index.json'), JSON.stringify(searchIndex), 'utf8');
+  await writeFile(join(OUT, '..', 'public', 'search-index.json'), json(searchIndex), 'utf8');
 
   console.log('\nWrote data/ —', JSON.stringify(meta.counts));
   console.log('Wrote public/search-index.json —', searchIndex.length, 'entries');
@@ -912,7 +916,7 @@ async function main() {
       }));
       const drop = allowDrop ? null : dataDrop('published news', news.length, baseline.news, FLOORS.news);
       if (drop) throw dataDropError(drop);
-      await writeFile(join(OUT, 'news.json'), JSON.stringify(news, null, 1), 'utf8');
+      await writeFile(join(OUT, 'news.json'), json(news, 1), 'utf8');
       console.log('Wrote data/news.json —', news.length, 'published items');
     } catch (err) {
       if (err.fatal) throw err;
@@ -928,7 +932,7 @@ async function main() {
       }));
       const drop = allowDrop ? null : dataDrop('published vote counts', results.length, baseline.results, FLOORS.results);
       if (drop) throw dataDropError(drop);
-      await writeFile(join(OUT, 'results.json'), JSON.stringify(results, null, 1), 'utf8');
+      await writeFile(join(OUT, 'results.json'), json(results, 1), 'utf8');
       console.log('Wrote data/results.json —', results.length, 'published results');
     } catch (err) {
       if (err.fatal) throw err;
