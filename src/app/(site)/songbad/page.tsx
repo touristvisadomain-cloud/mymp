@@ -46,7 +46,6 @@ export default async function NewsPage() {
   ]);
   const videos = stories.filter((s) => s.kind === 'video');
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
-  const firstYear = Number((figures?.months.at(-1)?.month ?? today).slice(0, 4));
 
   // Who is in the news, by number of stories; the list's member filter and the side card both use it.
   const counts = new Map<string, { slug: string; name: string; count: number }>();
@@ -84,7 +83,7 @@ export default async function NewsPage() {
         <div className="min-w-0 flex flex-col gap-8">
           {videos.length > 0 && <VideoStrip videos={videos} moreHref="?type=video" />}
           {stories.length ? (
-            <NewsBrowser stories={stories} members={members} outlets={outlets} today={today} firstYear={firstYear} />
+            <NewsBrowser stories={stories} members={members} outlets={outlets} today={today} />
           ) : (
             <Empty
               title="এখনো কোনো সংবাদ প্রকাশ করা হয়নি"
@@ -128,7 +127,7 @@ export default async function NewsPage() {
                   </li>
                 ))}
               </ul>
-              <p className="text-[12.5px] text-muted leading-relaxed">মাসে চাপ দিলে সেই মাসের খবর দেখাবে। জানুয়ারি ২০২৬ থেকে গোনা।</p>
+              <p className="text-[12.5px] text-muted leading-relaxed">মাসে চাপ দিলে সেই মাসের খবর দেখাবে। ডিসেম্বর ২০২৫ থেকে, বর্তমান সংসদ সদস্যদের খবর।</p>
             </Card>
           )}
 
