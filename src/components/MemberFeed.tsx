@@ -58,6 +58,71 @@ const dateLabel = (day: string) => {
   return `${WEEKDAYS_BN[date.getUTCDay()]}, ${bn(d ?? 1)} ${MONTHS_BN[(m ?? 1) - 1]} ${bn(y ?? 0)}`;
 };
 
+const SELECT_CLS = 'h-9 rounded-full border border-rule bg-surface px-2.5 text-[13.5px] text-ink focus:border-brand focus:ring-4 focus:ring-brandring outline-none';
+
+/**
+ * A day, chosen in Bangla: a pill that opens day, month and year menus, the
+ * months being only those the feed has. The browser's own date box reads
+ * "dd-----yyyy" in English and hides what it wants; this says it.
+ */
+function DayPicker({ day, months, today, onPick }: { day: string; months: string[]; today: string; onPick: (day: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [ty, tm, td] = today.split('-').map(Number);
+  const years = Array.from(new Set(months.map((m) => m.slice(0, 4)))).sort().reverse();
+  const [y, setY] = useState(day ? day.slice(0, 4) : (years[0] ?? String(ty)));
+  const monthsOfYear = months.filter((m) => m.startsWith(y)).map((m) => m.slice(5, 7)).sort().reverse();
+  const [m, setM] = useState(day ? day.slice(5, 7) : (monthsOfYear[0] ?? String(tm).padStart(2, '0')));
+  const monthOk = monthsOfYear.includes(m) ? m : (monthsOfYear[0] ?? m);
+  // Days run to the end of the month, and no further than today in the current one.
+  const lastDay = Number(y) === ty && Number(monthOk) === tm ? td! : new Date(Date.UTC(Number(y), Number(monthOk), 0)).getUTCDate();
+  const [d, setD] = useState(day ? Number(day.slice(8, 10)) : 1);
+  const dayOk = Math.min(d, lastDay);
+
+  if (day && !open) {
+    return (
+      <span className="flex items-center gap-1 h-9 ps-3 pe-1 rounded-full border border-brand bg-brandsoft text-brand text-[13.5px] font-semibold">
+        {dateLabel(day)}
+        <button type="button" onClick={() => setOpen(true)} className="h-7 px-2 rounded-full hover:bg-surface text-[12.5px]">বদলান</button>
+        <button type="button" onClick={() => onPick('')} aria-label="তারিখ সরান" className="h-7 w-7 rounded-full hover:bg-surface grid place-items-center">
+          <Icon name="x" size={14} />
+        </button>
+      </span>
+    );
+  }
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="h-9 px-3.5 rounded-full border border-rule text-[13.5px] font-semibold hover:border-ink flex items-center gap-1.5">
+        <Icon name="calendar" size={15} />
+        তারিখ দিয়ে খুঁজুন
+      </button>
+    );
+  }
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      <label className="sr-only" htmlFor="feed-day">দিন</label>
+      <select id="feed-day" value={dayOk} onChange={(e) => setD(Number(e.target.value))} className={SELECT_CLS}>
+        {Array.from({ length: lastDay }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{bn(n)}</option>)}
+      </select>
+      <label className="sr-only" htmlFor="feed-month">মাস</label>
+      <select id="feed-month" value={monthOk} onChange={(e) => { setM(e.target.value); }} className={SELECT_CLS}>
+        {monthsOfYear.map((mm) => <option key={mm} value={mm}>{MONTHS_BN[Number(mm) - 1]}</option>)}
+      </select>
+      <label className="sr-only" htmlFor="feed-year">বছর</label>
+      <select id="feed-year" value={y} onChange={(e) => { setY(e.target.value); }} className={SELECT_CLS}>
+        {years.map((yy) => <option key={yy} value={yy}>{bn(yy)}</option>)}
+      </select>
+      <button
+        type="button"
+        onClick={() => { onPick(`${y}-${monthOk}-${String(dayOk).padStart(2, '0')}`); setOpen(false); }}
+        className="h-9 px-3.5 rounded-full bg-brand text-white text-[13.5px] font-semibold hover:bg-branddark"
+      >
+        দেখুন
+      </button>
+      <button type="button" onClick={() => setOpen(false)} className="h-9 px-3 rounded-full border border-rule text-[13px] hover:border-ink">বাতিল</button>
+    </span>
+  );
+}
+
 const monthLabel = (month: string) => {
   const [y, m] = month.split('-').map(Number);
   return `${MONTHS_BN[(m ?? 1) - 1]} ${bn(y ?? 0)}`;
@@ -219,22 +284,7 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
             </select>
           </label>
         )}
-        <label className="flex items-center gap-1.5 text-[13px] text-muted">
-          <span>তারিখ</span>
-          <input
-            type="date"
-            value={day}
-            min={data.startsAt ? data.startsAt.slice(0, 10) : '2026-01-01'}
-            max={dhakaDay(new Date().toISOString())}
-            onChange={(e) => setDayParam(e.target.value)}
-            className="h-9 rounded-full border border-rule bg-surface px-3 text-[13.5px] text-ink focus:border-brand focus:ring-4 focus:ring-brandring outline-none"
-          />
-        </label>
-        {day && (
-          <button type="button" onClick={() => setDayParam('')} className="h-9 px-3 rounded-full border border-rule text-[13px] hover:border-ink">
-            তারিখ সরান
-          </button>
-        )}
+        <DayPicker day={day} months={data.months.map((m) => m.month)} today={dhakaDay(new Date().toISOString())} onPick={(d) => setDayParam(d)} />
       </div>
 
       {day && (
