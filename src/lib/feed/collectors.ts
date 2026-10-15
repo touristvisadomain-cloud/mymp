@@ -131,11 +131,12 @@ export async function runYoutubeCollector(opts: { trigger?: string; perRun?: num
     // official channels' results are kept, so take the most it gives.
     url.searchParams.set('maxResults', '50');
     url.searchParams.set('relevanceLanguage', 'bn');
-    // A member with no video yet is searched back to the start of the year: a
-    // thirty-day window left most of the House with an empty video strip for good.
+    // A member with no video on the page yet (hidden ones do not count) is
+    // searched back to the start of the year: a thirty-day window left most of
+    // the House with an empty video strip for good.
     let after = published;
     if (!opts.since) {
-      const had = await db().get<unknown[]>(`feed_item_mps?mp_id=eq.${encodeURIComponent(t.id)}&select=feed_item_id,feed_items!inner(type)&feed_items.type=eq.video&limit=1`).catch(() => [1]);
+      const had = await db().get<unknown[]>(`feed_item_mps?mp_id=eq.${encodeURIComponent(t.id)}&status=eq.visible&select=feed_item_id,feed_items!inner(type)&feed_items.type=eq.video&limit=1`).catch(() => [1]);
       if (!had.length) after = FEED_START;
     }
     url.searchParams.set('publishedAfter', after);
