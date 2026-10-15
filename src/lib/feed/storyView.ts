@@ -11,6 +11,11 @@ import { getMemberById, partyColor } from '@/lib/data';
 import { allStories, dayLabel, type StoryView, type StoryMember } from '@/lib/newsView';
 import { latestItems, canonicalUrl, type LatestEntry } from './store';
 import { isMissingTable } from '@/lib/posts/db';
+import { FEED_FROM } from './window';
+import { allMembers } from '@/lib/data';
+
+/** Slugs of members who have left the House: their news is not on the news page. */
+const LEFT_SLUGS = new Set(allMembers.filter((m) => m.resignedOn).map((m) => m.slug));
 
 const member = (id: string): StoryMember | null => {
   const m = getMemberById(id);
@@ -57,7 +62,10 @@ export async function newsPageStories(limit = 400): Promise<{ stories: StoryView
   }
 
   const seen = new Set(live.flatMap((s) => [s.lead.url, ...s.also.map((a) => a.url)].map(canonicalUrl)));
-  const older = allStories().filter((s) => !seen.has(canonicalUrl(s.lead.url)));
+  // The build-time snapshot keeps to the same window and the sitting House.
+  const older = allStories().filter(
+    (s) => !seen.has(canonicalUrl(s.lead.url)) && s.date >= FEED_FROM && !(s.member && LEFT_SLUGS.has(s.member.slug)),
+  );
 
   const stories = [...live, ...older].sort((a, b) => b.date.localeCompare(a.date));
   return { stories: stories.slice(0, limit), live: reachable };

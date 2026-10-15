@@ -37,14 +37,12 @@ export default function NewsBrowser({
   members: latestMembers,
   outlets: latestOutlets,
   today,
-  firstYear,
 }: {
   stories: StoryView[];
   members: { slug: string; name: string; count: number }[];
   outlets: { name: string; count: number }[];
   /** Today in Dhaka, yyyy-mm-dd, from the server, so the picker and the page agree. */
   today: string;
-  firstYear: number;
 }) {
   const [member, setMemberHash] = useQueryParam('mp', legacyMember);
   const [outlet, setOutlet] = useQueryParam('outlet');
@@ -204,7 +202,7 @@ export default function NewsBrowser({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <RangePicker key={rangeParam} range={range} firstYear={firstYear} today={today} onPick={(raw) => { setRangeParam(raw); setShown(PAGE); }} />
+        <RangePicker key={rangeParam} range={range} today={today} onPick={(raw) => { setRangeParam(raw); setShown(PAGE); }} />
       </div>
 
 

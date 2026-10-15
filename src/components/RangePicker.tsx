@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import Icon from './Icon';
+import { FEED_FROM } from '@/lib/feed/window';
+
+const [MIN_Y, MIN_M] = FEED_FROM.split('-').map(Number) as [number, number];
 
 const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
 const bn = (n: number | string) => String(n).replace(/\d/g, (d) => BN_DIGITS[Number(d)]!);
@@ -40,10 +43,12 @@ export function parseRange(raw: string): { from: string; to: string } | null {
 }
 
 /** One day, chosen in Bangla: day, month and year menus that stop at today. */
-function DateSelect({ id, label, value, firstYear, today, onChange }: { id: string; label: string; value: string; firstYear: number; today: string; onChange: (day: string) => void }) {
+function DateSelect({ id, label, value, today, onChange }: { id: string; label: string; value: string; today: string; onChange: (day: string) => void }) {
   const [ty, tm, td] = today.split('-').map(Number) as [number, number, number];
   const [y, m, d] = value.split('-').map(Number) as [number, number, number];
-  const years = Array.from({ length: ty - firstYear + 1 }, (_, i) => ty - i);
+  const years = Array.from({ length: ty - MIN_Y + 1 }, (_, i) => ty - i);
+  // The months run from the window's first (December 2025) to today's.
+  const firstMonth = y === MIN_Y ? MIN_M : 1;
   const lastMonth = y === ty ? tm : 12;
   const lastDay = y === ty && m === tm ? td : new Date(Date.UTC(y, m, 0)).getUTCDate();
   const set = (ny: number, nm: number, nd: number) => {
@@ -60,7 +65,7 @@ function DateSelect({ id, label, value, firstYear, today, onChange }: { id: stri
       </select>
       <label className="sr-only" htmlFor={`${id}-m`}>{label}: মাস</label>
       <select id={`${id}-m`} value={m} onChange={(e) => set(y, Number(e.target.value), d)} className={SELECT_CLS}>
-        {Array.from({ length: lastMonth }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{MONTHS_BN[n - 1]}</option>)}
+        {Array.from({ length: lastMonth - firstMonth + 1 }, (_, i) => firstMonth + i).map((n) => <option key={n} value={n}>{MONTHS_BN[n - 1]}</option>)}
       </select>
       <label className="sr-only" htmlFor={`${id}-y`}>{label}: বছর</label>
       <select id={`${id}-y`} value={y} onChange={(e) => set(Number(e.target.value), m, d)} className={SELECT_CLS}>
@@ -77,7 +82,7 @@ const CHIP = 'h-9 px-3.5 rounded-full border text-[13.5px] font-semibold transit
  * গত ৭ দিন, এই মাস), or a start and an end picked from day, month and year
  * menus. The browser's own date box reads "dd-----yyyy" in English.
  */
-export default function RangePicker({ range, firstYear, today, onPick }: { range: { from: string; to: string } | null; firstYear: number; today: string; onPick: (raw: string) => void }) {
+export default function RangePicker({ range, today, onPick }: { range: { from: string; to: string } | null; today: string; onPick: (raw: string) => void }) {
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(range?.from ?? addDays(today, -6));
   const [to, setTo] = useState(range?.to ?? today);
@@ -119,8 +124,8 @@ export default function RangePicker({ range, firstYear, today, onPick }: { range
       </div>
       <div className="flex flex-col gap-2 pt-3 border-t border-rulesoft">
         <span className="text-[13px] text-muted">অথবা নির্দিষ্ট সময়</span>
-        <DateSelect id="feed-from" label="থেকে" value={from} firstYear={firstYear} today={today} onChange={setFrom} />
-        <DateSelect id="feed-to" label="পর্যন্ত" value={to} firstYear={firstYear} today={today} onChange={setTo} />
+        <DateSelect id="feed-from" label="থেকে" value={from} today={today} onChange={setFrom} />
+        <DateSelect id="feed-to" label="পর্যন্ত" value={to} today={today} onChange={setTo} />
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <button type="button" onClick={() => (from <= to ? pick(from, to) : pick(to, from))} className="h-9 px-4 rounded-full bg-brand text-white text-[13.5px] font-semibold hover:bg-branddark">
             দেখুন

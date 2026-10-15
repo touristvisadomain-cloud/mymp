@@ -196,7 +196,6 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
   const earlier = data.months.filter((m) => m.month !== data.month);
   const items = byOutlet(data.items);
   const rangeItems = range && rangeData?.key === rangeKey ? byOutlet(rangeData.items) : null;
-  const firstYear = Number((data.months.map((m) => m.month).sort()[0] ?? data.month).slice(0, 4));
 
   return (
     <div className="flex flex-col gap-4">
@@ -228,7 +227,7 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
             </select>
           </label>
         )}
-        <RangePicker key={rangeParam} range={range} firstYear={firstYear} today={dhakaDay(new Date().toISOString())} onPick={(raw) => setRangeParam(raw)} />
+        <RangePicker key={rangeParam} range={range} today={dhakaDay(new Date().toISOString())} onPick={(raw) => setRangeParam(raw)} />
       </div>
 
       {range && (
