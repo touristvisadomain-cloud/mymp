@@ -79,6 +79,42 @@ export default async function NewsPage() {
         }
       />
 
+      {figures && figures.months.length > 0 && (
+        <section className="pt-8 flex flex-col gap-3" aria-labelledby="by-month">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap">
+            <h2 id="by-month" className="display text-[22px] font-bold">মাস অনুযায়ী সংবাদ ও ভিডিও</h2>
+            <p className="text-[13px] text-muted">ডিসেম্বর ২০২৫ থেকে, বর্তমান সংসদ সদস্যদের। মাসে চাপ দিলে সেই মাসের খবর।</p>
+          </div>
+          <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+            {figures.months.map((m) => {
+              const total = m.news + m.video;
+              const most = Math.max(...figures.months.map((x) => x.news + x.video));
+              const current = m.month === today.slice(0, 7);
+              return (
+                <li key={m.month}>
+                  <a
+                    href={`?d=${monthSpan(m.month, today)}`}
+                    className={`h-full bg-surface border rounded-card shadow-card p-4 flex flex-col gap-1.5 hover:border-brand hover:shadow-lift transition-all ${current ? 'border-brand' : 'border-rule'}`}
+                  >
+                    <span className="text-[13px] font-semibold text-muted">
+                      {monthName(m.month)}
+                      {current && <span className="ms-1.5 text-brand">· চলতি</span>}
+                    </span>
+                    <span className="display text-[26px] font-bold leading-none tnum">{bnCount(total)}</span>
+                    <span className="h-1.5 rounded-full bg-rulesoft overflow-hidden" aria-hidden="true">
+                      <span className="block h-full rounded-full bg-brand" style={{ width: `${Math.max(3, Math.round((total / most) * 100))}%` }} />
+                    </span>
+                    <span className="text-[12.5px] text-inksoft tnum">
+                      {bnCount(m.news)} সংবাদ · {bnCount(m.video)} ভিডিও
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       <div className="pt-8 pb-14 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
         <div className="min-w-0 flex flex-col gap-8">
           {videos.length > 0 && <VideoStrip videos={videos} moreHref="?type=video" />}
@@ -114,22 +150,6 @@ export default async function NewsPage() {
             </Card>
           )}
 
-          {figures && figures.months.length > 0 && (
-            <Card className="p-5 flex flex-col gap-3">
-              <h2 className="display text-[18px] font-bold">মাস অনুযায়ী</h2>
-              <ul className="flex flex-col">
-                {figures.months.map((m) => (
-                  <li key={m.month}>
-                    <a href={`?d=${monthSpan(m.month, today)}`} className="flex items-baseline justify-between gap-3 py-2 border-b border-rulesoft last:border-0 hover:text-brand transition-colors">
-                      <span className="text-[14.5px] font-semibold">{monthName(m.month)}</span>
-                      <span className="text-[12.5px] text-muted text-end">{bnCount(m.news)} সংবাদ, {bnCount(m.video)} ভিডিও</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-[12.5px] text-muted leading-relaxed">মাসে চাপ দিলে সেই মাসের খবর দেখাবে। ডিসেম্বর ২০২৫ থেকে, বর্তমান সংসদ সদস্যদের খবর।</p>
-            </Card>
-          )}
 
           <Card className="p-5 flex flex-col gap-3">
             <h2 className="display text-[18px] font-bold">সংবাদ কীভাবে যুক্ত হয়</h2>

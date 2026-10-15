@@ -15,6 +15,7 @@ import { searchProvider } from './searchProvider';
 import { NEWS_SOURCES, SEARCH_ONLY_SOURCES } from '../../../config/news-sources';
 import { TRUSTED_CHANNELS } from '../../../config/feed-matching';
 import { OFFICIAL_CHANNELS, OFFICIAL_CHANNEL_IDS } from '../../../config/video-channels';
+import { FEED_FROM, FEED_FROM_INSTANT } from './window';
 
 /** The outlet a channel belongs to, by its Bangla name, so a video reads "যুগান্তর" and not "Daily Jugantor". */
 const CHANNEL_OUTLET = new Map(OFFICIAL_CHANNELS.map((c) => [c.id, NEWS_SOURCES.find((s) => s.key === c.source)?.nameBn ?? null]));
@@ -37,10 +38,28 @@ const YOUTUBE_KEY = () => process.env.YOUTUBE_API_KEY;
  */
 const SEARCH_COST = 100;
 /**
- * The earliest a member's video search reaches: the start of the election
- * year, so the campaign months before the 13th parliament sat are in too.
+ * The earliest a member's video search reaches: the start of the site's feed
+ * window (lib/feed/window.ts), so the campaign months are in too.
  */
-const FEED_START = '2026-01-01T00:00:00Z';
+const FEED_START = new Date(FEED_FROM_INSTANT).toISOString();
+
+/**
+ * An earlier month of the window, a different one each time, as an
+ * after/before pair. A member who already has video is searched for the last
+ * thirty days on one run and for one of these on the next, so the months
+ * before the collectors ran fill in without spending more quota.
+ */
+export function olderMonth(turn: number, now = new Date()): { after: string; before: string } | null {
+  const months: Date[] = [];
+  const start = new Date(FEED_START);
+  const thisMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const [y, mo] = FEED_FROM.split('-').map(Number);
+  for (let d = new Date(Date.UTC(y!, mo! - 1, 1)); d < thisMonth; d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1))) months.push(d);
+  if (!months.length) return null;
+  const m = months[turn % months.length]!;
+  const next = new Date(Date.UTC(m.getUTCFullYear(), m.getUTCMonth() + 1, 1));
+  return { after: (m < start ? start : m).toISOString(), before: next.toISOString() };
+}
 /** channels.list and playlistItems.list cost one unit each. */
 const CHEAP_COST = 1;
 const PER_RUN = () => Math.max(0, Number(process.env.YOUTUBE_MEMBERS_PER_RUN ?? 3));
@@ -168,11 +187,17 @@ export async function runYoutubeCollector(opts: { trigger?: string; perRun?: num
     // searched back to the start of the year: a thirty-day window left most of
     // the House with an empty video strip for good.
     let after = published;
+    let before: string | null = null;
     if (!opts.since) {
       const had = await db().get<unknown[]>(`feed_item_mps?mp_id=eq.${encodeURIComponent(t.id)}&status=eq.visible&select=feed_item_id,feed_items!inner(type)&feed_items.type=eq.video&limit=1`).catch(() => [1]);
       if (!had.length) after = FEED_START;
+      else if (turn % 2 === 1) {
+        const span = olderMonth(Math.floor(turn / 2) + slice.indexOf(t));
+        if (span) ({ after, before } = span);
+      }
     }
     url.searchParams.set('publishedAfter', after);
+    if (before) url.searchParams.set('publishedBefore', before);
     url.searchParams.set('key', key);
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
