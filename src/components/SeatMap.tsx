@@ -127,6 +127,8 @@ interface Drawing {
   label: (f: Feature) => string;
   onClick?: (f: Feature) => void;
   onHover: (text: string | null) => void;
+  /** The zoom from which the Bangla place names show. */
+  labelZoom: number;
 }
 
 async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<Engine> {
@@ -152,6 +154,14 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
   const bounds = new g.maps.LatLngBounds();
   for (const f of d.focus) for (const rings of polygonsOf(f)) for (const [lng, lat] of rings[0]!) bounds.extend({ lat: lat!, lng: lng! });
   map.fitBounds(bounds, 18);
+  // Google fits to the box it sees at the start; once drawn, and while the
+  // box settles in the first seconds, fit again so the district fills it.
+  g.maps.event.addListenerOnce(map, 'idle', () => map.fitBounds(bounds, 18));
+  const ro = new ResizeObserver(() => {
+    if (el.clientWidth > 0) map.fitBounds(bounds, 18);
+  });
+  ro.observe(el);
+  setTimeout(() => ro.disconnect(), 4000);
   // Every upazila and city named in Bangla on top of Google's own labels.
   const labels = d.features.map((f) => {
     const [lng, lat] = labelPoint(f);
@@ -164,6 +174,13 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
       zIndex: 1000,
     });
   });
+  // Far out, a district's names run into one another: they show from the zoom where they fit.
+  const showLabels = () => {
+    const z = map.getZoom() ?? 0;
+    for (const l of labels) l.setVisible(z >= d.labelZoom);
+  };
+  map.addListener('zoom_changed', showLabels);
+  showLabels();
   let here: google.maps.Marker | null = null;
   return {
     showHere(lat, lng) {
@@ -181,6 +198,7 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
       map.fitBounds(bounds, 18);
     },
     destroy() {
+      ro.disconnect();
       here?.setMap(null);
       for (const l of labels) l.setMap(null);
     },
@@ -205,10 +223,17 @@ async function startLeaflet(el: HTMLElement, d: Drawing): Promise<Engine> {
     },
   }).addTo(m);
   void layer;
-  for (const f of d.features) {
-    const [lng, lat] = labelPoint(f);
-    L.marker([lat, lng], { interactive: false, icon: L.divIcon({ className: 'seatmap-label seatmap-label-osm', html: shortName(f), iconSize: undefined }) }).addTo(m);
-  }
+  const labelLayer = L.layerGroup(
+    d.features.map((f) => {
+      const [lng, lat] = labelPoint(f);
+      return L.marker([lat, lng], { interactive: false, icon: L.divIcon({ className: 'seatmap-label seatmap-label-osm', html: shortName(f), iconSize: undefined }) });
+    }),
+  );
+  const showLabels = () => {
+    if (m.getZoom() >= d.labelZoom) labelLayer.addTo(m);
+    else labelLayer.remove();
+  };
+  m.on('zoomend', showLabels);
   const focus = L.geoJSON({ type: 'FeatureCollection', features: d.focus } as never);
   const bounds = focus.getBounds();
   // The box may still be laid out when the map starts: fit again once it has a size.
@@ -217,6 +242,7 @@ async function startLeaflet(el: HTMLElement, d: Drawing): Promise<Engine> {
     m.fitBounds(bounds, { padding: [18, 18] });
   };
   fit();
+  showLabels();
   const ro = new ResizeObserver(() => {
     if (el.clientWidth > 0) fit();
   });
@@ -327,6 +353,7 @@ export default function SeatMap({
             return `${placeName(f)} · ${p === 'whole' ? 'পুরোটা এই আসনে' : p === 'part' ? 'একাংশ এই আসনে' : names(f)}`;
           },
           onHover: setHover,
+          labelZoom: 8,
         };
       } else {
         const tone = Object.fromEntries(Object.entries(colors ?? {}).map(([k, v]) => [k, resolve(v)]));
@@ -345,6 +372,7 @@ export default function SeatMap({
             if (only.length === 1) router.push(`/ason/${only[0]}`);
           },
           onHover: setHover,
+          labelZoom: 10,
         };
       }
       // A key Google refuses loads the script and then greys the map; Google calls this instead of failing.
