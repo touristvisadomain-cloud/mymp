@@ -10,8 +10,8 @@ import {
   GENERAL_SEATS,
 } from "@/lib/data";
 import { districtList } from "@/lib/districts";
-import MyMpFinder from "@/components/MyMpFinder";
 import { finderSeats } from "@/lib/finderSeats";
+import upazilaEn from "../../../data/upazila-en.json";
 import { newsPageStories, latestVideos } from "@/lib/feed/storyView";
 import {
   latestSession,
@@ -160,7 +160,8 @@ export default async function Home() {
               <div className="rise [--rise-i:3] relative z-20">
                 <SiteSearch
                   withButton
-                  placeholder="আসন, জেলা, এমপি বা দলের নাম, বাংলা বা ইংরেজিতে"
+                  placeholder="উপজেলা, ইউনিয়ন, আসন, এমপি বা দলের নাম, বাংলা বা ইংরেজিতে"
+                  places={{ seats: finderSeats(), upazilaEn: upazilaEn as [string, string][] }}
                 />
               </div>
               <div className="rise [--rise-i:4] flex items-center gap-2.5 text-[13.5px] text-muted overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -220,16 +221,6 @@ export default async function Home() {
       </section>
 
       <Page>
-        <section id="amar-mp" className="pb-12 flex flex-col gap-4 scroll-mt-24">
-          <div className="flex flex-col gap-1.5">
-            <h2 className="display text-[26px] font-bold">আমার এলাকার এমপি</h2>
-            <p className="text-[15px] text-inksoft text-pretty">
-              উপজেলা, ইউনিয়ন বা সিটি ওয়ার্ডের নাম লিখুন, অথবা এক ক্লিকে অবস্থান দিন। তিনি কে, কোন দলের, কোন কমিটিতে, কী খবর, সবই তাঁর পাতায়।
-            </p>
-          </div>
-          <MyMpFinder seats={finderSeats()} />
-        </section>
-
         <section className="pb-12 flex flex-col gap-5">
           <SectionHead
             title="সংসদে এখন"
