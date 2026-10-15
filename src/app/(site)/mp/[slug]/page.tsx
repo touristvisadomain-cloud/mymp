@@ -22,11 +22,7 @@ import ShareButtons from '@/components/ShareButtons';
 import CorrectionButton from '@/components/CorrectionButton';
 import SeatMap from '@/components/SeatMap';
 
-/**
- * Districts whose upazila boundaries are in public/geo (OpenStreetMap, ODbL).
- * Preview: Bhola first; the rest follow once the design is settled.
- */
-const SEAT_GEO: Record<string, string> = { bhola: '/geo/bhola.json' };
+
 import { siteUrl } from '@/lib/site';
 
 export function generateStaticParams() {
@@ -383,14 +379,14 @@ export default async function MemberPage({ params }: PageProps<'/mp/[slug]'>) {
             )}
           </section>
 
-          {m.seat && district && SEAT_GEO[district.slug] && (
+          {m.seat && !m.seat.reserved && district && (
             <section className="flex flex-col gap-4" id="elaka">
               <H2>নির্বাচনী এলাকা</H2>
               <SeatMap
-                geoUrl={SEAT_GEO[district.slug]!}
-                seatSlug={m.seat.slug}
-                seatName={m.seat.nameBn ?? m.seat.nameEn ?? ''}
-                color={partyColor(m.party?.abbr)}
+                geoUrl={`/geo/${district.slug}.json`}
+                seat={{ slug: m.seat.slug, color: partyColor(m.party?.abbr) }}
+                title={m.seat.nameBn ?? m.seat.nameEn ?? ''}
+                note={m.seat.boundaryBn}
                 seatNames={Object.fromEntries(seats.filter((x) => districtOf(x)?.slug === district.slug).map((x) => [x.slug, x.nameBn ?? x.nameEn ?? x.slug]))}
               />
             </section>

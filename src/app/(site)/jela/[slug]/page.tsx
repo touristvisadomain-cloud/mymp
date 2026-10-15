@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { shareGraph } from '@/lib/seo';
 import { notFound } from 'next/navigation';
-import { getMemberById, bn, meta, dateBn } from '@/lib/data';
+import { getMemberById, bn, meta, dateBn, partyColor } from '@/lib/data';
+import SeatMap from '@/components/SeatMap';
 import { districtGroups as districts } from '@/lib/districts';
 import { districtIntro } from '@/lib/districtIntro';
 import { Page, PageHead, Card, Breadcrumb, MemberRow, PartyDot, Stat } from '@/components/ui';
@@ -49,6 +50,17 @@ export default async function DistrictPage({ params }: PageProps<'/jela/[slug]'>
 
       {/* The district in a paragraph, from the site's own records: division, seats and their upazilas, who holds them now and who held them last time. */}
       <p className="mt-6 max-w-[760px] text-[16px] leading-[1.75] text-inksoft text-pretty">{districtIntro(d).text}</p>
+
+      <section className="mt-8 flex flex-col gap-3">
+        <h2 className="display text-[22px] font-bold">জেলার মানচিত্র</h2>
+        <SeatMap
+          geoUrl={`/geo/${slug}.json`}
+          colors={Object.fromEntries(rows.map(({ seat, m }) => [seat.slug, partyColor(m?.party?.abbr)]))}
+          seatNames={Object.fromEntries(d.seats.map((s) => [s.slug, s.nameBn ?? s.nameEn ?? s.slug]))}
+          title={`${d.bn} জেলা`}
+          startOnClick
+        />
+      </section>
 
       <div className="mt-8 pb-14 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
         <ul className="flex flex-col gap-3">
