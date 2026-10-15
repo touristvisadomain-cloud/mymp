@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import PartyBadge from './PartyBadge';
 import StoryThumb from './StoryThumb';
+import When from './When';
 import type { StoryView } from '@/lib/newsView';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
@@ -57,7 +58,8 @@ export default function StoryCard({ s, showMember = true, showDate = true }: { s
             {s.kind === 'press' && <span className="shrink-0 px-1.5 py-px rounded border border-rule text-[11.5px] font-semibold">প্রজ্ঞাপন</span>}
             <span className="font-semibold text-inksoft truncate">{s.lead.source}</span>
           </span>
-          {showDate && <span className="shrink-0">{s.dateLabel}</span>}
+          {/* "৩ ঘণ্টা আগে, সকাল ১০:২৬"; under a day heading only the clock is new, so the date is left out. */}
+          {s.publishedAt ? <When iso={s.publishedAt} withDate={showDate} className="shrink-0" /> : showDate && <span className="shrink-0">{s.dateLabel}</span>}
         </div>
 
         <a

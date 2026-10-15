@@ -28,6 +28,7 @@ function toStory(item: LatestEntry): StoryView {
     id: `feed-${item.id}`,
     date,
     dateLabel: dayLabel(date),
+    publishedAt: item.publishedAt,
     lead: { title: item.title, source: item.outletName ?? '', url: item.url },
     also: item.alsoIn.map((a) => ({ title: item.title, source: a.outletName ?? '', url: a.url })),
     member: members[0] ?? null,
