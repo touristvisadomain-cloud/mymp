@@ -16,6 +16,7 @@
  *                                        since the window opened (back-fills
  *                                        the months the collectors missed)
  *   npm run feed:fill -- --skip 120      start at the 121st member (to resume)
+ *   npm run feed:fill -- --take 100      only that many (to run in parts)
  *   npm run feed:fill -- --dry-run     report, write nothing
  *
  * Google News' RSS needs no key. A query a second and a half apart is a
@@ -137,13 +138,14 @@ async function main() {
   const gap = Number(argOf('gap') ?? 1.5) * 1000;
   const byMonth = process.argv.includes('--months');
   const skip = Number(argOf('skip') ?? 0);
+  const take = Number(argOf('take') ?? Infinity);
   const provider = searchProvider();
   if (!provider) throw new Error('no search provider is configured');
 
   const index = await buildIndex();
   const sitting = allMembers.filter((m) => !m.resignedOn);
   const haveNews = process.argv.includes('--all') || only ? new Set<string>() : await covered('news');
-  const todo = sitting.filter((m) => (only ? m.id === only : !haveNews.has(m.id))).slice(skip);
+  const todo = sitting.filter((m) => (only ? m.id === only : !haveNews.has(m.id))).slice(skip, skip + take);
   console.log(`${todo.length} members to search${dryRun ? ' (dry run)' : ''}\n`);
 
   const run = dryRun ? null : await startRun('search', 'fill');
