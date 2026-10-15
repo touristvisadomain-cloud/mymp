@@ -287,14 +287,3 @@ test('a name written with initials keeps them', () => {
   assert.deepEqual(ids('লক্ষ্যহীন মানুষ মাঝি ছাড়া নৌকার মত: জিলানী'), []);
 });
 
-test('an office stands for the name only when the headline names nobody', () => {
-  // জিলানী is speaking; the prime minister is who he speaks of.
-  const members = [
-    ...MEMBERS.map((m) => ({ ...m, variants: [] })),
-    { id: 'jilani', nameBn: 'এস, এম, জিলানী', nameEn: 'S M Zilany', seatBn: 'গোপালগঞ্জ-৩', seatEn: 'Gopalganj-3', districtBn: 'গোপালগঞ্জ', districtEn: 'Gopalganj', partyBn: 'বাংলাদেশ জাতীয়তাবাদী দল', partyAbbr: 'BNP', posts: [], ministries: [], variants: [] },
-  ];
-  const index = buildFeedIndex(members);
-  const ids = (title: string) => matchItem(index, { title }).map((m) => m.mpId);
-  assert.deepEqual(ids('নারীদের সম্মান বাড়াতে ফ্যামিলি কার্ড দিয়েছেন প্রধানমন্ত্রী: এস এম জিলানী'), ['jilani']);
-  assert.deepEqual(ids('বাকস্বাধীনতা যেন বাকশালীনতার সীমা লঙ্ঘন না করে: প্রধানমন্ত্রী'), ['tarique']);
-});

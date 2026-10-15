@@ -512,10 +512,6 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
   // sent condolences) is not given someone else's story.
   if (kept.some((f) => subjects.has(f))) kept = kept.filter((f) => subjects.has(f));
 
-  // An office stands for the name only when the headline names nobody:
-  // "…ফ্যামিলি কার্ড দিয়েছেন প্রধানমন্ত্রী: এস এম জিলানী" is জিলানী speaking.
-  if (kept.some((f) => f.nameLabel && spans.get(f)?.inTitle)) kept = kept.filter((f) => f.nameLabel);
-
   // Where one member's name sits inside a longer name of another member at the
   // same place, the text names the longer one: "রফিকুল ইসলাম হিলালী" is
   // হিলালী, not কাজী রফিকুল ইসলাম, and "নুরুল ইসলাম মনি" is the chief whip.
