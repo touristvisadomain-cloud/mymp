@@ -286,6 +286,13 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
   const titleTokens = title.tokens;
   const summaryTokens = summary.tokens;
   const allTokens = [...titleTokens, ...summaryTokens];
+  // The summary's first sentence says what the story is about; a name further
+  // down ("…পরে প্রধানমন্ত্রী শোক জানান") is somebody mentioned, not the subject.
+  // Its words are the opening run of the summary's own tokens.
+  // An English sentence ends at ". " before a capital; "মো. " and "ড. " are not ends.
+  const lead = (item.summary ?? '').split(/[।!?]|\.\s+(?=[A-Z])/u)[0] ?? '';
+  const leadLength = textTokensWithBreaks(lead).tokens.length;
+  const headTokens = [...titleTokens, ...summaryTokens.slice(0, leadLength)];
   const negative = NEGATIVE_TOKENS.filter((w) => hasTokens(allTokens, w.tokens)).map((w) => w.word);
 
   // Only members whose name, seat, district, party or office actually appears
@@ -335,18 +342,29 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
 
   const found: MpMatch[] = [];
   const spans = new Map<MpMatch, { inTitle: boolean; at: number; end: number }>();
+  /** Members the headline is about: named in it, or named in the summary and called by their office in it. */
+  const subjects = new Set<MpMatch>();
   for (const entry of candidates) {
     const { mp } = entry;
     const signals: Signal[] = [];
     let score = 0;
     let named = false;
 
+    // A headline that carries the member's own office, seat or district
+    // ("…ডেকেছেন প্রধানমন্ত্রী", "…: স্বরাষ্ট্রমন্ত্রী", "ব্রাহ্মণবাড়িয়ায় এমপির…")
+    // is about them even when the summary names them only further down.
+    const { phrases } = entry;
+    const inHeadline = (p: { tokens: string[] }) => (longerNames ? personalOffice(titleTokens, p.tokens) : hasTokens(titleTokens, p.tokens));
+    const officeInHeadline = phrases.posts.some(inHeadline) || phrases.ministries.some(inHeadline);
+    const headlinePointsAtThem =
+      officeInHeadline || phrases.seat.some((p) => hasTokens(titleTokens, p)) || phrases.district.some((p) => hasTokens(titleTokens, p));
+
     let best: { weight: number; label: string; inTitle: boolean; at: number; length: number } | null = null;
     for (const n of entry.names) {
       const atTitle = findRun(titleTokens, n.tokens);
       const atSummary = findRun(summaryTokens, n.tokens);
       const inTitle = atTitle >= 0 && standsAlone(title, atTitle, n.tokens.length);
-      const inSummary = !inTitle && atSummary >= 0 && standsAlone(summary, atSummary, n.tokens.length);
+      const inSummary = !inTitle && atSummary >= 0 && (atSummary < leadLength || headlinePointsAtThem) && standsAlone(summary, atSummary, n.tokens.length);
       if (!inTitle && !inSummary) continue;
       if (!best || (inTitle && !best.inTitle) || (inTitle === best.inTitle && n.weight > best.weight)) {
         best = { weight: n.weight, label: n.label, inTitle, at: inTitle ? atTitle : atSummary, length: n.tokens.length };
@@ -359,7 +377,6 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
       signals.push({ signal: best.inTitle ? 'name-in-title' : 'name-in-summary', points, detail: best.label });
     }
 
-    const { phrases } = entry;
     if (phrases.seat.some((p) => hasTokens(allTokens, p))) {
       score += POINTS.seat;
       signals.push({ signal: 'seat', points: POINTS.seat, detail: mp.seatBn ?? mp.seatEn ?? '' });
@@ -373,7 +390,8 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
       signals.push({ signal: 'party', points: POINTS.party, detail: mp.partyBn ?? mp.partyAbbr ?? '' });
     }
 
-    const officeHere = (w: { tokens: string[] }) => longerNames ? personalOffice(allTokens, w.tokens) : hasTokens(allTokens, w.tokens);
+    // An office counts where the subject is: the headline or the first sentence.
+    const officeHere = (w: { tokens: string[] }) => longerNames ? personalOffice(headTokens, w.tokens) : hasTokens(headTokens, w.tokens);
     const office = phrases.posts.find(officeHere) ?? phrases.ministries.find(officeHere);
     if (office) {
       score += POINTS.post;
@@ -388,6 +406,8 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
     if (score >= REVIEW_SCORE) {
       found.push({ mpId: mp.id, score, lowConfidence: score < AUTO_SCORE, named, nameLabel: best?.label ?? null, signals });
       if (best) spans.set(found[found.length - 1]!, { inTitle: best.inTitle, at: best.at, end: best.at + best.length });
+      // Named in the summary but called by their office in the headline: also a subject.
+      if (best && (best.inTitle || officeInHeadline)) subjects.add(found[found.length - 1]!);
     }
   }
 
@@ -397,6 +417,11 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
   // happen to describe. Context-only matches drop out as soon as anyone is named.
   const anyNamed = found.some((f) => f.named);
   let kept = anyNamed ? found.filter((f) => f.named) : found;
+
+  // The story belongs to whoever the headline names. A member the summary
+  // also mentions (the prime minister whose adviser came home, the leader who
+  // sent condolences) is not given someone else's story.
+  if (kept.some((f) => subjects.has(f))) kept = kept.filter((f) => subjects.has(f));
 
   // Where one member's name sits inside a longer name of another member at the
   // same place, the text names the longer one: "রফিকুল ইসলাম হিলালী" is

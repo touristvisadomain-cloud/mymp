@@ -63,6 +63,44 @@ test('a name in the summary carries the office title over the floor', () => {
   assert.equal(scoreOf('দেশের জনসংখ্যাকে জনসম্পদে রূপান্তর করতে হবে: স্পিকার', 'hafiz', 'জাতীয় সংসদের স্পিকার হাফিজ উদ্দিন আহমদ বীর বিক্রম বলেছেন'), 65);
 });
 
+test('a story belongs to the member its headline names, not to one the summary mentions', () => {
+  // The adviser who came home is the story; the prime minister he advises is not.
+  assert.deepEqual(
+    who('চিকিৎসা শেষে দেশে ফিরলেন রুমিন ফারহানা', 'দ্বিতীয় দফায় চিকিৎসা শেষে দেশে ফিরেছেন প্রধানমন্ত্রী তারেক রহমানের উপদেষ্টা রুমিন ফারহানা।'),
+    ['rumin'],
+  );
+});
+
+test('a name further down the summary is a mention, not the subject', () => {
+  assert.deepEqual(
+    who('তৃতীয় দফা জানাজা শেষে দাফন সম্পন্ন', 'বিএনপির সাবেক সংসদ সদস্যের জানাজা নয়াপল্টনে অনুষ্ঠিত হয়েছে। পরে প্রধানমন্ত্রী তারেক রহমান শোক জানান।'),
+    [],
+  );
+  // The office in a later sentence does not lift a name either.
+  assert.equal(scoreOf('সংসদ অধিবেশন শুরু', 'tarique', 'অধিবেশন শুরু হয়েছে। প্রধানমন্ত্রী উপস্থিত ছিলেন। তারেক রহমান বক্তব্য দেন।'), 0);
+});
+
+test('one member named and another called by office in the headline are both its subjects', () => {
+  assert.deepEqual(
+    who('পত্রিকা পড়া নিয়ে রুমিন ফারহানার খোঁচা, প্রধানমন্ত্রী বললেন সব পড়েন', 'সংসদে রুমিন ফারহানার মন্তব্যের জবাবে প্রধানমন্ত্রী তারেক রহমান বলেন।').sort(),
+    ['rumin', 'tarique'],
+  );
+});
+
+test('a headline that names only the office still belongs to its holder', () => {
+  assert.deepEqual(
+    who('বিএনপির সংসদীয় দলের বৈঠক ডেকেছেন প্রধানমন্ত্রী', 'আগামী শনিবার সংসদীয় দলের বৈঠক হবে। বৈঠকে সভাপতিত্ব করবেন প্রধানমন্ত্রী তারেক রহমান।'),
+    ['tarique'],
+  );
+});
+
+test('a headline without a name still belongs to the member the first sentence is about', () => {
+  assert.deepEqual(
+    who('কল্যাণমুখী কাজ যারা করবে তাদের পাশে থাকবে সরকার', 'প্রধানমন্ত্রী তারেক রহমান বলেছেন, দেশ ও জাতি গঠনে কল্যাণমুখী কাজ যারা করবে সরকার তাদের পাশে থাকবে।'),
+    ['tarique'],
+  );
+});
+
 test('the chief whip is found by name in the summary plus his office', () => {
   assert.deepEqual(
     who('মোবাইল হ্যাকিং ও ভয়েস ক্লোনিং নিয়ে এমপিদের সতর্ক করলেন চিফ হুইপ', 'জাতীয় সংসদের চিফ হুইপ মো. নুরুল ইসলাম মনি সংসদ সদস্যদের মোবাইল ফোন হ্যাকিং নিয়ে সতর্ক করেছেন'),
