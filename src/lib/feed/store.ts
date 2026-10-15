@@ -380,6 +380,23 @@ export async function monthItems(mpId: string, month: string, type?: FeedType): 
   return rows.map(toEntry).filter((x): x is FeedEntry => !!x);
 }
 
+/** Most items a span returns; past this the reader is told to narrow it. */
+export const RANGE_LIMIT = 1000;
+
+/** One member's visible items from one Dhaka day to another, both included, newest first. */
+export async function rangeItems(mpId: string, fromDay: string, toDay: string, type?: FeedType): Promise<FeedEntry[]> {
+  const from = `${fromDay}T00:00:00+06:00`;
+  const [y, m, d] = toDay.split('-').map(Number);
+  const to = `${new Date(Date.UTC(y!, m! - 1, d! + 1)).toISOString().slice(0, 10)}T00:00:00+06:00`;
+  const typeFilter = type ? `&feed_items.type=eq.${type}` : '';
+  const rows = await db().get<JoinRow[]>(
+    `feed_item_mps?mp_id=eq.${q(mpId)}&status=eq.visible&select=${SELECT_ITEM_INNER}` +
+      `&feed_items.published_at=gte.${q(from)}&feed_items.published_at=lt.${q(to)}${typeFilter}` +
+      `&order=feed_items(published_at).desc&limit=${RANGE_LIMIT}`,
+  );
+  return rows.map(toEntry).filter((x): x is FeedEntry => !!x);
+}
+
 /** One member's newest visible items across every month, for the app's member page. */
 export async function recentItems(mpId: string, limit: number, type?: FeedType): Promise<FeedEntry[]> {
   const typeFilter = type ? `&feed_items.type=eq.${type}` : '';

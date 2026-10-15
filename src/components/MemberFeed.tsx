@@ -60,66 +60,119 @@ const dateLabel = (day: string) => {
 
 const SELECT_CLS = 'h-9 rounded-full border border-rule bg-surface px-2.5 text-[13.5px] text-ink focus:border-brand focus:ring-4 focus:ring-brandring outline-none';
 
-/**
- * A day, chosen in Bangla: a pill that opens day, month and year menus, the
- * months being only those the feed has. The browser's own date box reads
- * "dd-----yyyy" in English and hides what it wants; this says it.
- */
-function DayPicker({ day, months, today, onPick }: { day: string; months: string[]; today: string; onPick: (day: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const [ty, tm, td] = today.split('-').map(Number);
-  const years = Array.from(new Set(months.map((m) => m.slice(0, 4)))).sort().reverse();
-  const [y, setY] = useState(day ? day.slice(0, 4) : (years[0] ?? String(ty)));
-  const monthsOfYear = months.filter((m) => m.startsWith(y)).map((m) => m.slice(5, 7)).sort().reverse();
-  const [m, setM] = useState(day ? day.slice(5, 7) : (monthsOfYear[0] ?? String(tm).padStart(2, '0')));
-  const monthOk = monthsOfYear.includes(m) ? m : (monthsOfYear[0] ?? m);
-  // Days run to the end of the month, and no further than today in the current one.
-  const lastDay = Number(y) === ty && Number(monthOk) === tm ? td! : new Date(Date.UTC(Number(y), Number(monthOk), 0)).getUTCDate();
-  const [d, setD] = useState(day ? Number(day.slice(8, 10)) : 1);
-  const dayOk = Math.min(d, lastDay);
+/** yyyy-mm-dd, n days later (or earlier), on the calendar. */
+const addDays = (day: string, n: number) => {
+  const [y, m, d] = day.split('-').map(Number);
+  return new Date(Date.UTC(y!, m! - 1, d! + n)).toISOString().slice(0, 10);
+};
+/** "১০ অক্টোবর", with the year only when it differs from the other end's. */
+const shortDay = (day: string, withYear: boolean) => {
+  const [y, m, d] = day.split('-').map(Number);
+  return `${bn(d!)} ${MONTHS_BN[m! - 1]}${withYear ? ` ${bn(y!)}` : ''}`;
+};
+/** "বুধবার, ১৫ অক্টোবর ২০২৬" for one day, "১০ অক্টোবর থেকে ১৫ অক্টোবর ২০২৬" for a span. */
+const rangeLabel = (from: string, to: string) =>
+  from === to ? dateLabel(from) : `${shortDay(from, from.slice(0, 4) !== to.slice(0, 4))} থেকে ${shortDay(to, true)}`;
 
-  if (day && !open) {
-    return (
+/** The span the address asks for: ?d=2026-10-15 or ?d=2026-10-10~2026-10-15, earlier end first. */
+export function parseRange(raw: string): { from: string; to: string } | null {
+  const [a, b = a] = raw.split('~');
+  const ok = (x: string | undefined): x is string => !!x && /^\d{4}-\d{2}-\d{2}$/.test(x);
+  if (!ok(a) || !ok(b)) return null;
+  return a <= b ? { from: a, to: b } : { from: b, to: a };
+}
+
+/** One day, chosen in Bangla: day, month and year menus that stop at today. */
+function DateSelect({ id, label, value, firstYear, today, onChange }: { id: string; label: string; value: string; firstYear: number; today: string; onChange: (day: string) => void }) {
+  const [ty, tm, td] = today.split('-').map(Number) as [number, number, number];
+  const [y, m, d] = value.split('-').map(Number) as [number, number, number];
+  const years = Array.from({ length: ty - firstYear + 1 }, (_, i) => ty - i);
+  const lastMonth = y === ty ? tm : 12;
+  const lastDay = y === ty && m === tm ? td : new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const set = (ny: number, nm: number, nd: number) => {
+    const mm = Math.min(nm, ny === ty ? tm : 12);
+    const max = ny === ty && mm === tm ? td : new Date(Date.UTC(ny, mm, 0)).getUTCDate();
+    onChange(`${ny}-${String(mm).padStart(2, '0')}-${String(Math.min(nd, max)).padStart(2, '0')}`);
+  };
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      <span className="text-[13px] font-semibold text-inksoft w-9">{label}</span>
+      <label className="sr-only" htmlFor={`${id}-d`}>{label}: দিন</label>
+      <select id={`${id}-d`} value={d} onChange={(e) => set(y, m, Number(e.target.value))} className={SELECT_CLS}>
+        {Array.from({ length: lastDay }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{bn(n)}</option>)}
+      </select>
+      <label className="sr-only" htmlFor={`${id}-m`}>{label}: মাস</label>
+      <select id={`${id}-m`} value={m} onChange={(e) => set(y, Number(e.target.value), d)} className={SELECT_CLS}>
+        {Array.from({ length: lastMonth }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{MONTHS_BN[n - 1]}</option>)}
+      </select>
+      <label className="sr-only" htmlFor={`${id}-y`}>{label}: বছর</label>
+      <select id={`${id}-y`} value={y} onChange={(e) => set(Number(e.target.value), m, d)} className={SELECT_CLS}>
+        {years.map((n) => <option key={n} value={n}>{bn(n)}</option>)}
+      </select>
+    </span>
+  );
+}
+
+const CHIP = 'h-9 px-3.5 rounded-full border text-[13.5px] font-semibold transition-colors';
+
+/**
+ * A day or a span of days, in Bangla. One tap for the usual ones (আজ, গতকাল,
+ * গত ৭ দিন, এই মাস), or a start and an end picked from day, month and year
+ * menus. The browser's own date box reads "dd-----yyyy" in English.
+ */
+function RangePicker({ range, firstYear, today, onPick }: { range: { from: string; to: string } | null; firstYear: number; today: string; onPick: (raw: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [from, setFrom] = useState(range?.from ?? addDays(today, -6));
+  const [to, setTo] = useState(range?.to ?? today);
+  const quick: [string, string, string][] = [
+    ['আজ', today, today],
+    ['গতকাল', addDays(today, -1), addDays(today, -1)],
+    ['গত ৭ দিন', addDays(today, -6), today],
+    ['গত ৩০ দিন', addDays(today, -29), today],
+    ['এই মাস', `${today.slice(0, 7)}-01`, today],
+  ];
+  const pick = (a: string, b: string) => { onPick(a === b ? a : `${a}~${b}`); setOpen(false); };
+  const isQuick = (a: string, b: string) => range?.from === a && range?.to === b;
+
+  if (!open) {
+    return range ? (
       <span className="flex items-center gap-1 h-9 ps-3 pe-1 rounded-full border border-brand bg-brandsoft text-brand text-[13.5px] font-semibold">
-        {dateLabel(day)}
-        <button type="button" onClick={() => setOpen(true)} className="h-7 px-2 rounded-full hover:bg-surface text-[12.5px]">বদলান</button>
+        <Icon name="calendar" size={15} />
+        {quick.find(([, a, b]) => isQuick(a, b))?.[0] ?? rangeLabel(range.from, range.to)}
+        <button type="button" onClick={() => { setFrom(range.from); setTo(range.to); setOpen(true); }} className="h-7 px-2 rounded-full hover:bg-surface text-[12.5px]">বদলান</button>
         <button type="button" onClick={() => onPick('')} aria-label="তারিখ সরান" className="h-7 w-7 rounded-full hover:bg-surface grid place-items-center">
           <Icon name="x" size={14} />
         </button>
       </span>
-    );
-  }
-  if (!open) {
-    return (
-      <button type="button" onClick={() => setOpen(true)} className="h-9 px-3.5 rounded-full border border-rule text-[13.5px] font-semibold hover:border-ink flex items-center gap-1.5">
+    ) : (
+      <button type="button" onClick={() => setOpen(true)} className={`${CHIP} border-rule hover:border-ink flex items-center gap-1.5`}>
         <Icon name="calendar" size={15} />
         তারিখ দিয়ে খুঁজুন
       </button>
     );
   }
   return (
-    <span className="flex flex-wrap items-center gap-1.5">
-      <label className="sr-only" htmlFor="feed-day">দিন</label>
-      <select id="feed-day" value={dayOk} onChange={(e) => setD(Number(e.target.value))} className={SELECT_CLS}>
-        {Array.from({ length: lastDay }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{bn(n)}</option>)}
-      </select>
-      <label className="sr-only" htmlFor="feed-month">মাস</label>
-      <select id="feed-month" value={monthOk} onChange={(e) => { setM(e.target.value); }} className={SELECT_CLS}>
-        {monthsOfYear.map((mm) => <option key={mm} value={mm}>{MONTHS_BN[Number(mm) - 1]}</option>)}
-      </select>
-      <label className="sr-only" htmlFor="feed-year">বছর</label>
-      <select id="feed-year" value={y} onChange={(e) => { setY(e.target.value); }} className={SELECT_CLS}>
-        {years.map((yy) => <option key={yy} value={yy}>{bn(yy)}</option>)}
-      </select>
-      <button
-        type="button"
-        onClick={() => { onPick(`${y}-${monthOk}-${String(dayOk).padStart(2, '0')}`); setOpen(false); }}
-        className="h-9 px-3.5 rounded-full bg-brand text-white text-[13.5px] font-semibold hover:bg-branddark"
-      >
-        দেখুন
-      </button>
-      <button type="button" onClick={() => setOpen(false)} className="h-9 px-3 rounded-full border border-rule text-[13px] hover:border-ink">বাতিল</button>
-    </span>
+    <div className="basis-full rounded-card border border-rule bg-surface p-4 flex flex-col gap-3">
+      <div className="flex flex-wrap gap-2">
+        {quick.map(([label, a, b]) => (
+          <button key={label} type="button" onClick={() => pick(a, b)} className={`${CHIP} ${isQuick(a, b) ? 'border-brand bg-brandsoft text-brand' : 'border-rule hover:border-ink'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-col gap-2 pt-3 border-t border-rulesoft">
+        <span className="text-[13px] text-muted">অথবা নির্দিষ্ট সময়</span>
+        <DateSelect id="feed-from" label="থেকে" value={from} firstYear={firstYear} today={today} onChange={setFrom} />
+        <DateSelect id="feed-to" label="পর্যন্ত" value={to} firstYear={firstYear} today={today} onChange={setTo} />
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <button type="button" onClick={() => (from <= to ? pick(from, to) : pick(to, from))} className="h-9 px-4 rounded-full bg-brand text-white text-[13.5px] font-semibold hover:bg-branddark">
+            দেখুন
+          </button>
+          <button type="button" onClick={() => setOpen(false)} className="h-9 px-3 rounded-full border border-rule text-[13px] hover:border-ink">বাতিল</button>
+          <span className="text-[12.5px] text-muted">{rangeLabel(from <= to ? from : to, from <= to ? to : from)}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -183,10 +236,10 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
   const setType = (v: string | null) => setTypeParam(v ?? "");
   const [openMonth, setOpenMonthParam] = useQueryParam("m");
   const setOpenMonth = (v: string | null) => setOpenMonthParam(v ?? "");
-  // One day, picked from the calendar: its month is fetched and the day's items shown on top.
-  const [dayParam, setDayParam] = useQueryParam("d");
-  const day = dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : '';
-  const dayMonth = day ? day.slice(0, 7) : '';
+  // A day or a span of days (?d=2026-10-15 or ?d=2026-10-10~2026-10-15): the
+  // months it covers are fetched and its items shown on top.
+  const [rangeParam, setRangeParam] = useQueryParam("d");
+  const range = parseRange(rangeParam);
   const [outlet, setOutlet] = useState('');
   const [monthData, setMonthData] = useState<Record<string, FeedEntry[]>>({});
   const [playing, setPlaying] = useState<FeedEntry | null>(null);
@@ -213,7 +266,24 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
   // A month is fetched when a reader opens it, picks a day in it, or on load when the address names one.
   // Fetched months are kept per type filter, so switching the filter never shows the other kind's list.
   const cacheKey = (month: string) => `${month}${typeParam}`;
-  const wanted = [openMonth, dayMonth].filter((m): m is string => !!m && /^\d{4}-\d{2}$/.test(m) && !monthData[cacheKey(m)]);
+  const wanted = [openMonth].filter((m): m is string => !!m && /^\d{4}-\d{2}$/.test(m) && !monthData[cacheKey(m)]);
+
+  // The picked span is asked for as one query: a month's list stops at its
+  // newest 300, which for the Prime Minister is a single week.
+  const rangeKey = range ? `${range.from}~${range.to}${typeParam}` : '';
+  const [rangeData, setRangeData] = useState<{ key: string; items: FeedEntry[]; more: boolean } | null>(null);
+  useEffect(() => {
+    if (!range || !rangeKey) return;
+    let live = true;
+    void (async () => {
+      const r = await fetch(`/api/feed/${slug}?from=${range.from}&to=${range.to}${typeParam}`);
+      if (!r.ok || !live) return;
+      const j = (await r.json()) as { items: FeedEntry[]; more: boolean };
+      if (live) setRangeData({ key: rangeKey, items: j.items, more: j.more });
+    })();
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rangeKey carries the span and the type
+  }, [rangeKey, slug]);
   const wantedKey = wanted.join(',');
   useEffect(() => {
     if (!wantedKey) return;
@@ -250,9 +320,8 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
   const current = data.months.find((m) => m.month === data.month);
   const earlier = data.months.filter((m) => m.month !== data.month);
   const items = byOutlet(data.items);
-  // The picked day's items come from the current month's list or the month fetched for it.
-  const dayPool = day ? (dayMonth === data.month ? data.items : monthData[cacheKey(dayMonth)]) : undefined;
-  const dayItems = dayPool ? byOutlet(dayPool.filter((i) => dhakaDay(i.publishedAt) === day)) : null;
+  const rangeItems = range && rangeData?.key === rangeKey ? byOutlet(rangeData.items) : null;
+  const firstYear = Number((data.months.map((m) => m.month).sort()[0] ?? data.month).slice(0, 4));
 
   return (
     <div className="flex flex-col gap-4">
@@ -284,18 +353,28 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
             </select>
           </label>
         )}
-        <DayPicker day={day} months={data.months.map((m) => m.month)} today={dhakaDay(new Date().toISOString())} onPick={(d) => setDayParam(d)} />
+        <RangePicker key={rangeParam} range={range} firstYear={firstYear} today={dhakaDay(new Date().toISOString())} onPick={(raw) => setRangeParam(raw)} />
       </div>
 
-      {day && (
+      {range && (
         <div className="rounded-card border border-brandring bg-brandsoft/30 px-4 py-2">
-          <h3 className="display text-[16px] py-1">{dateLabel(day)}</h3>
-          {dayItems === null ? (
+          <h3 className="display text-[16px] py-1 flex flex-wrap items-baseline gap-x-3">
+            {rangeLabel(range.from, range.to)}
+            {rangeItems && rangeItems.length > 0 && (
+              <span className="text-[13px] font-normal text-muted">
+                {countLabel({ month: '', total: rangeItems.length, news: rangeItems.filter((i) => i.type !== 'video').length, video: rangeItems.filter((i) => i.type === 'video').length })}
+              </span>
+            )}
+          </h3>
+          {rangeData?.key === rangeKey && rangeData.more && (
+            <p className="text-[12.5px] text-muted">এই সময়ের সর্বশেষ {bn(rangeData.items.length)}টি দেখানো হচ্ছে; আরও আগেরগুলো দেখতে সময় ছোট করুন।</p>
+          )}
+          {rangeItems === null ? (
             <p className="py-2 text-[13.5px] text-muted">আনা হচ্ছে…</p>
-          ) : dayItems.length ? (
-            dayItems.map((i) => <Row key={i.id} item={i} onPlay={setPlaying} />)
+          ) : rangeItems.length ? (
+            rangeItems.map((i) => <Row key={i.id} item={i} onPlay={setPlaying} />)
           ) : (
-            <p className="py-2 text-[13.5px] text-muted">এই দিনে কোনো সংবাদ বা ভিডিও নেই{outlet ? ` (${outlet})` : ''}।</p>
+            <p className="py-2 text-[13.5px] text-muted">{range.from === range.to ? 'এই দিনে' : 'এই সময়ে'} কোনো সংবাদ বা ভিডিও নেই{outlet ? ` (${outlet})` : ''}।</p>
           )}
         </div>
       )}

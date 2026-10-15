@@ -3,7 +3,8 @@
  *
  * The profile page itself is prerendered, so the feed is fetched from here at
  * view time. One request brings the pinned items, the current month and the
- * month list; `?m=2026-08` brings one earlier month when a reader opens it, and
+ * month list; `?m=2026-08` brings one earlier month when a reader opens it,
+ * `?from=2026-10-10&to=2026-10-15` a span of days the reader picked, and
  * `?recent=60` the newest items whatever their month (the app's member page).
  *
  * Cached at the edge for five minutes: a headline that lands during a coffee
@@ -12,7 +13,7 @@
  */
 import { NextResponse } from 'next/server';
 import { getMember } from '@/lib/data';
-import { monthCounts, monthItems, pinnedItems, recentItems, feedSettings, type FeedType } from '@/lib/feed/store';
+import { monthCounts, monthItems, pinnedItems, recentItems, rangeItems, feedSettings, RANGE_LIMIT, type FeedType } from '@/lib/feed/store';
 import { isMissingTable } from '@/lib/posts/db';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,17 @@ export async function GET(req: Request, ctx: { params: Promise<{ slug: string }>
       const [pinned, items] = await Promise.all([pinnedItems(member.id), recentItems(member.id, recent, typeFilter)]);
       const pinnedIds = new Set(pinned.map((p) => p.id));
       return NextResponse.json({ pinned, items: items.filter((i) => !pinnedIds.has(i.id)) }, { headers: HEADERS });
+    }
+    // A span of days the reader picked (?from=2026-10-10&to=2026-10-15), across months.
+    const fromDay = url.searchParams.get('from');
+    const toDay = url.searchParams.get('to');
+    if (fromDay || toDay) {
+      const day = /^\d{4}-\d{2}-\d{2}$/;
+      if (!fromDay || !toDay || !day.test(fromDay) || !day.test(toDay) || fromDay > toDay) {
+        return NextResponse.json({ error: 'bad range' }, { status: 400 });
+      }
+      const items = await rangeItems(member.id, fromDay, toDay, typeFilter);
+      return NextResponse.json({ from: fromDay, to: toDay, items, more: items.length >= RANGE_LIMIT }, { headers: HEADERS });
     }
     if (month) {
       if (!/^\d{4}-\d{2}$/.test(month)) return NextResponse.json({ error: 'bad month' }, { status: 400 });
