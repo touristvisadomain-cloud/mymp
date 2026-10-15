@@ -541,8 +541,18 @@ async function main() {
     };
   });
 
+  // A committee constituted before this parliament took its oath belongs to the
+  // previous one. The endpoint keeps those records for good, often under a
+  // slightly different name ("Public Accounts Committee (PAC)" beside this
+  // parliament's "Standing Committee on Public Accounts"), and its sub-committees
+  // lapsed with it. Listed, they read as this parliament's committees still
+  // waiting for a roster, which they are not.
+  const oathDate = clean((Array.isArray(rawParliaments) ? rawParliaments : []).find((x) => x.parliamentNo === PARLIAMENT)?.oathDate)?.slice(0, 10) ?? null;
+  const thisParliament = records.filter((r) => !oathDate || !r.startDate || r.startDate.slice(0, 10) >= oathDate);
+  if (thisParliament.length < records.length) console.log(`  committees: ${records.length - thisParliament.length} records from before ${oathDate} left out`);
+
   const grouped = new Map();
-  for (const r of records) {
+  for (const r of thisParliament) {
     const existing = grouped.get(r.slug);
     if (!existing) { grouped.set(r.slug, r); continue; }
     // Prefer a current roster, then the later start date.
@@ -701,7 +711,8 @@ async function main() {
 
   // Only notices about the House and its members reach the site. Staff office
   // orders, tenders and downloads are the secretariat's business, not the public's.
-  const finalCommitteeId = new Map(records.map((r) => [r.id, grouped.get(r.slug)?.id ?? r.id]));
+  const kept = new Set(thisParliament);
+  const finalCommitteeId = new Map(records.map((r) => [r.id, kept.has(r) ? grouped.get(r.slug)?.id ?? r.id : null]));
   const notices = rawNotices
     .map((n) => {
       const seatNo = n.noticeType === 'NOC_GO' ? seatInTitle(n.titleBn) ?? seatInTitle(n.titleEn) : null;

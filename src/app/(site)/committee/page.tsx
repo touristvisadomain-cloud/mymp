@@ -33,7 +33,11 @@ export default function CommitteesPage() {
         aside={
           <div className="grid grid-cols-2 gap-3">
             <Stat label="তালিকা হালনাগাদ" value={bn(current.length)} />
-            <Stat label="অপেক্ষমাণ" value={bn(pending.length)} />
+            {pending.length > 0 ? (
+              <Stat label="অপেক্ষমাণ" value={bn(pending.length)} />
+            ) : (
+              <Stat label="কমিটিতে সদস্য" value={bn(new Set(current.flatMap((c) => c.members.map((m) => m.memberId))).size)} />
+            )}
           </div>
         }
       />
@@ -88,6 +92,7 @@ export default function CommitteesPage() {
           </ul>
         </section>
 
+        {pending.length > 0 && (
         <section className="flex flex-col gap-4">
           <div className="flex items-center gap-3.5">
             <h2 className="display text-[22px] font-bold">যেসব কমিটির তালিকা এখনো হালনাগাদ হয়নি</h2>
@@ -121,6 +126,7 @@ export default function CommitteesPage() {
             ))}
           </ul>
         </section>
+        )}
 
         <p className="text-[13px] text-muted">
           তথ্যসূত্র: বাংলাদেশ জাতীয় সংসদ | হালনাগাদ {dateBn(meta.syncedAt)}
