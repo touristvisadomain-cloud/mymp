@@ -1,6 +1,7 @@
 'use client';
 
 import StoryThumb from './StoryThumb';
+import When from './When';
 
 import { useEffect, useState } from 'react';
 import Icon from './Icon';
@@ -54,16 +55,6 @@ const monthLabel = (month: string) => {
   return `${MONTHS_BN[(m ?? 1) - 1]} ${bn(y ?? 0)}`;
 };
 
-/** "৩ ঘণ্টা আগে" for today's news, a date for anything older. */
-function whenBn(iso: string): string {
-  const then = new Date(iso);
-  const mins = Math.round((Date.now() - then.getTime()) / 60000);
-  if (mins < 1) return 'এইমাত্র';
-  if (mins < 60) return `${bn(mins)} মিনিট আগে`;
-  if (mins < 24 * 60) return `${bn(Math.floor(mins / 60))} ঘণ্টা আগে`;
-  const d = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka', year: 'numeric', month: 'numeric', day: 'numeric' }).format(then).split('-');
-  return `${bn(Number(d[2]))} ${MONTHS_BN[Number(d[1]) - 1]} ${bn(d[0]!)}`;
-}
 
 const duration = (s: number | null) => (s ? `${bn(Math.floor(s / 60))}:${bn(String(s % 60).padStart(2, '0'))}` : null);
 
@@ -94,7 +85,7 @@ function Row({ item, onPlay }: { item: FeedEntry; onPlay: (item: FeedEntry) => v
             {item.type === 'video' ? 'ভিডিও' : item.type === 'press' ? 'প্রজ্ঞাপন' : 'সংবাদ'}
           </span>
           {item.outletName && <span>{item.outletName}</span>}
-          <span>{whenBn(item.publishedAt)}</span>
+          <When iso={item.publishedAt} />
           {item.durationSeconds ? <span>{duration(item.durationSeconds)}</span> : null}
           {item.alsoIn.length > 0 && <span>আরও {bn(item.alsoIn.length)}টি সংবাদমাধ্যমে</span>}
           {item.pinned && <span className="text-brand font-semibold">নির্বাচিত</span>}

@@ -20,6 +20,8 @@ export interface StoryView {
   date: string;
   /** "শুক্রবার, ১২ সেপ্টেম্বর ২০২৬" */
   dateLabel: string;
+  /** When the lead headline was published, ISO; a bare date when the source gave no clock. */
+  publishedAt?: string;
   lead: StoryLink;
   also: StoryLink[];
   member: StoryMember | null;
@@ -56,6 +58,7 @@ export function allStories(): StoryView[] {
       id: lead.id,
       date: lead.publishedOn.slice(0, 10),
       dateLabel: dayLabel(lead.publishedOn),
+      publishedAt: lead.publishedOn,
       lead: link(lead),
       also: also.map(link),
       member: m
