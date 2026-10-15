@@ -12,6 +12,10 @@
  *   npm run feed:fill                  every member with no news on their page
  *   npm run feed:fill -- --all         every sitting member
  *   npm run feed:fill -- --only <id>   one member
+ *   npm run feed:fill -- --all --months  every sitting member, every month
+ *                                        since the window opened (back-fills
+ *                                        the months the collectors missed)
+ *   npm run feed:fill -- --skip 120      start at the 121st member (to resume)
  *   npm run feed:fill -- --dry-run     report, write nothing
  *
  * Google News' RSS needs no key. A query a second and a half apart is a
@@ -131,13 +135,15 @@ async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const only = argOf('only');
   const gap = Number(argOf('gap') ?? 1.5) * 1000;
+  const byMonth = process.argv.includes('--months');
+  const skip = Number(argOf('skip') ?? 0);
   const provider = searchProvider();
   if (!provider) throw new Error('no search provider is configured');
 
   const index = await buildIndex();
   const sitting = allMembers.filter((m) => !m.resignedOn);
   const haveNews = process.argv.includes('--all') || only ? new Set<string>() : await covered('news');
-  const todo = sitting.filter((m) => (only ? m.id === only : !haveNews.has(m.id)));
+  const todo = sitting.filter((m) => (only ? m.id === only : !haveNews.has(m.id))).slice(skip);
   console.log(`${todo.length} members to search${dryRun ? ' (dry run)' : ''}\n`);
 
   const run = dryRun ? null : await startRun('search', 'fill');
@@ -187,8 +193,14 @@ async function main() {
     };
 
     // A full page means more is left: ask again a month at a time.
-    const first = await ask(`after:${dayBefore}`);
-    if (first >= 90) for (const span of months()) await ask(`after:${span.after} before:${span.before}`);
+    if (byMonth) {
+      // Every month on its own: one query returns at most a hundred stories,
+      // so a member in the news every day loses all but the latest weeks.
+      for (const span of months()) await ask(`after:${span.after} before:${span.before}`);
+    } else {
+      const first = await ask(`after:${dayBefore}`);
+      if (first >= 90) for (const span of months()) await ask(`after:${span.after} before:${span.before}`);
+    }
 
     const list = [...items.values()];
     // Which of them the matcher gives to this member, which is what the page will show.

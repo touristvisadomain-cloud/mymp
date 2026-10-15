@@ -12,6 +12,7 @@
  *
  *   npm run feed:archive                       since the election year began (2026-01-01)
  *   npm run feed:archive -- --since 2026-08-01
+ *   npm run feed:archive -- --since 2025-12-01 --until 2025-12-31   one span
  *   npm run feed:archive -- --only samakal     one outlet
  *   npm run feed:archive -- --dry-run          count matches, write nothing
  *
@@ -92,6 +93,7 @@ async function get(url: string, timeoutMs: number): Promise<{ status: number; te
 async function main() {
   const since = argOf('since') ?? '2026-01-01';
   const only = argOf('only');
+  const until = argOf('until');
   const gap = Number(argOf('gap') ?? 8) * 1000;
   const dryRun = process.argv.includes('--dry-run');
   const sources = NEWS_SOURCES.filter((s) => s.archives?.length && (!only || s.key === only));
@@ -113,7 +115,7 @@ async function main() {
       lastAt = Date.now();
     };
     for (const archive of source.archives!) {
-      for (const period of periods(archive.every, since)) {
+      for (const period of periods(archive.every, since).filter((p) => !until || p <= until)) {
         await polite();
         const url = archive.url.replace('{d}', period);
         const page = await get(url, 60_000);
