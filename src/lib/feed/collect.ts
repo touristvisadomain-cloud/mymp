@@ -181,8 +181,12 @@ export async function runRssCollector(opts: CollectorOptions = {}): Promise<RunR
     return result;
   }
 
-  if (!opts.dryRun) await ingest(items, index, counts, deadline);
-  else counts.found = items.length;
+  if (!opts.dryRun) {
+    // An international feed is mostly about elsewhere: only what names a member is stored from it.
+    const narrow = new Set(RSS_SOURCES.filter((s) => s.onlyMatched).map((s) => s.key));
+    await ingest(items.filter((i) => !narrow.has(i.outletId ?? '')), index, counts, deadline);
+    await ingest(items.filter((i) => narrow.has(i.outletId ?? '')), index, counts, deadline, { onlyMatched: true });
+  } else counts.found = items.length;
 
   const result: RunResult = {
     status: RSS_SOURCES.every((s) => !detail[s.key]) ? 'failed' : 'ok',

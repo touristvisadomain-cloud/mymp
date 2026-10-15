@@ -115,6 +115,7 @@ export const TRUSTED_CHANNELS: { handle: string; name: string }[] = [
   { handle: '@ChanneliNews', name: 'চ্যানেল আই নিউজ' },
   { handle: '@EkhonTV', name: 'এখন টিভি' },
   { handle: '@BBCBangla', name: 'বিবিসি বাংলা' },
+  { handle: '@DWBengali', name: 'ডয়চে ভেলে বাংলা' },
   { handle: '@ProthomAlo', name: 'প্রথম আলো' },
   { handle: '@thedailystarnews', name: 'দ্য ডেইলি স্টার' },
   { handle: '@jagonews24', name: 'জাগো নিউজ' },

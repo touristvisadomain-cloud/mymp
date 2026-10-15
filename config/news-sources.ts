@@ -52,6 +52,8 @@ export interface NewsSource {
    * the headline from there, and opens only the articles that name a member.
    */
   archives?: { url: string; every: 'day' | 'month' }[];
+  /** Keep only headlines that name a member: an international feed is mostly about elsewhere. */
+  onlyMatched?: boolean;
   lang: 'bn' | 'en';
 }
 
@@ -92,6 +94,19 @@ export const NEWS_SOURCES: NewsSource[] = [
   { key: 'dailystar', nameBn: 'দ্য ডেইলি স্টার', homepage: 'https://www.thedailystar.net', rss: ['https://www.thedailystar.net/rss.xml'], sitemaps: [{ url: 'https://www.thedailystar.net/googlenews.xml' }], lang: 'en' },
   { key: 'tbs', nameBn: 'দ্য বিজনেস স্ট্যান্ডার্ড', homepage: 'https://www.tbsnews.net', rss: ['https://www.tbsnews.net/top-news/rss.xml'], sitemaps: [{ url: 'https://www.tbsnews.net/bangla/googlenews.xml' }], lang: 'en' },
   { key: 'observerbd', nameBn: 'দ্য ডেইলি অবজারভার', homepage: 'https://www.observerbd.com', rss: ['https://www.observerbd.com/rss'], lang: 'en' },
+
+  // ---- International, from the owner's list of eighty (feeds checked 2026-10-15).
+  // They name a member rarely, so only a headline that does is kept
+  // (`onlyMatched`; the sitemap collector always works that way). CNN's RSS
+  // stopped in 2023; its news sitemap is current. Reuters and AP refuse
+  // crawlers and stay out.
+  { key: 'dwbangla', nameBn: 'ডয়চে ভেলে বাংলা', homepage: 'https://www.dw.com/bn', rss: ['https://rss.dw.com/xml/rss-ben-all'], onlyMatched: true, lang: 'bn' },
+  { key: 'aljazeera', nameBn: 'আল জাজিরা', homepage: 'https://www.aljazeera.com', rss: ['https://www.aljazeera.com/xml/rss/all.xml'], onlyMatched: true, lang: 'en' },
+  { key: 'guardian', nameBn: 'দ্য গার্ডিয়ান', homepage: 'https://www.theguardian.com', rss: ['https://www.theguardian.com/world/bangladesh/rss'], onlyMatched: true, lang: 'en' },
+  { key: 'nyt', nameBn: 'দ্য নিউ ইয়র্ক টাইমস', homepage: 'https://www.nytimes.com', rss: ['https://rss.nytimes.com/services/xml/rss/nyt/AsiaPacific.xml'], onlyMatched: true, lang: 'en' },
+  { key: 'bloomberg', nameBn: 'ব্লুমবার্গ', homepage: 'https://www.bloomberg.com', rss: ['https://feeds.bloomberg.com/politics/news.rss'], onlyMatched: true, lang: 'en' },
+  { key: 'cnn', nameBn: 'সিএনএন', homepage: 'https://www.cnn.com', sitemaps: [{ url: 'https://www.cnn.com/sitemap/news.xml' }], lang: 'en' },
+  { key: 'economist', nameBn: 'দ্য ইকোনমিস্ট', homepage: 'https://www.economist.com', rss: ['https://www.economist.com/asia/rss.xml'], onlyMatched: true, lang: 'en' },
 
   // ---- The owner's own outlet
   { key: 'durbinnews', nameBn: 'দুরবীন নিউজ', homepage: 'https://durbinnews.com', rss: ['https://durbinnews.com/feed.xml'], lang: 'bn' },
