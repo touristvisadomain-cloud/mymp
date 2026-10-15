@@ -9,6 +9,9 @@
  *
  *   npm run feed:prune             report what would be hidden, write nothing
  *   npm run feed:prune -- --apply  hide them
+ *   npm run feed:prune -- --all    judge by every current rule, not only the
+ *                                  longer-name one (owner, 2026-10-15: a page
+ *                                  shows only that member's own news)
  *
  * Only links the system made and nobody has ruled on are touched: an editor's
  * attachment, a confirmed story, a pin or a hidden one is left as it is.
@@ -70,6 +73,7 @@ async function hide(link: Link) {
 
 async function main() {
   const apply = process.argv.includes('--apply');
+  const allRules = process.argv.includes('--all');
   const index = await buildIndex();
   const nameOf = new Map(allMembers.map((m) => [m.id, m.nameBn]));
 
@@ -102,7 +106,7 @@ async function main() {
     }
     // Hidden only when the new rules are what reject it: a link some older,
     // looser scoring made and today's scores would not is an editor's call.
-    if (!ids.now.has(link.mp_id) && ids.before.has(link.mp_id)) stale.push(link);
+    if (!ids.now.has(link.mp_id) && (allRules || ids.before.has(link.mp_id))) stale.push(link);
   }
 
   console.log(`\n\nlinks checked   ${links.length}`);

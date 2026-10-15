@@ -50,8 +50,13 @@ test('an article naming two members attaches to both', () => {
 
 test('an office title adds to a name and never stands in for one', () => {
   assert.ok(scoreOf('দিল্লিতে ব্রিকস সম্মেলনে যাচ্ছেন না প্রধানমন্ত্রী তারেক রহমান', 'tarique') >= 90);
-  // The office alone is 30, under the floor: nobody is named, so nobody is attached.
-  assert.deepEqual(who('বাকস্বাধীনতা যেন বাকশালীনতার সীমা লঙ্ঘন না করে: প্রধানমন্ত্রী'), []);
+  // An office one member alone holds stands for the name (owner, 2026-10-15):
+  // "…: প্রধানমন্ত্রী" is the prime minister's own story.
+  assert.deepEqual(who('বাকস্বাধীনতা যেন বাকশালীনতার সীমা লঙ্ঘন না করে: প্রধানমন্ত্রী'), ['tarique']);
+  // Another country's, a former one's, or an office several members hold is nobody's.
+  assert.deepEqual(who('ভারতের প্রধানমন্ত্রীর সঙ্গে বৈঠক হবে নভেম্বরে'), []);
+  assert.deepEqual(who('সাবেক প্রধানমন্ত্রীর বিরুদ্ধে নতুন মামলা'), []);
+  assert.deepEqual(who('বন্যা পরিস্থিতি নিয়ে মন্ত্রীর বৈঠক'), []);
 });
 
 test('a name in the summary carries the office title over the floor', () => {
@@ -61,6 +66,65 @@ test('a name in the summary carries the office title over the floor', () => {
   );
   assert.deepEqual(ids, ['hafiz']);
   assert.equal(scoreOf('দেশের জনসংখ্যাকে জনসম্পদে রূপান্তর করতে হবে: স্পিকার', 'hafiz', 'জাতীয় সংসদের স্পিকার হাফিজ উদ্দিন আহমদ বীর বিক্রম বলেছেন'), 65);
+});
+
+test('a story belongs to the member its headline names, not to one the summary mentions', () => {
+  // The adviser who came home is the story; the prime minister he advises is not.
+  assert.deepEqual(
+    who('চিকিৎসা শেষে দেশে ফিরলেন রুমিন ফারহানা', 'দ্বিতীয় দফায় চিকিৎসা শেষে দেশে ফিরেছেন প্রধানমন্ত্রী তারেক রহমানের উপদেষ্টা রুমিন ফারহানা।'),
+    ['rumin'],
+  );
+});
+
+test('a name further down the summary is a mention, not the subject', () => {
+  assert.deepEqual(
+    who('তৃতীয় দফা জানাজা শেষে দাফন সম্পন্ন', 'বিএনপির সাবেক সংসদ সদস্যের জানাজা নয়াপল্টনে অনুষ্ঠিত হয়েছে। পরে প্রধানমন্ত্রী তারেক রহমান শোক জানান।'),
+    [],
+  );
+  // The office in a later sentence does not lift a name either.
+  assert.equal(scoreOf('সংসদ অধিবেশন শুরু', 'tarique', 'অধিবেশন শুরু হয়েছে। প্রধানমন্ত্রী উপস্থিত ছিলেন। তারেক রহমান বক্তব্য দেন।'), 0);
+});
+
+test('one member named and another called by office in the headline are both its subjects', () => {
+  assert.deepEqual(
+    who('পত্রিকা পড়া নিয়ে রুমিন ফারহানার খোঁচা, প্রধানমন্ত্রী বললেন সব পড়েন', 'সংসদে রুমিন ফারহানার মন্তব্যের জবাবে প্রধানমন্ত্রী তারেক রহমান বলেন।').sort(),
+    ['rumin', 'tarique'],
+  );
+});
+
+test('a headline that names only the office still belongs to its holder', () => {
+  assert.deepEqual(
+    who('বিএনপির সংসদীয় দলের বৈঠক ডেকেছেন প্রধানমন্ত্রী', 'আগামী শনিবার সংসদীয় দলের বৈঠক হবে। বৈঠকে সভাপতিত্ব করবেন প্রধানমন্ত্রী তারেক রহমান।'),
+    ['tarique'],
+  );
+});
+
+test('a story that names nobody belongs to nobody, office and place notwithstanding', () => {
+  assert.deepEqual(
+    who('৩ ঘণ্টা পর উত্তরায় অবরোধ তুলে নেন পোশাক শ্রমিকরা', 'রাজধানীর উত্তরায় প্রায় ৩ ঘণ্টা অবরোধের পর প্রধানমন্ত্রীর নির্দেশে অবরোধ তুলে নিয়েছেন পোশাক শ্রমিকরা। ঢাকা মহানগরে যান চলাচল স্বাভাবিক হয়।'),
+    [],
+  );
+});
+
+test('a member mentioned in passing in the first sentence is not its subject', () => {
+  assert.deepEqual(
+    who('তিন ঘণ্টা পর উত্তরায় অবরোধ তুলে নিলেন পোষাক শ্রমিকেরা', 'এমন পরিস্থিতিতে প্রধানমন্ত্রী তারেক রহমান এবং স্থানীয় নেতাদের নির্দেশনায় নেতাকর্মীরা ঘটনাস্থলে যান।'),
+    [],
+  );
+});
+
+test('the speaker named last in the first sentence is its subject', () => {
+  assert.deepEqual(
+    who('সবার অধিকার ও নিরাপত্তা নিশ্চিত করা আমার দায়িত্ব', 'সবার অধিকার ও নিরাপত্তা নিশ্চিত করা নিজের দায়িত্ব বলে মন্তব্য করেছেন প্রধানমন্ত্রী তারেক রহমান। শনিবার এক অনুষ্ঠানে তিনি এ কথা বলেন।'),
+    ['tarique'],
+  );
+});
+
+test('a headline without a name still belongs to the member the first sentence is about', () => {
+  assert.deepEqual(
+    who('কল্যাণমুখী কাজ যারা করবে তাদের পাশে থাকবে সরকার', 'প্রধানমন্ত্রী তারেক রহমান বলেছেন, দেশ ও জাতি গঠনে কল্যাণমুখী কাজ যারা করবে সরকার তাদের পাশে থাকবে।'),
+    ['tarique'],
+  );
 });
 
 test('the chief whip is found by name in the summary plus his office', () => {

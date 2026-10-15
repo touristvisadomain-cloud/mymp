@@ -48,11 +48,27 @@ export async function buildIndex(): Promise<FeedIndex> {
         partyBn: m.party?.nameBn ?? null,
         partyAbbr: m.party?.abbr ?? null,
         posts: post?.titles ?? [],
+        partyOffices: partyOffice(m.party?.abbr, m.partyRoleBn),
         ministries: post?.ministries ?? [],
         variants: variants.get(m.id) ?? [],
       };
     });
   return buildFeedIndex(mps);
+}
+
+/** How headlines write the parties whose leaders they call by office alone. */
+const PARTY_SHORT: Record<string, string[]> = { BNP: ['বিএনপি'], BJEI: ['জামায়াত', 'জামায়াতের'], NCP: ['এনসিপি', 'এনসিপির'] };
+
+/**
+ * A party office as headlines write it when they leave the name out:
+ * "…: জামায়াত আমির", "বিএনপি চেয়ারম্যান বললেন". Only a role at the party's
+ * national level (no ", জেলা …" after it) is one person.
+ */
+function partyOffice(abbr: string | undefined, role: string | null | undefined): string[] {
+  const short = abbr ? PARTY_SHORT[abbr] : undefined;
+  const r = role?.trim();
+  if (!short || !r || r.includes(',')) return [];
+  return short.map((p) => `${p} ${r}`);
 }
 
 export interface IngestCounts { found: number; stored: number; attached: number; lowConfidence: number; unmatched: number; ranOut?: boolean }
