@@ -17,17 +17,8 @@ export const memberName = (m: StoryMember, t: T) => (t.en ? m.nameEn || personNa
  * channels name themselves differently from their newspapers. The same list
  * as StoryCard's, until the shared table has them.
  */
-const CHANNEL_EN: Record<string, string> = {
-  'বাংলাদেশ জাতীয় সংসদ': 'Parliament of Bangladesh',
-  'আরটিভি নিউজ': 'RTV News',
-  'ইনডিপেনডেন্ট টিভি': 'Independent TV',
-  'জাগো নিউজ': 'Jago News',
-  'চ্যানেল আই নিউজ': 'Channel i News',
-  'BBC News বাংলা': 'BBC News Bangla',
-};
-
 /** A video's channel in the page's language; the Bangla page shows it as the feed wrote it. */
-export const channelName = (name: string, t: T) => (t.en ? CHANNEL_EN[name.trim()] ?? outletName(name, 'en') : outletName(name, 'bn'));
+export const channelName = (name: string, t: T) => outletName(name, t.lang);
 
 /**
  * The newest videos, as a row that scrolls sideways on a phone and sits in a

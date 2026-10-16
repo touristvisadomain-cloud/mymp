@@ -18,18 +18,9 @@ const bn = (n: number | string) => String(n).replace(/\d/g, (d) => BN_DIGITS[Num
  * does not have yet: the House's own press items and a few outlets' YouTube
  * channels, which name themselves differently from their newspapers.
  */
-const OUTLET_EN_MORE: Record<string, string> = {
-  'বাংলাদেশ জাতীয় সংসদ': 'Parliament of Bangladesh',
-  'আরটিভি নিউজ': 'RTV News',
-  'ইনডিপেনডেন্ট টিভি': 'Independent TV',
-  'জাগো নিউজ': 'Jago News',
-  'চ্যানেল আই নিউজ': 'Channel i News',
-  'BBC News বাংলা': 'BBC News Bangla',
-};
-
 /** A news outlet's name in the page's language (the Bangla page shows it as the feed wrote it). */
 export const outletIn = (name: string | null | undefined, lang: Lang): string =>
-  lang === 'en' ? OUTLET_EN_MORE[(name ?? '').trim()] ?? outletName(name, lang) : outletName(name, lang);
+  outletName(name, lang);
 
 const duration = (s: number | null | undefined, en = false) =>
   s ? (en ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : `${bn(Math.floor(s / 60))}:${bn(String(s % 60).padStart(2, '0'))}`) : null;

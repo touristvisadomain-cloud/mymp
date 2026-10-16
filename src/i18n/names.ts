@@ -292,6 +292,9 @@ const OUTLET_EN: Record<string, string> = {
   'সমকাল': 'Samakal', 'সময় টিভি': 'Somoy TV', 'সময়ের আলো': 'Shomoyer Alo', 'সময়ের কণ্ঠস্বর': 'Somoyer Konthosor', 'সারাবাংলা': 'Sarabangla',
   'সিএনএন': 'CNN', 'সিভয়েস২৪': 'CVoice24', 'সিলেট টুডে ২৪': 'Sylhet Today 24', 'সুপ্রভাত বাংলাদেশ': 'Suprobhat Bangladesh',
   'সোনালী সংবাদ': 'Sonali Sangbad', 'স্বদেশ প্রতিদিন': 'Swadesh Protidin',
+  // Channel names the video feed writes, beside the outlets' own.
+  'বাংলাদেশ জাতীয় সংসদ': 'Parliament of Bangladesh', 'আরটিভি নিউজ': 'RTV News', 'ইনডিপেনডেন্ট টিভি': 'Independent TV',
+  'জাগো নিউজ': 'Jago News', 'চ্যানেল আই নিউজ': 'Channel i News', 'BBC News বাংলা': 'BBC News Bangla',
 };
 
 /** A news outlet's name in the page's language; an outlet the table lacks keeps its Bangla name. */

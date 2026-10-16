@@ -14,13 +14,14 @@ import { isMissingTable } from '@/lib/posts/db';
 import { FEED_FROM } from './window';
 import { fixJoiners } from '@/lib/joiners.mjs';
 import { allMembers } from '@/lib/data';
+import { personName } from '@/i18n/names';
 
 /** Slugs of members who have left the House: their news is not on the news page. */
 const LEFT_SLUGS = new Set(allMembers.filter((m) => m.resignedOn).map((m) => m.slug));
 
 const member = (id: string): StoryMember | null => {
   const m = getMemberById(id);
-  return m ? { slug: m.slug, name: m.nameBn ?? m.nameEn ?? '', party: m.party?.abbr ?? null, color: partyColor(m.party?.abbr) } : null;
+  return m ? { slug: m.slug, name: m.nameBn ?? m.nameEn ?? '', nameEn: personName(m, 'en'), party: m.party?.abbr ?? null, color: partyColor(m.party?.abbr) } : null;
 };
 
 /** The day a story belongs to is the day it was published in Dhaka. */
