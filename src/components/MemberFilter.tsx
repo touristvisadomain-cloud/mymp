@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/Link';
+import { useT } from '@/i18n/client';
+import { personName, seatName, partyShort } from '@/i18n/names';
 import { normalise } from '@/lib/search';
 import { RESERVED_HASH } from '@/lib/nav';
 import { useQueryParam } from '@/lib/useQueryParam';
@@ -25,9 +27,6 @@ export interface FilterMember {
   gender: string | null;
 }
 
-const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-const bn = (n: number | string) => String(n).replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
-
 const PARTY_COLOR: Record<string, string> = {
   BNP: 'var(--color-pbnp)',
   BJEI: 'var(--color-pjamaat)',
@@ -39,6 +38,10 @@ const initialOf = (m: FilterMember) => {
   const name = (m.nameBn || m.nameEn || '?').trim();
   return (name.replace(/^(মোঃ|মো\.|ব্যারিস্টার|ড\.|অ্যাডভোকেট)\s*/, '') || name).charAt(0);
 };
+/** The same for an English name, past its titles. */
+const initialEn = (name: string) =>
+  (name.replace(/^((Md\.?|Mst\.?|Mohammad|Barrister|Dr\.?|Advocate|Adv\.?|Alhaj|Engr\.?|Prof\.?)\s+)+/i, '') || name).charAt(0).toUpperCase();
+const BANGLA = /[ঀ-৿]/;
 
 type SeatKind = 'all' | 'territorial' | 'reserved';
 
@@ -52,6 +55,7 @@ export default function MemberFilter({
   members: FilterMember[];
   parties: { abbr: string; label: string; seats: number }[];
 }) {
+  const t = useT();
   // Every filter lives in the address, so a filtered list can be shared and comes back on back/forward.
   const [q, setQ] = useQueryParam('q');
   const [partyParam, setPartyParam] = useQueryParam('party');
@@ -108,14 +112,14 @@ export default function MemberFilter({
             value={q}
             onChange={(e) => { setQ(e.target.value); setShown(60); }}
             type="search"
-            placeholder="নাম বা আসন, বাংলা বা ইংরেজি"
-            aria-label="সদস্য খুঁজুন"
+            placeholder={t('নাম বা আসন, বাংলা বা ইংরেজি', 'Name or seat, in English or Bangla')}
+            aria-label={t('সদস্য খুঁজুন', 'Search members')}
             className="grow bg-transparent outline-none text-[14px] placeholder:text-muted"
           />
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {([['all', 'সব'], ['territorial', 'আসনভিত্তিক'], ['reserved', 'সংরক্ষিত']] as const).map(([k, label]) => (
+          {([['all', 'সব', 'All'], ['territorial', 'আসনভিত্তিক', 'Elected seats'], ['reserved', 'সংরক্ষিত', 'Reserved seats']] as const).map(([k, label, labelEn]) => (
             <button
               key={k}
               type="button"
@@ -125,7 +129,7 @@ export default function MemberFilter({
                 kind === k ? 'bg-brand text-white border-brand' : 'bg-surface border-rule'
               }`}
             >
-              {label}
+              {t(label, labelEn)}
             </button>
           ))}
         </div>
@@ -140,7 +144,7 @@ export default function MemberFilter({
               party === null ? 'bg-brand text-white border-brand' : 'bg-surface border-rule'
             }`}
           >
-            সব দল
+            {t('সব দল', 'All parties')}
           </button>
           {parties.slice(0, 4).map((p) => (
             <button
@@ -157,34 +161,51 @@ export default function MemberFilter({
                 className="w-2.5 h-2.5 rounded-full"
                 style={{ background: party === p.abbr ? '#fff' : (PARTY_COLOR[p.abbr] ?? 'var(--color-pother)') }}
               />
-              {p.label}
+              {t.en ? partyShort({ abbr: p.abbr }, 'en') : p.label}
             </button>
           ))}
         </div>
       </div>
 
       <p className="text-[14px] text-muted tnum" aria-live="polite">
-        {bn(results.length)} জন সদস্য
-        {results.length > visible.length ? `, ${bn(visible.length)} জন দেখানো হচ্ছে` : ''}
+        {t.en ? (
+          <>
+            {t.count(results.length, '', 'member', 'members')}
+            {results.length > visible.length ? `, showing ${visible.length}` : ''}
+          </>
+        ) : (
+          <>
+            {t.n(results.length)} জন সদস্য
+            {results.length > visible.length ? `, ${t.n(visible.length)} জন দেখানো হচ্ছে` : ''}
+          </>
+        )}
       </p>
 
       {results.length === 0 ? (
         <p className="py-10 text-center text-[15px] text-muted">
-          কিছু পাওয়া যায়নি। নাম বাংলা বা ইংরেজি দুইভাবেই লেখা যায়।
+          {t('কিছু পাওয়া যায়নি। নাম বাংলা বা ইংরেজি দুইভাবেই লেখা যায়।', 'Nothing found. Names can be typed in English or in Bangla.')}
         </p>
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {visible.map((m) => (
+          {visible.map((m) => {
+            const name = t.en ? personName(m, 'en') : m.nameBn || m.nameEn;
+            // A member with no English name on record keeps the Bangla one, marked as Bangla.
+            const nameLang = t.en && name && BANGLA.test(name) ? 'bn' : undefined;
+            const seat = t.en ? (m.seatEn ? seatName({ nameEn: m.seatEn, nameBn: m.seatBn, reserved: m.reserved }, 'en') : null) : m.seatBn;
+            const party = t.en ? (m.party ? partyShort({ abbr: m.party, nameBn: m.partyBn }, 'en') : null) : m.partyBn ?? m.party;
+            return (
             <li key={m.id}>
               <Link
                 href={`/mp/${m.slug}`}
                 className="bg-surface border border-rule rounded-xl px-4 py-3 flex items-center gap-3.5 hover:border-brand transition-colors"
               >
-                <MemberPhoto src={m.photoUrl} alt="" initial={initialOf(m)} size={44} />
+                <span lang={nameLang} className="contents">
+                  <MemberPhoto src={m.photoUrl} alt="" initial={t.en && !nameLang && name ? initialEn(name) : initialOf(m)} size={44} />
+                </span>
                 <span className="grow min-w-0 flex flex-col gap-0.5">
-                  <span className="display text-[15.5px] font-bold truncate">{m.nameBn || m.nameEn}</span>
+                  <span lang={nameLang} className="display text-[15.5px] font-bold truncate">{name}</span>
                   <span className="text-[13px] text-muted truncate">
-                    {[m.seatBn, m.partyBn ?? m.party].filter(Boolean).join(', ')}
+                    {[seat, party].filter(Boolean).join(', ')}
                   </span>
                 </span>
                 <span
@@ -194,7 +215,8 @@ export default function MemberFilter({
                 />
               </Link>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
 
@@ -204,7 +226,7 @@ export default function MemberFilter({
           onClick={() => setShown((n) => n + 90)}
           className="self-center px-6 h-12 rounded-full border border-ink font-semibold text-[15px] hover:bg-surface"
         >
-          আরও দেখুন
+          {t('আরও দেখুন', 'Show more')}
         </button>
       )}
     </div>

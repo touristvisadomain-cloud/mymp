@@ -22,7 +22,13 @@ export function titleCaseName(s: string | null | undefined): string | null {
   if (!s) return null;
   // Stray spaces the source leaves around hyphens and before full stops: "Md Anwar - ul - Islam", "A . E. Sultan".
   s = s.replace(/\s*-\s*/g, '-').replace(/\s+\./g, '.').replace(/\s{2,}/g, ' ').trim();
-  if (s !== s.toUpperCase() || !/[A-Z]{2}/.test(s)) return s;
+  // A title or a few words in capitals inside an otherwise mixed name: "DR. Khandaker…", "Mr. MIAH NURUDDIN AHMAD APU".
+  if (s !== s.toUpperCase()) {
+    s = s.replace(/\bDR\./g, 'Dr.');
+    if ((s.match(/\b[A-Z]{3,}\b/g) ?? []).length >= 2) s = s.replace(/\b([A-Z])([A-Z]{2,})\b/g, (_, a: string, b: string) => a + b.toLowerCase());
+    return s;
+  }
+  if (!/[A-Z]{2}/.test(s)) return s;
   return s.toLowerCase().replace(/(^|[\s.\-('])([a-z])/g, (_, p: string, c: string) => p + c.toUpperCase());
 }
 
