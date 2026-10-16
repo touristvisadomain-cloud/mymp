@@ -17,7 +17,8 @@ const MESSENGER_WEB = 'https://www.messenger.com/';
 
 /**
  * Share this page: the phone's own share sheet where the browser has one,
- * plain share links for Facebook, Messenger, WhatsApp and X, and copy link.
+ * and plain share links for Facebook, Messenger and WhatsApp (the owner
+ * dropped X and the copy-link button, 2026-10-17).
  * No third-party script is loaded; each network's own share address does the
  * work, and what the post shows comes from the page's share tags (photo,
  * name, seat).
@@ -29,7 +30,7 @@ const MESSENGER_WEB = 'https://www.messenger.com/';
  */
 export default function ShareButtons({ url, title, text }: { url: string; title: string; text: string }) {
   const canShare = useCanShare();
-  const [copied, setCopied] = useState<'link' | 'messenger' | null>(null);
+  const [copied, setCopied] = useState<'messenger' | null>(null);
 
   const u = encodeURIComponent(url);
 
@@ -38,13 +39,13 @@ export default function ShareButtons({ url, title, text }: { url: string; title:
     if (/Android/i.test(ua)) {
       e.preventDefault();
       // Falls back to messenger.com when no app handles the link.
-      window.location.href = `intent://share/?link=${u}#Intent;scheme=fb-messenger;S.browser_fallback_url=${encodeURIComponent(MESSENGER_WEB)};end`;
+      window.location.assign(`intent://share/?link=${u}#Intent;scheme=fb-messenger;S.browser_fallback_url=${encodeURIComponent(MESSENGER_WEB)};end`);
     } else if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) {
       e.preventDefault();
-      window.location.href = `fb-messenger://share/?link=${u}`;
+      window.location.assign(`fb-messenger://share/?link=${u}`);
     } else {
       // The link itself opens messenger.com in a new tab.
-      void copy('messenger');
+      void copy();
     }
   }
 
@@ -52,10 +53,10 @@ export default function ShareButtons({ url, title, text }: { url: string; title:
     { key: 'facebook', label: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
     { key: 'messenger', label: 'Messenger', href: MESSENGER_WEB, onClick: toMessenger },
     { key: 'whatsapp', label: 'WhatsApp', href: `https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}` },
-    { key: 'x', label: 'X', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${u}` },
   ];
 
-  async function copy(which: 'link' | 'messenger') {
+  /** The link to the clipboard, for Messenger on a computer, which has no share address. */
+  async function copy() {
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -70,8 +71,8 @@ export default function ShareButtons({ url, title, text }: { url: string; title:
       document.execCommand('copy');
       field.remove();
     }
-    setCopied(which);
-    window.setTimeout(() => setCopied(null), which === 'messenger' ? 6000 : 2500);
+    setCopied('messenger');
+    window.setTimeout(() => setCopied(null), 6000);
   }
 
   const button =
@@ -106,12 +107,8 @@ export default function ShareButtons({ url, title, text }: { url: string; title:
           <span className="hidden sm:inline">{l.key === 'messenger' && copied === 'messenger' ? 'লিংক কপি হয়েছে, চ্যাটে পেস্ট করুন' : l.label}</span>
         </a>
       ))}
-      <button type="button" onClick={() => copy('link')} className={button} aria-label={copied === 'link' ? 'লিংক কপি হয়েছে' : 'লিংক কপি করুন'}>
-        <Icon name={copied === 'link' ? 'check' : 'link'} size={15} className={copied === 'link' ? 'text-brand' : undefined} />
-        <span className="hidden sm:inline">{copied === 'link' ? 'লিংক কপি হয়েছে' : 'লিংক কপি'}</span>
-      </button>
       <span className="sr-only" role="status">
-        {copied === 'messenger' ? 'লিংক কপি হয়েছে। Messenger খুলেছে, যাকে পাঠাতে চান তার চ্যাটে পেস্ট করুন।' : copied === 'link' ? 'লিংক কপি হয়েছে।' : ''}
+        {copied === 'messenger' ? 'লিংক কপি হয়েছে। Messenger খুলেছে, যাকে পাঠাতে চান তার চ্যাটে পেস্ট করুন।' : ''}
       </span>
     </div>
   );
