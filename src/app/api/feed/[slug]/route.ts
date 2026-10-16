@@ -6,6 +6,7 @@
  * month list; `?m=2026-08` brings one earlier month when a reader opens it,
  * `?from=2026-10-10&to=2026-10-15` a span of days the reader picked, and
  * `?recent=60` the newest items whatever their month (the app's member page).
+ * `?lang=en` names the outlets in English.
  *
  * Cached at the edge for five minutes: a headline that lands during a coffee
  * break is soon enough, and the site keeps its "no function on the read path
@@ -16,6 +17,7 @@ import { getMember } from '@/lib/data';
 import { monthCounts, monthItems, pinnedItems, recentItems, rangeItems, feedSettings, RANGE_LIMIT, type FeedType } from '@/lib/feed/store';
 import { isMissingTable } from '@/lib/posts/db';
 import { gzipJson } from '@/lib/gzipJson';
+import { feedInEnglish } from '@/lib/app/news';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -96,7 +98,17 @@ async function handle(req: Request, ctx: { params: Promise<{ slug: string }> }) 
   }
 }
 
-/** The JSON, gzipped for a browser that accepts it (lib/gzipJson). */
+/**
+ * The JSON, gzipped for a browser that accepts it (lib/gzipJson). With
+ * `?lang=en` (the app's English version) the outlets are named in English;
+ * the headlines stay as the outlets wrote them.
+ */
 export async function GET(req: Request, ctx: { params: Promise<{ slug: string }> }) {
-  return gzipJson(req, await handle(req, ctx));
+  let res = await handle(req, ctx);
+  if (res.ok && new URL(req.url).searchParams.get('lang') === 'en') {
+    const headers = new Headers(res.headers);
+    headers.delete('content-length');
+    res = NextResponse.json(feedInEnglish(await res.json()), { status: res.status, headers });
+  }
+  return gzipJson(req, res);
 }

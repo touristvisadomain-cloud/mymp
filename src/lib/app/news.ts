@@ -45,3 +45,19 @@ export async function newsCounts() {
     return { today: { news: 0, video: 0, outlets: 0 }, total: { news: 0, video: 0 }, months: [], outletCount: NEWS_SOURCES.length, unavailable: true as const };
   }
 }
+
+type FeedItemLike = { outletName?: string | null; alsoIn?: { outletName: string | null }[] };
+
+/**
+ * A member's feed (/api/feed/<slug>) for an English reader: each outlet under
+ * its English name, null when the site has none for it yet. The headlines and
+ * summaries stay as the outlets wrote them.
+ */
+export function feedInEnglish<B extends Record<string, unknown>>(body: B): B {
+  const outlet = (name: string | null | undefined) => (name ? enOnly(outletName(name, 'en')) : null);
+  const item = (i: FeedItemLike) => ({ ...i, outletName: outlet(i.outletName), alsoIn: (i.alsoIn ?? []).map((a) => ({ ...a, outletName: outlet(a.outletName) })) });
+  const out: Record<string, unknown> = { ...body, lang: 'en' };
+  for (const k of ['pinned', 'items'] as const) if (Array.isArray(body[k])) out[k] = (body[k] as FeedItemLike[]).map(item);
+  if (Array.isArray(body.outlets)) out.outlets = (body.outlets as string[]).map(outlet);
+  return out as B;
+}

@@ -17,7 +17,7 @@
  * Bangla in its place (lib/app/respond.ts, docs/app-api.md).
  */
 import {
-  members, resignedMembers, parties, meta, getMember, committeesOfMember, governmentPostsOf, committeeCounts,
+  members, resignedMembers, parties, meta, getMember, getSeat, committeesOfMember, governmentPostsOf, committeeCounts,
   districtOf, partyColor, partyShortBn, currentPosts, posts, bnText, OFFICE_LABELS, type Member, type PostEntry,
 } from '@/lib/data';
 import { districtList } from '@/lib/districts';
@@ -373,7 +373,8 @@ export function memberDetail(slug: string, lang: Lang = 'bn') {
           districtBn: d ? (en ? districtName(d, 'en') : d.bn) : null,
           boundaryBn: boundary?.text ?? null,
           boundaryTranslated: !!boundary?.translated,
-          vacantSince: m.seat.vacantSince ?? null,
+          // The member record's copy of the seat does not carry this; the seat list does.
+          vacantSince: getSeat(m.seat.slug)?.vacantSince ?? null,
         }
       : null,
     offices: m.offices ?? [],

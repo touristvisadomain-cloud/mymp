@@ -15,7 +15,7 @@ const BANGLA = /[ঀ-৿]/;
  * same story elsewhere), and the bootstrap's upazila table, whose second
  * column is the Bangla an English name is matched to. Addresses are not text.
  */
-const ALLOWED = [/\.stories\[\d+\]\.(lead|also\[\d+\])\.title$/, /^\.upazilaEn\[\d+\]\[1\]$/];
+const ALLOWED = [/\.stories\[\d+\]\.(lead|also\[\d+\])\.title$/, /^\.(items|pinned)\[\d+\]\.(title|summary)$/, /^\.upazilaEn\[\d+\]\[1\]$/];
 const isUrl = (s) => /^https?:\/\//.test(s);
 
 const get = async (path) => {
@@ -93,11 +93,15 @@ for (const ep of endpoints) {
   }
 }
 
-// Old routes the app's web build reads directly.
-for (const path of ['/api/news/range?from=2026-10-01&to=2026-10-02', `/api/feed/${someMember}?recent=5`, '/api/feed/no-such-member']) {
+// Routes the website shares with the app, which its web build reads directly.
+for (const path of ['/api/news/range?from=2026-10-01&to=2026-10-02', `/api/feed/${someMember}?recent=5`, `/api/feed/${someMember}?lang=en`, '/api/feed/no-such-member']) {
   const r = await get(path);
   console.log(`${r.status} ${path}`);
   if (r.headers.get('access-control-allow-origin') !== '*') fail('no access-control-allow-origin: *');
+  if (path.endsWith('lang=en')) {
+    const bangla = [...strings(await r.json())].filter(([p, s]) => BANGLA.test(s) && !isUrl(s) && !ALLOWED.some((re) => re.test(p)));
+    for (const [p, s] of bangla.slice(0, 15)) fail(`Bangla at ${p}: ${s.slice(0, 80)}`);
+  }
 }
 
 console.log(failures ? `\n${failures} problem(s).` : '\nEvery endpoint answers as documented.');
