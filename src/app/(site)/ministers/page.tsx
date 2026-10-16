@@ -5,10 +5,19 @@ import { posts, currentPosts, getMemberById, bn, dateBn, initial, partyColor, po
 import { ministryKey, normalizeName } from '@/lib/posts/names';
 import { adviserForPost } from '@/lib/advisers';
 import { Page, PageHead, Card } from '@/components/ui';
+import Icon from '@/components/Icon';
 import MinistersBrowser, { type MinisterGroup, type MinisterPerson } from '@/components/MinistersBrowser';
 import { CABINET_PAGE_FOR_READERS } from '../../../../config/sync-sources';
 
 const GROUPS = ['প্রধানমন্ত্রী', 'মন্ত্রী', 'প্রতিমন্ত্রী', 'উপমন্ত্রী', 'উপদেষ্টা'];
+/** A line under each rank's tile. */
+const RANK_SHORT: Record<string, string> = {
+  প্রধানমন্ত্রী: 'সরকারপ্রধান',
+  মন্ত্রী: 'মন্ত্রণালয়ের পূর্ণ দায়িত্বে',
+  প্রতিমন্ত্রী: 'পদমর্যাদায় মন্ত্রীর পরে',
+  উপমন্ত্রী: 'প্রতিমন্ত্রীর পরের ধাপ',
+  উপদেষ্টা: 'প্রধানমন্ত্রীর পরামর্শক',
+};
 
 /** The list writes "জনাব" before most names; the site's names never carry it. */
 const plainName = (name: string) => name.replace(/^জনাব\s+/, '').trim();
@@ -117,30 +126,60 @@ export default function MinistersPage() {
         lede="কে কোন মন্ত্রণালয়ের দায়িত্বে, কবে থেকে, আর কে কোন আসনের সংসদ সদস্য। তালিকাটি মন্ত্রিপরিষদ বিভাগের ওয়েবসাইট থেকে দিনে কয়েকবার মিলিয়ে নেওয়া হয়; কোনো নাম হাতে বসানো হয় না।"
       />
 
-      <div className="pt-6 flex flex-col gap-3">
-        <div className="rounded-card border border-rule bg-surface divide-y sm:divide-y-0 sm:divide-x divide-rulesoft flex flex-col sm:flex-row overflow-hidden rtl:sm:divide-x-reverse">
-          {GROUPS.map((t) => (
-            <div key={t} className="grow px-4 py-3.5 flex items-baseline justify-between sm:flex-col sm:items-start sm:gap-1">
-              <span className="text-[13px] text-muted">{t}</span>
-              <span className="display text-[24px] font-bold leading-none">
-                {count(t) ? bn(count(t)) : <span className="text-[15px] font-normal text-muted">এখন কেউ নেই</span>}
-              </span>
-            </div>
-          ))}
+      <div className="pt-6 flex flex-col gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {GROUPS.map((t, i) =>
+            count(t) ? (
+              // Each rank jumps to its own list below (MinistersBrowser's rankId).
+              <a
+                key={t}
+                href={`#rank-${t}`}
+                className={`group relative overflow-hidden rounded-card border border-rule bg-surface shadow-card px-4 pt-3.5 pb-4 flex flex-col gap-1.5 hover:border-brand hover:shadow-lift transition-all ${i === 0 ? 'col-span-2 sm:col-span-1' : ''}`}
+              >
+                <span className="flex items-center justify-between gap-2 text-[13px] font-semibold text-inksoft group-hover:text-brand">
+                  {t}
+                  <Icon name="arrow" size={14} className="text-brand opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </span>
+                <span className="display text-[32px] font-bold leading-none tnum">{bn(count(t))}</span>
+                <span className="text-[12px] text-muted leading-snug">{RANK_SHORT[t]}</span>
+                <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-[3px] bg-brand/70 scale-x-0 group-hover:scale-x-100 origin-left transition-transform" />
+              </a>
+            ) : (
+              <div key={t} className="rounded-card border border-dashed border-rule bg-surface/60 px-4 pt-3.5 pb-4 flex flex-col gap-1.5">
+                <span className="text-[13px] font-semibold text-muted">{t}</span>
+                <span className="display text-[32px] font-bold leading-none text-rule tnum">০</span>
+                <span className="text-[12px] text-muted">এখন কেউ নেই</span>
+              </div>
+            ),
+          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-muted">
-          {checked && <span>সরকারি পদ সর্বশেষ যাচাই: {checked}</span>}
-          <span>
-            সূত্র:{' '}
-            <a href={CABINET_PAGE_FOR_READERS} target="_blank" rel="noopener noreferrer" className="underline decoration-rule underline-offset-2 hover:text-brand">
-              মন্ত্রিপরিষদ বিভাগ ↗
-            </a>
-          </span>
-          {(posts.pending?.length ?? 0) > 0 && (
-            <span>{bn(posts.pending!.length)} জন সংসদ সদস্য কিনা তা এখনো যাচাই হচ্ছে; তাঁদের নামের পাশে তা লেখা আছে।</span>
+        <div className="flex flex-wrap items-center gap-2 text-[13px]">
+          {checked && (
+            <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brandsoft text-branddark font-semibold">
+              <Icon name="check" size={14} />
+              সর্বশেষ যাচাই {checked}
+            </span>
           )}
-          <Link href="/mp" className="font-semibold text-brand hover:underline">সব সংসদ সদস্য →</Link>
+          <a
+            href={CABINET_PAGE_FOR_READERS}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-rule bg-surface text-inksoft hover:border-brand hover:text-brand transition-colors"
+          >
+            সূত্র: মন্ত্রিপরিষদ বিভাগ
+            <Icon name="external" size={13} />
+          </a>
+          {(posts.pending?.length ?? 0) > 0 && (
+            <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-warnsoft text-ink" title="তাঁদের নামের পাশে তা লেখা আছে">
+              <Icon name="clock" size={14} />
+              {bn(posts.pending!.length)} জন সংসদ সদস্য কিনা যাচাই হচ্ছে
+            </span>
+          )}
+          <Link href="/mp" className="ms-auto inline-flex items-center gap-1 font-semibold text-brand hover:underline">
+            সব সংসদ সদস্য
+            <Icon name="arrow" size={14} />
+          </Link>
         </div>
       </div>
 
