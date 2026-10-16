@@ -6,7 +6,7 @@ import MemberPhoto from './MemberPhoto';
 import PartyBadge from './PartyBadge';
 import Icon from './Icon';
 import { siteUrl } from '@/lib/site';
-import { partyLogo } from '@/lib/partyLogos';
+import { partyLogo, logoLicence } from '@/lib/partyLogos';
 
 export function Page({ children }: { children: React.ReactNode }) {
   return <div className="mx-auto max-w-[1200px] px-4 sm:px-5">{children}</div>;
@@ -139,7 +139,7 @@ export async function LogoCredit({ abbr }: { abbr: string }) {
       <a href={logo.page} target="_blank" rel="noopener noreferrer" className={link}>{where}</a>
       {logo.author && <>, {logo.author}</>}
       {', '}
-      {logo.licenceUrl ? <a href={logo.licenceUrl} target="_blank" rel="noopener noreferrer" className={link}>{logo.licence}</a> : logo.licence}
+      {logo.licenceUrl ? <a href={logo.licenceUrl} target="_blank" rel="noopener noreferrer" className={link}>{logoLicence(logo, t.lang)}</a> : logoLicence(logo, t.lang)}
     </span>
   );
 }

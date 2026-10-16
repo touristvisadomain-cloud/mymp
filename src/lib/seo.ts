@@ -65,7 +65,7 @@ export const BASE_OPEN_GRAPH: NonNullable<Metadata['openGraph']> = {
 /** The Open Graph defaults for a language: its site name and locale, the other language as the alternate. */
 export function baseOpenGraph(lang: Lang): NonNullable<Metadata['openGraph']> {
   return lang === 'en'
-    ? { ...BASE_OPEN_GRAPH, siteName: SITE_NAME_EN, locale: 'en_GB', alternateLocale: ['bn_BD'], images: [{ ...SHARE_IMAGE, alt: 'My MP: the members of the Parliament of Bangladesh' }] }
+    ? { ...BASE_OPEN_GRAPH, siteName: SITE_NAME_EN, locale: 'en_GB', alternateLocale: ['bn_BD'], images: [shareImageIn('en')] }
     : { ...BASE_OPEN_GRAPH, alternateLocale: ['en_GB'] };
 }
 
@@ -84,6 +84,12 @@ export const BASE_TWITTER: NonNullable<Metadata['twitter']> = {
   card: 'summary_large_image',
   images: [SHARE_IMAGE],
 };
+
+/** The site's share image with its description in the page's language. */
+const shareImageIn = (lang: Lang) => (lang === 'en' ? { ...SHARE_IMAGE, alt: 'My MP: the members of the Parliament of Bangladesh' } : SHARE_IMAGE);
+
+/** Twitter's defaults for a language. */
+export const baseTwitter = (lang: Lang): NonNullable<Metadata['twitter']> => ({ ...BASE_TWITTER, images: [shareImageIn(lang)] });
 
 /**
  * The share tags for one page: the site's Open Graph defaults plus the page's

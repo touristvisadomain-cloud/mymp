@@ -1,3 +1,5 @@
+import type { Lang } from '@/i18n/core';
+
 /**
  * Each party's logo, copied into public/party/ from Wikimedia so the site never
  * hotlinks it. The parliament's own data has no logos at all. `licence` is what
@@ -26,6 +28,15 @@ const NON_FREE = 'অ-মুক্ত লোগো, দল চেনানোর
 const CC0 = { licence: 'CC0', licenceUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' };
 const BY = { licence: 'CC BY 4.0', licenceUrl: 'https://creativecommons.org/licenses/by/4.0/' };
 const BY_SA = { licence: 'CC BY-SA 4.0', licenceUrl: 'https://creativecommons.org/licenses/by-sa/4.0/' };
+
+/** The two licences written in words, in English; the Creative Commons names read the same in both languages. */
+const LICENCE_EN: Record<string, string> = {
+  [PD]: 'Public domain',
+  [NON_FREE]: 'Non-free logo, used to identify the party',
+};
+
+/** A logo's licence in the page's language. */
+export const logoLicence = (logo: PartyLogo, lang: Lang) => (lang === 'en' ? LICENCE_EN[logo.licence] ?? logo.licence : logo.licence);
 
 /** Keyed by party abbreviation, as in parties.json and every member's party. */
 export const PARTY_LOGOS: Record<string, PartyLogo> = {

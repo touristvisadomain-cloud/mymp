@@ -57,7 +57,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
 
   const profile = partyProfile(p);
   const year = foundedYear(profile);
-  const leader = profile?.leaderNameBn ? `${profile.leaderTitleBn ?? 'প্রধান'} ${profile.leaderNameBn}` : null;
+  const leader = profile?.leaderName ? `${profile.leaderTitle ?? 'প্রধান'} ${profile.leaderName}` : null;
   const logo = `data:image/jpeg;base64,${read().toString('base64')}`;
   const accent = ogPartyColour(p.abbr);
 

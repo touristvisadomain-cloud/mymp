@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Noto_Sans_Bengali } from 'next/font/google';
 import '../globals.css';
 import { siteUrl } from '@/lib/site';
-import { baseOpenGraph, BASE_TWITTER, siteDescription, siteName, siteTitle } from '@/lib/seo';
+import { baseOpenGraph, baseTwitter, siteDescription, siteName, siteTitle } from '@/lib/seo';
 import { getLang } from '@/i18n/server';
 import { LangProvider } from '@/i18n/client';
 import { isLang } from '@/i18n/core';
@@ -34,7 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: siteTitle(lang), template: `%s | ${siteName(lang)}` },
     description: siteDescription(lang),
     openGraph: baseOpenGraph(lang),
-    twitter: BASE_TWITTER,
+    twitter: baseTwitter(lang),
   };
 }
 
