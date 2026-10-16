@@ -119,14 +119,24 @@ export default function MinistersPage() {
 
       <div className="pt-6 flex flex-col gap-3">
         <div className="rounded-card border border-rule bg-surface divide-y sm:divide-y-0 sm:divide-x divide-rulesoft flex flex-col sm:flex-row overflow-hidden rtl:sm:divide-x-reverse">
-          {GROUPS.map((t) => (
-            <div key={t} className="grow px-4 py-3.5 flex items-baseline justify-between sm:flex-col sm:items-start sm:gap-1">
-              <span className="text-[13px] text-muted">{t}</span>
-              <span className="display text-[24px] font-bold leading-none">
-                {count(t) ? bn(count(t)) : <span className="text-[15px] font-normal text-muted">এখন কেউ নেই</span>}
-              </span>
-            </div>
-          ))}
+          {GROUPS.map((t) =>
+            count(t) ? (
+              // Each rank jumps to its own list below (MinistersBrowser's rankId).
+              <a
+                key={t}
+                href={`#rank-${t}`}
+                className="group grow px-4 py-3.5 flex items-baseline justify-between sm:flex-col sm:items-start sm:gap-1 hover:bg-brandsoft/60 transition-colors"
+              >
+                <span className="text-[13px] text-muted group-hover:text-brand">{t}</span>
+                <span className="display text-[24px] font-bold leading-none tnum">{bn(count(t))}</span>
+              </a>
+            ) : (
+              <div key={t} className="grow px-4 py-3.5 flex items-baseline justify-between sm:flex-col sm:items-start sm:gap-1">
+                <span className="text-[13px] text-muted">{t}</span>
+                <span className="text-[15px] text-muted leading-none">এখন কেউ নেই</span>
+              </div>
+            ),
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-muted">
