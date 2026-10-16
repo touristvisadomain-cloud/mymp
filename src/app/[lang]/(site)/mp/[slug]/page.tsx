@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/mp/[slug]'
   if (!m) return { title: t('সদস্য পাওয়া যায়নি', 'Member not found') };
   const path = `/mp/${m.slug}`;
   // The member's own 1200x630 preview image (src/app/api/og/mp/[slug]/route.tsx).
-  const image = cardImage(`/api/og/mp/${m.slug}`, mpTitle(m, t.lang));
+  const image = cardImage(`/api/og/mp/${m.slug}${t.en ? "/en" : ""}`, mpTitle(m, t.lang));
   const description = mpDescription(m, t.lang);
   return {
     title: { absolute: mpTitle(m, t.lang) },

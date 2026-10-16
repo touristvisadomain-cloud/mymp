@@ -47,11 +47,11 @@ function MemberList({ list, t }: { list: Member[]; t: T }) {
 /** "১ সেপ্টেম্বর ১৯৭৮" / "1 September 1978", or "১৯৭৮ সাল" / "1978" when only the year is on record. */
 const founded = (on: string, t: T) => (/^\d{4}$/.test(on) ? t(`${t.n(on)} সাল`, on) : t.date(on) ?? on);
 
-/** The party's preview card (/api/og/party/[slug], drawn in Bangla); independents keep the site's image. */
+/** The party's preview card (/api/og/party/[slug], or its English twin /en); independents keep the site's image. */
 const shareCard = (p: Party, t: T) =>
   p.abbr === 'Ind'
     ? null
-    : cardImage(`/api/og/party/${p.slug}`, t.en ? partyName(p, 'en') : p.nameBn ?? p.abbr);
+    : cardImage(`/api/og/party/${p.slug}${t.en ? "/en" : ""}`, t.en ? partyName(p, 'en') : p.nameBn ?? p.abbr);
 
 /** The party's name as a sentence starts with it: the Bangla without its abbreviation, the English in full. */
 const nameOf = (p: Party, t: T) => (t.en ? partyName(p, 'en') : partyBn(p)?.name ?? p.nameBn ?? p.abbr);

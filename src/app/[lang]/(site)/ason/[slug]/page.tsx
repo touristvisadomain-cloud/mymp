@@ -92,7 +92,7 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/ason/[slug
     : '';
   const where = s.reserved ? s.nameBn : `${s.nameBn} আসন`;
   const card = m
-    ? { url: `/api/og/mp/${m.slug}`, width: 1200, height: 630, type: 'image/png', alt: t(`${where}, ${name}`, `${s.reserved ? seatEn : `${seatEn} constituency`}, ${name}`) }
+    ? { url: `/api/og/mp/${m.slug}${t.en ? "/en" : ""}`, width: 1200, height: 630, type: 'image/png', alt: t(`${where}, ${name}`, `${s.reserved ? seatEn : `${seatEn} constituency`}, ${name}`) }
     : null;
   const party = m?.party ? (t.en ? partyName(m.party, 'en') : m.party.nameBn) : null;
   return {

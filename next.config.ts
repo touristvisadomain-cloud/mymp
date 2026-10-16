@@ -114,7 +114,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["harfbuzzjs"],
   outputFileTracingIncludes: {
     "/api/og/mp/\\[slug\\]": [HARFBUZZ_WASM],
+    "/api/og/mp/\\[slug\\]/en": [HARFBUZZ_WASM],
     "/api/og/party/\\[slug\\]": [HARFBUZZ_WASM, "./public/party/og/*.jpg"],
+    "/api/og/party/\\[slug\\]/en": [HARFBUZZ_WASM, "./public/party/og/*.jpg"],
   },
 };
 
