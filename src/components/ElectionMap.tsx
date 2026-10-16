@@ -220,7 +220,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
     <button
       key={m}
       type="button"
-      onClick={() => { setMode(m); close(); }}
+      onClick={() => { setMode(m); close(); setVb(HOME); }}
       aria-pressed={mode === m}
       className={`h-9 px-3.5 rounded-lg text-[13.5px] font-semibold transition-colors ${mode === m ? 'bg-brand text-white' : 'bg-surface border border-rule text-ink hover:border-brand'}`}
     >
