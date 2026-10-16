@@ -167,13 +167,15 @@ export default function ElectionPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-4 items-stretch">
           <Card className="p-6 flex flex-col gap-4">
             {/* Crore-sized figures in Bangla grouping are wide: one column on a narrow phone, so two never run together. */}
-            <div className="grid grid-cols-1 min-[440px]:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 min-[440px]:grid-cols-2 gap-x-4 gap-y-5">
               {([
-                ['মোট ভোটার', ecs.national.registeredVoters],
-                ['ভোটকেন্দ্র', ecs.national.pollingCentres],
-              ] as [string, number][]).map(([label, n]) => (
+                ['মোট ভোটার', bnGroup(ecs.national.registeredVoters)],
+                ['ভোটকেন্দ্র', bnGroup(ecs.national.pollingCentres)],
+                ['নিবন্ধিত রাজনৈতিক দল', bn(ecs.national.registeredParties)],
+                ['ভোটারের মধ্যে নারী', `${bn(((ecs.national.femaleVoters / ecs.national.registeredVoters) * 100).toFixed(1))}%`],
+              ] as [string, string][]).map(([label, value]) => (
                 <div key={label} className="flex flex-col gap-1">
-                  <span className="display tnum text-[26px] font-extrabold leading-none">{bnGroup(n)}</span>
+                  <span className="display tnum text-[26px] font-extrabold leading-none">{value}</span>
                   <span className="text-[13px] text-muted">{label}</span>
                 </div>
               ))}
@@ -265,9 +267,9 @@ export default function ElectionPage() {
 
       <section id="jela" className="mt-10 pb-14 flex flex-col gap-5 scroll-mt-24">
         <SectionHead title="জেলা অনুযায়ী আসন" note={`${bn(districts.length)} জেলা`} />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="columns-1 md:columns-2 xl:columns-3 gap-4">
           {districts.map((d) => (
-            <Card key={d.bn} className="p-5 flex flex-col gap-3">
+            <Card key={d.bn} className="p-5 mb-4 flex flex-col gap-3 break-inside-avoid">
               <div className="flex items-baseline justify-between gap-3">
                 <h3 className="display text-[18px] font-bold">{d.bn}</h3>
                 <span className="text-[13px] text-muted tnum">{bn(d.list.length)} আসন</span>
