@@ -82,6 +82,7 @@ const DISTRICT_EN_DISPLAY: Record<string, string> = {
   ChapaiNawabganj: 'Chapai Nawabganj',
   "Cox'sBazar": "Cox's Bazar",
   Chittagong: 'Chattogram',
+  Gopalgonj: 'Gopalganj',
 };
 
 export const districtNameEn = (en: string) => DISTRICT_EN_DISPLAY[en] ?? en;
