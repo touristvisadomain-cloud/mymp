@@ -237,7 +237,7 @@ export default function NewsBrowser({
               <span className="text-[13px] font-medium text-muted">{bn(perDay.get(d.date) ?? d.items.length)}টি</span>
             </h2>
             <ul className="flex flex-col gap-3">
-              {d.items.map((s) => <li key={s.id}><StoryCard s={s} showDate={false} /></li>)}
+              {d.items.map((s) => <li key={s.id}><StoryCard s={s} /></li>)}
             </ul>
           </section>
         ))

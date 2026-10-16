@@ -58,8 +58,8 @@ export default function StoryCard({ s, showMember = true, showDate = true }: { s
             {s.kind === 'press' && <span className="shrink-0 px-1.5 py-px rounded border border-rule text-[11.5px] font-semibold">প্রজ্ঞাপন</span>}
             <span className="font-semibold text-inksoft truncate">{s.lead.source}</span>
           </span>
-          {/* "৩ ঘণ্টা আগে, সকাল ১০:২৬"; under a day heading only the clock is new, so the date is left out. */}
-          {s.publishedAt ? <When iso={s.publishedAt} withDate={showDate} className="shrink-0" /> : showDate && <span className="shrink-0">{s.dateLabel}</span>}
+          {/* "১৭ অক্টোবর ২০২৬, রাত ১১:২৫ · ৩ ঘণ্টা আগে": the date and time on every story. */}
+          {s.publishedAt ? <When iso={s.publishedAt} withDate={showDate} /> : showDate && <span>{s.dateLabel}</span>}
         </div>
 
         <a
