@@ -1,0 +1,299 @@
+[
+ {
+  "memberId": "013017801",
+  "nameBn": "মোহাম্মদ কামাল হোসেন",
+  "links": {},
+  "notes": "Could not confirm pending facebook kamalhossaindcs. The Wikipedia 'website' hint (bd-pratidin.com) is a news site, not his. bn/en Wikipedia list kamalbd.com as his website, but the domain does not resolve (ENOTFOUND), so it was not reported.",
+  "fields": {}
+ },
+ {
+  "memberId": "013017901",
+  "nameBn": "ইশরাক হোসেন",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/channel/UCt9k6X8GCU_K6qaAmf7mAGw",
+    "evidence": "https://www.ishraque.com",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/ishraque_hossain_official/",
+    "evidence": "https://www.ishraque.com",
+    "confirm": false
+   }
+  },
+  "notes": "Wikidata lists a different X handle (https://x.com/IshraqueBD). The X link given here is the one on his own site, which may be from his 2020 mayoral campaign.",
+  "fields": {}
+ },
+ {
+  "memberId": "013018001",
+  "nameBn": "হামিদুর রহমান",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@HamidurRahmanHamid-politician",
+    "evidence": "https://hamidurrahmanhamid.com",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/hamidurrahmanhamidbd/",
+    "evidence": "https://hamidurrahmanhamid.com",
+    "confirm": false
+   }
+  },
+  "notes": "Links come from his own site's JS bundle. The site also links the verified facebook hamidurrahmanhamiddhaka7.",
+  "fields": {}
+ },
+ {
+  "memberId": "013018401",
+  "nameBn": "মোঃ নাহিদ ইসলাম",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@NahidforDhaka-11",
+    "evidence": "https://nahidislam.info",
+    "confirm": false
+   },
+   "x": {
+    "url": "https://x.com/NahidIslam_24",
+    "evidence": "https://nahidislam.info",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/nahid.islam__",
+    "evidence": "https://nahidislam.info",
+    "confirm": false
+   }
+  },
+  "notes": "Wikidata and bn Wikipedia also list a second facebook (https://www.facebook.com/NahidIslam.July36). professionBn was not filled: Wikipedia gives only 'politician' (রাজনীতিবিদ), and no affidavit source was found.",
+  "fields": {}
+ },
+ {
+  "memberId": "013018701",
+  "nameBn": "মীর আহমাদ বিনকাসেম",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/mirahmadbinquasem",
+    "evidence": "https://www.wikidata.org/wiki/Q85851446",
+    "confirm": true
+   },
+   "website": {
+    "url": "https://www.barristerarman.com/",
+    "evidence": "https://bn.wikipedia.org/wiki/%E0%A6%AE%E0%A7%80%E0%A6%B0_%E0%A6%86%E0%A6%B9%E0%A6%AE%E0%A6%A6_%E0%A6%AC%E0%A6%BF%E0%A6%A8_%E0%A6%95%E0%A6%BE%E0%A6%B8%E0%A7%87%E0%A6%AE",
+    "confirm": false
+   },
+   "youtube": {
+    "url": "https://www.youtube.com/@barristerarmanmediacell/",
+    "evidence": "https://www.barristerarman.com/",
+    "confirm": false
+   }
+  },
+  "notes": "barristerarman.com is his personal site ('Mir Ahmad Bin Kasem, also known as Barrister Arman'). Its YouTube and facebook links are to his 'media cell' (https://www.facebook.com/barristerarmanmediacell/), which is team-run.",
+  "fields": {}
+ },
+ {
+  "memberId": "013018801",
+  "nameBn": "ডাঃ মোঃ শফিকুর রহমান",
+  "links": {
+   "website": {
+    "url": "http://dr-shafiqurrahman.info/",
+    "evidence": "https://bn.wikipedia.org/wiki/%E0%A6%B6%E0%A6%AB%E0%A6%BF%E0%A6%95%E0%A7%81%E0%A6%B0_%E0%A6%B0%E0%A6%B9%E0%A6%AE%E0%A6%BE%E0%A6%A8",
+    "confirm": false
+   },
+   "x": {
+    "url": "https://x.com/Drsr_Official",
+    "evidence": "https://www.wikidata.org/wiki/Q16406038",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/drshafiq.official/",
+    "evidence": "http://dr-shafiqurrahman.info/",
+    "confirm": false
+   },
+   "youtube": {
+    "url": "https://www.youtube.com/DrShafiqurRahman",
+    "evidence": "http://dr-shafiqurrahman.info/",
+    "confirm": false
+   }
+  },
+  "notes": "The site's title is 'ডাঃ শফিকুর রহমান এমপি – আমীর, বাংলাদেশ জামায়াতে ইসলামী'. It also links twitter.com/Drsr_Official and the verified facebook.",
+  "fields": {}
+ },
+ {
+  "memberId": "013018901",
+  "nameBn": "মোঃ আব্দুল বাতেন",
+  "links": {},
+  "notes": "The website hint colonelabdulbaten.info (from bn Wikipedia) was not reported: it returns HTTP 404 over https.",
+  "fields": {}
+ },
+ {
+  "memberId": "013019001",
+  "nameBn": "তারেক রহমান",
+  "links": {
+   "x": {
+    "url": "https://twitter.com/trahmanbnp",
+    "evidence": "https://tariquerahman.info",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/trahmanbnp/",
+    "evidence": "https://tariquerahman.info",
+    "confirm": false
+   },
+   "youtube": {
+    "url": "https://www.youtube.com/tariquerahmaninfo",
+    "evidence": "https://tariquerahman.info",
+    "confirm": false
+   }
+  },
+  "notes": "The X and Instagram handles also match Wikidata Q7686199.",
+  "fields": {}
+ },
+ {
+  "memberId": "013019101",
+  "nameBn": "এস, এম, জাহাঙ্গীর হোসেন",
+  "links": {
+   "website": {
+    "url": "https://smjahangir.com/",
+    "evidence": "https://bn.wikipedia.org/wiki/%E0%A6%8F%E0%A6%B8_%E0%A6%8F%E0%A6%AE_%E0%A6%9C%E0%A6%BE%E0%A6%B9%E0%A6%BE%E0%A6%99%E0%A7%8D%E0%A6%97%E0%A7%80%E0%A6%B0_%E0%A6%B9%E0%A7%8B%E0%A6%B8%E0%A7%87%E0%A6%A8",
+    "confirm": false
+   }
+  },
+  "notes": "The site's title is 'S M Jahangir Hossain | BNP Nominated MP Candidate - Dhaka-18'. Its hidden schema.org sameAs lists https://www.facebook.com/smjahangir and https://twitter.com/smjahangir, which differ from the pending facebook smjahangirhossain.bd. No visible link on the page confirms them, so they were not reported. The pending facebook remains unconfirmed.",
+  "fields": {}
+ },
+ {
+  "memberId": "013019601",
+  "nameBn": "এস,এম, রফিকুল ইসলাম",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/Dr.Bachchu",
+    "evidence": "https://drsmrafiqulislammp.info/",
+    "confirm": true
+   },
+   "website": {
+    "url": "https://drsmrafiqulislammp.info/",
+    "evidence": "https://bn.wikipedia.org/wiki/%E0%A6%8F%E0%A6%B8.%E0%A6%8F%E0%A6%AE._%E0%A6%B0%E0%A6%AB%E0%A6%BF%E0%A6%95%E0%A7%81%E0%A6%B2_%E0%A6%87%E0%A6%B8%E0%A6%B2%E0%A6%BE%E0%A6%AE_%E0%A6%AC%E0%A6%BE%E0%A6%9A%E0%A7%8D%E0%A6%9A%E0%A7%81",
+    "confirm": false
+   }
+  },
+  "notes": "The site describes itself as the official website of the Gazipur-3 MP Dr. S. M. Rafiqul Islam Bachchu. No source named specific institutions or degrees, so educationBn was not filled (the site says only that he is a physician).",
+  "fields": {}
+ },
+ {
+  "memberId": "013019701",
+  "nameBn": "সালাহ উদ্দিন",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@AyubiSOfficial",
+    "evidence": "https://salahuddinayubi.net",
+    "confirm": false
+   },
+   "x": {
+    "url": "https://x.com/SAyubiOfficial",
+    "evidence": "https://salahuddinayubi.net",
+    "confirm": false
+   }
+  },
+  "notes": "The links come from the site's own settings API (salahuddinayubi.net/api.php?collection=settings), which feeds its social buttons and also lists the verified facebook AyubiSOfficial.",
+  "fields": {}
+ },
+ {
+  "memberId": "013019901",
+  "nameBn": "খায়রুল কবির খোকন",
+  "links": {},
+  "fields": {
+   "educationBn": {
+    "value": "ঢাকা বিশ্ববিদ্যালয়",
+    "source": "https://khairulkabirkhokon.com/%e0%a6%9c%e0%a7%80%e0%a6%ac%e0%a6%a8%e0%a7%80/"
+   }
+  },
+  "notes": "His own site's biography says he studied at Dhaka University and was DUCSU GS; no degree is named. His site has no social links, so the pending facebook could not be confirmed."
+ },
+ {
+  "memberId": "013020001",
+  "nameBn": "ড. আবদুল মঈন খান",
+  "links": {},
+  "notes": "The Wikipedia 'website' hint tritiyomatra.com is not his site; ignore it. The pending facebook could not be confirmed.",
+  "fields": {}
+ },
+ {
+  "memberId": "013020301",
+  "nameBn": "মোঃ আশরাফ উদ্দিন",
+  "links": {},
+  "fields": {
+   "educationBn": {
+    "value": "সেরাজনগর এম.এ পাইলট মডেল উচ্চ বিদ্যালয় (এসএসসি); রায়পুরা সরকারি কলেজ (এইচএসসি); রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (ইলেকট্রিক্যাল ও ইলেকট্রনিক ইঞ্জিনিয়ারিং)",
+    "source": "https://bn.wikipedia.org/wiki/%E0%A6%86%E0%A6%B6%E0%A6%B0%E0%A6%BE%E0%A6%AB_%E0%A6%89%E0%A6%A6%E0%A7%8D%E0%A6%A6%E0%A7%80%E0%A6%A8_%E0%A6%AC%E0%A6%95%E0%A7%81%E0%A6%B2"
+   }
+  },
+  "notes": "The education comes from the bn Wikipedia article (আশরাফ উদ্দীন বকুল), whose education section has no inline citation, so confidence is moderate. The RUET entry says 'studied' (পড়াশোনা করেছেন), not that he completed a degree."
+ },
+ {
+  "memberId": "013020401",
+  "nameBn": "মুস্তাফিজুর রহমান ভূঁইয়া",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/mrbhuiyandipu",
+    "evidence": "https://dipubhuiyan.com/",
+    "confirm": false
+   },
+   "website": {
+    "url": "https://dipubhuiyan.com/",
+    "evidence": "https://bn.wikipedia.org/wiki/%E0%A6%AE%E0%A7%8B%E0%A6%B8%E0%A7%8D%E0%A6%A4%E0%A6%BE%E0%A6%AB%E0%A6%BF%E0%A6%9C%E0%A7%81%E0%A6%B0_%E0%A6%B0%E0%A6%B9%E0%A6%AE%E0%A6%BE%E0%A6%A8_%E0%A6%AD%E0%A7%82%E0%A6%81%E0%A6%87%E0%A6%AF%E0%A6%BC%E0%A6%BE_%E0%A6%A6%E0%A6%BF%E0%A6%AA%E0%A7%81",
+    "confirm": false
+   },
+   "youtube": {
+    "url": "https://www.youtube.com/@M.R.DipuBhuiyan",
+    "evidence": "https://dipubhuiyan.com/",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/mustafizur_rahman_bhuiyan",
+    "evidence": "https://dipubhuiyan.com/",
+    "confirm": false
+   }
+  },
+  "notes": "His own site (Narayanganj-1, Rupganj) links facebook mrbhuiyandipu, not the pending dipubhuiyanrupganj; mrbhuiyandipu is suggested as the better official link. The X handle 'Diupbhuiyan' is copied exactly from the site but looks like a typo, so check it before use. The Instagram query string (?igsh=...) was dropped.",
+  "fields": {}
+ },
+ {
+  "memberId": "013020501",
+  "nameBn": "মোঃ নজরুল ইসলাম আজাদ",
+  "links": {},
+  "fields": {},
+  "notes": "Low confidence: the bn Wikipedia education section is uncited, promotional text that names only this high school. The pending facebook was not confirmed."
+ },
+ {
+  "memberId": "013020601",
+  "nameBn": "আজহারুল ইসলাম মান্নান",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@bnpmannan",
+    "evidence": "https://mannanbnp.com",
+    "confirm": false
+   },
+   "x": {
+    "url": "https://x.com/Mannanbnp",
+    "evidence": "https://mannanbnp.com",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/mannan.bnp/",
+    "evidence": "https://mannanbnp.com",
+    "confirm": false
+   }
+  },
+  "notes": "The links come from his own site's JS bundle, which also links the verified facebook maannan.bnp/ and https://www.tiktok.com/@mannan.bnp.",
+  "fields": {}
+ },
+ {
+  "memberId": "013020901",
+  "nameBn": "আলী নেওয়াজ মাহমুদ খৈয়ম",
+  "links": {},
+  "fields": {
+   "birthPlaceBn": {
+    "value": "গোপালপুর গ্রাম, মদাপুর ইউনিয়ন, কালুখালী উপজেলা, রাজবাড়ী",
+    "source": "https://bn.wikipedia.org/wiki/%E0%A6%86%E0%A6%B2%E0%A7%80_%E0%A6%A8%E0%A7%87%E0%A6%93%E0%A6%AF%E0%A6%BC%E0%A6%BE%E0%A6%9C_%E0%A6%AE%E0%A6%BE%E0%A6%B9%E0%A6%AE%E0%A7%81%E0%A6%A6_%E0%A6%96%E0%A7%88%E0%A6%AF%E0%A6%BC%E0%A6%BE%E0%A6%AE"
+   }
+  },
+  "notes": "en Wikipedia (Ali_Newaz_Mahmud_Khaiyam) gives the same birthplace. No source for education or profession was found, apart from 'politician' and a former Rajbari municipality chairman."
+ }
+]

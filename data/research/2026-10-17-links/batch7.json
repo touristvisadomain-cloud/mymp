@@ -1,0 +1,173 @@
+[
+ {
+  "memberId": "013024801",
+  "nameBn": "মোঃ জোনায়েদ আব্দুর রহিম সাকি",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/zonayed.saki.bd",
+    "evidence": "https://www.facebook.com/zonayed.saki.bd/",
+    "confirm": true
+   }
+  },
+  "fields": {},
+  "notes": "FB page title 'Zonayed Saki-জোনায়েদ সাকি'; its description reads 'পরিকল্পনা প্রতিমন্ত্রী, সংসদ সদস্য, ব্রাহ্মণবাড়িয়া-৬' (seen in search results). Profession comes only from the Wikipedia infobox ('Politician'), so it is generic."
+ },
+ {
+  "memberId": "013024901",
+  "nameBn": "ড. খন্দকার মোশাররফ হোসেন",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/Dr.KhandakerMosharrafHossain",
+    "evidence": "https://www.facebook.com/Dr.KhandakerMosharrafHossain/",
+    "confirm": true
+   }
+  },
+  "notes": "The page description shown in search results says 'Former Member of Parliament, Cumilla-1 Constituency. Member, National Standing Committee, BNP'. Do not mix it up with facebook.com/mosharrafmp, which belongs to Engineer Khandaker Mosharraf Hossain (Awami League, Faridpur-3).",
+  "fields": {}
+ },
+ {
+  "memberId": "013025001",
+  "nameBn": "মোঃ সেলিম ভূইয়া",
+  "fields": {
+   "professionBn": {
+    "value": "শিক্ষক (অধ্যক্ষ)",
+    "source": "https://dailyinqilab.com/bangladesh/news/863668"
+   }
+  },
+  "notes": "Inqilab's headline calls him 'অধ্যক্ষ সেলিম ভূঁইয়া' but does not name the college. Daily Star Bangla (https://bangla.thedailystar.net/news/bangladesh/news-3918296) says he has a verified Facebook page but does not name it. No page URL found.",
+  "links": {}
+ },
+ {
+  "memberId": "013025201",
+  "nameBn": "মোঃ আবুল হাসনাত",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/hasnat.ab1",
+    "evidence": "https://www.wikidata.org/wiki/Q128834014",
+    "confirm": true
+   }
+  },
+  "notes": "His own site https://www.hasnatabdullah.org also links facebook.com/hasnat.ab1. The site has no YouTube, X or Instagram links.",
+  "fields": {}
+ },
+ {
+  "memberId": "013025501",
+  "nameBn": "আতিকুল আলম",
+  "fields": {},
+  "notes": "bn.wikipedia gives 'রাজনীতিবিদ' only, which is generic. It also lists an LLB (Hons.) but does not say he practises law. The Wikipedia FB link is an unresolved share link (facebook.com/share/1AZiMAStzw/), so I could not tie it to the pending facebook.com/aa.shawon. Neither is confirmed.",
+  "links": {}
+ },
+ {
+  "memberId": "013025701",
+  "nameBn": "মোঃ আবুল কালাম",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@AbulKalam09",
+    "evidence": "https://mdabulkalam.com/public/index.php",
+    "confirm": false
+   }
+  },
+  "notes": "His official site links youtube.com/@AbulKalam09/shorts, given here as the channel root. The site's about page shows district 'কুমিল্লা' in a table, but not as his birthplace, so birthPlaceBn is left empty. en.wikipedia 'Md._Abul_Kalam' is a namesake (Natore-1), so it was not used.",
+  "fields": {}
+ },
+ {
+  "memberId": "013025901",
+  "nameBn": "সৈয়দ আবদুল্লাহ মোহাম্মদ তাহের",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/drabdullahtaher",
+    "evidence": "https://www.wikidata.org/wiki/Q18210454",
+    "confirm": true
+   }
+  },
+  "fields": {}
+ },
+ {
+  "memberId": "013026001",
+  "nameBn": "আ ন ম এহছানুল হক মিলন",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/anm.ehsanul.hoque.milon",
+    "evidence": "https://www.wikidata.org/wiki/Q24950956",
+    "confirm": true
+   },
+   "website": {
+    "url": "https://dranmehsanulhoquemilon.com",
+    "evidence": "https://www.wikidata.org/wiki/Q24950956",
+    "confirm": false
+   }
+  },
+  "notes": "The website comes from Wikidata P856 only. The site itself did not load when fetched, so check that it is live before showing it. Wikidata gives the FB display name 'ANM Ehsanul Hoque Milon', which is a personal profile, not a page.",
+  "fields": {}
+ },
+ {
+  "memberId": "013027601",
+  "nameBn": "মোঃ শহীদউদ্দীন চৌধুরী এ্যানি",
+  "links": {
+   "x": {
+    "url": "https://x.com/Chowdhury_Anee",
+    "evidence": "https://aneechowdhury.com",
+    "confirm": false
+   }
+  },
+  "notes": "The X handle is linked from his official site aneechowdhury.com and is also listed in Wikidata Q75019739.",
+  "fields": {}
+ },
+ {
+  "memberId": "013027701",
+  "nameBn": "এ. বি. এম আশরাফ উদ্দিন (নিজান)",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@ABMAshrafUddinNizan",
+    "evidence": "https://abmashrafuddinnizan.com",
+    "confirm": false
+   }
+  },
+  "fields": {}
+ },
+ {
+  "memberId": "013027801",
+  "nameBn": "নুরুল আমিন",
+  "fields": {
+   "educationBn": {
+    "value": "আল জামিয়া আল ইসলামিয়া পটিয়া",
+    "source": "https://en.wikipedia.org/wiki/Nurul_Amin_(Chittagong_politician)"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013027901",
+  "nameBn": "সরোয়ার আলমগীর",
+  "fields": {
+   "birthPlaceBn": {
+    "value": "ফটিকছড়ি, চট্টগ্রাম",
+    "source": "https://en.wikipedia.org/wiki/Sarowar_Alamgir"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013028201",
+  "nameBn": "মীর মোহাম্মদ হেলাল উদ্দীন",
+  "links": {
+   "x": {
+    "url": "https://twitter.com/mirhelal",
+    "evidence": "https://mirhelal.com",
+    "confirm": false
+   },
+   "youtube": {
+    "url": "https://www.youtube.com/@barristermirhelaluddin",
+    "evidence": "https://mirhelal.com",
+    "confirm": false
+   }
+  },
+  "fields": {
+   "birthPlaceBn": {
+    "value": "চট্টগ্রাম",
+    "source": "https://mirhelal.com"
+   }
+  },
+  "notes": "His official site mirhelal.com links Facebook https://www.facebook.com/chattogram05, not the facebook.com/mirmohammedhelaluddin the site has as verified. That may be a second (constituency) page, so check which one to show. The site says 'Born in Chattogram' and that his family is from Mir Bari, Mirer Khil, Mirer Haat, Hathazari. No village-level birthplace is stated."
+ }
+]

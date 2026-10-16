@@ -1,0 +1,200 @@
+[
+ {
+  "memberId": "013028301",
+  "nameBn": "গিয়াস উদ্দিন কাদের চৌধুরী",
+  "links": {},
+  "fields": {
+   "birthPlaceBn": {
+    "value": "গহিরা, রাউজান, চট্টগ্রাম",
+    "source": "https://en.wikipedia.org/wiki/Gias_Uddin_Quader_Chowdhury"
+   }
+  },
+  "notes": "Wikipedia infobox: born Gohira (Raozan). Prothom Alo (https://www.prothomalo.com/bangladesh/district/2y31ol6x5e) also says he lives in Gahira village, Raozan. Pending facebook not confirmed."
+ },
+ {
+  "memberId": "013028401",
+  "nameBn": "হুমাম কাদের চৌধুরী",
+  "links": {},
+  "fields": {
+   "birthPlaceBn": {
+    "value": "চট্টগ্রাম",
+    "source": "https://en.wikipedia.org/wiki/Humam_Quader_Chowdhury"
+   }
+  },
+  "notes": "Wikipedia gives only 'Chittagong' as birthplace. Pending facebook humamquaderchy not confirmed by any source found."
+ },
+ {
+  "memberId": "013028701",
+  "nameBn": "সাঈদ আল নোমান",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/sayeed.a.noman",
+    "evidence": "https://sayeednoman.com",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/s.a.n2023/",
+    "evidence": "https://sayeednoman.com",
+    "confirm": false
+   },
+   "website": {
+    "url": "https://sayeednoman.com",
+    "evidence": "https://en.wikipedia.org/wiki/Sayeed_Al_Noman",
+    "confirm": false
+   }
+  },
+  "fields": {},
+  "notes": "His own site (listed in his Wikipedia infobox, describes him as MP for Chattogram-10) links facebook.com/sayeed.a.noman, not the pending EastDeltaLSEoxford page; suggest replacing the pending one. Site and Wikipedia disagree on his bachelor's school (Carnegie Mellon vs Central Michigan); education was not requested."
+ },
+ {
+  "memberId": "013029001",
+  "nameBn": "সরওয়ার জামাল নিজাম",
+  "links": {},
+  "fields": {
+   "professionBn": {
+    "value": "ব্যবসায়ী",
+    "source": "https://en.wikipedia.org/wiki/Sarwar_Jamal_Nizam"
+   }
+  },
+  "notes": "Wikipedia: businessman (steel, ship-breaking, garments, deep-sea fishing, financial services) and former CCCI president."
+ },
+ {
+  "memberId": "013029201",
+  "nameBn": "শাহজাহান চৌধুরী",
+  "links": {
+   "x": {
+    "url": "https://x.com/shahjahanchy15",
+    "evidence": "https://shahjahanchowdhury.com",
+    "confirm": false
+   },
+   "youtube": {
+    "url": "https://youtube.com/@shahjahanchowdhury15",
+    "evidence": "https://shahjahanchowdhury.com",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/shahjahanchowdhury15",
+    "evidence": "https://www.wikidata.org/wiki/Q59550142",
+    "confirm": false
+   }
+  },
+  "fields": {},
+  "notes": "X and YouTube are linked from his own website (which also links the verified facebook). I dropped the ?si= tracking parameter from the YouTube URL."
+ },
+ {
+  "memberId": "013029301",
+  "nameBn": "মোহাম্মদ জহিরুল ইসলাম",
+  "links": {},
+  "fields": {},
+  "notes": "This YouTube channel is linked from his own website, but it is a campaign channel named for the Jamaat symbol and Banshkhali ('Daripalla Banskhali'), not a personal one. Use it only if campaign channels are accepted."
+ },
+ {
+  "memberId": "013029601",
+  "nameBn": "লুৎফুর রহমান",
+  "links": {},
+  "fields": {
+   "educationBn": {
+    "value": "বি.কম, চট্টগ্রাম বিশ্ববিদ্যালয় (১৯৮৬); আইন অধ্যয়ন, বঙ্গবন্ধু ল কলেজ, ঢাকা",
+    "source": "https://kazalbnp.com"
+   }
+  },
+  "notes": "Education comes from his own site kazalbnp.com, where the lines are unlabeled: 'বি, কম / ১৯৮৬ / চট্টগ্রাম বিশ্ববিদ্যালয় / আইন, অধ্যায়ন / বঙ্গবন্ধু ল কলেজ, ঢাকা'. The hint kazal.pro.bd is dead: the connection was refused and bn.wikipedia marks it as a dead link, so do not use it. The only facebook link on kazalbnp.com belongs to a staff member (Redwan Ahmed), not the MP."
+ },
+ {
+  "memberId": "013030001",
+  "nameBn": "সাচিং প্রু",
+  "links": {},
+  "fields": {
+   "birthPlaceBn": {
+    "value": "বান্দরবান",
+    "source": "https://en.wikipedia.org/wiki/Saching_Prue_Jerry"
+   }
+  }
+ },
+ {
+  "memberId": "013030301",
+  "nameBn": "রাশেদা বেগম হীরা",
+  "links": {},
+  "fields": {
+   "birthPlaceBn": {
+    "value": "চাঁদপুর",
+    "source": "https://en.wikipedia.org/wiki/Rasheda_Begum_Hira"
+   }
+  }
+ },
+ {
+  "memberId": "013030401",
+  "nameBn": "রেহানা আক্তার রানু",
+  "links": {},
+  "fields": {
+   "birthPlaceBn": {
+    "value": "ফেনী",
+    "source": "https://en.wikipedia.org/wiki/Rehana_Akter_Ranu"
+   }
+  }
+ },
+ {
+  "memberId": "013031101",
+  "nameBn": "নিপুন রায় চৌধুরী",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/NipunRoyChowdhuryOfficial",
+    "evidence": "https://www.wikidata.org/wiki/Q122069351",
+    "confirm": true
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/nipunroychowdhury",
+    "evidence": "https://www.wikidata.org/wiki/Q122069351",
+    "confirm": false
+   }
+  },
+  "fields": {
+   "educationBn": {
+    "value": "ইডেন মহিলা কলেজ",
+    "source": "https://en.wikipedia.org/wiki/Nipun_Roy_Chowdhury"
+   },
+   "birthPlaceBn": {
+    "value": "মোহাম্মদপুর, মাগুরা",
+    "source": "https://en.wikipedia.org/wiki/Nipun_Roy_Chowdhury"
+   }
+  },
+  "notes": "The Wikidata item (Bangladeshi politician and lawyer, BNP) lists both the facebook and instagram accounts."
+ },
+ {
+  "memberId": "013031201",
+  "nameBn": "জীবা আমিনা খান",
+  "links": {},
+  "fields": {},
+  "notes": "The website hint etihad.news is wrong. It is a news site that her Wikipedia article cites as reference 7 (an article about controversies around her), not her website. Do not use it."
+ },
+ {
+  "memberId": "013031601",
+  "nameBn": "সানজিদা ইসলাম",
+  "links": {
+   "youtube": {
+    "url": "https://youtube.com/@sanjidaislamdhaka14",
+    "evidence": "https://vote4tulee.com",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/sanjidaislamdhaka14",
+    "evidence": "https://vote4tulee.com",
+    "confirm": false
+   }
+  },
+  "fields": {},
+  "notes": "Both accounts are linked from her site vote4tulee.com, which also links the verified facebook sanjida.tulee. The handles carry her earlier Dhaka-14 campaign name. I removed the tracking parameters from both URLs."
+ },
+ {
+  "memberId": "013031701",
+  "nameBn": "সুলতানা আহমেদ",
+  "links": {},
+  "fields": {
+   "birthPlaceBn": {
+    "value": "বরিশাল",
+    "source": "https://en.wikipedia.org/wiki/Sultana_Ahmed"
+   }
+  },
+  "notes": "The Wikipedia article is about the BNP politician and Jatiyatabadi Mohila Dal general secretary who was nominated for a 2026 reserved seat."
+ }
+]

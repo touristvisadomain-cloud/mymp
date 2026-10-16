@@ -1,0 +1,97 @@
+[
+ {
+  "memberId": "013000201",
+  "nameBn": "ফরহাদ হোসেন আজাদ",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/Forhadhosenazad",
+    "evidence": "https://www.facebook.com/Forhadhosenazad/",
+    "confirm": true
+   }
+  },
+  "notes": "Search-result snippet of the page intro calls him State Minister for Water Resources, MP for Panchagarh-2 (Boda-Debiganj), BNP rural development secretary and Panchagarh district BNP member secretary. A separate page, 'ফরহাদ হোসেন আজাদ পঞ্চগড়-২' (facebook.com/p/...-100039677396633), is a campaign page; it was not used.",
+  "fields": {}
+ },
+ {
+  "memberId": "013000501",
+  "nameBn": "মোঃ জাহিদুর রহমান",
+  "fields": {
+   "educationBn": {
+    "value": "উচ্চ মাধ্যমিক",
+    "source": "https://bn.wikipedia.org/wiki/মোঃ_জাহিদুর_রহমান"
+   }
+  },
+  "notes": "Wikipedia gives only the level (higher secondary) and names no institution.",
+  "links": {}
+ },
+ {
+  "memberId": "013002001",
+  "nameBn": "এ টি এম আজহারুল ইসলাম",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/ATMAzharulIslam.Official",
+    "evidence": "https://www.wikidata.org/wiki/Q13057281",
+    "confirm": true
+   }
+  },
+  "notes": "Wikidata P2013 = ATMAzharulIslam.Official, with Facebook numeric ID qualifier 61576951164260. The same item lists him as MP for Rangpur-2 in the 13th JS.",
+  "fields": {}
+ },
+ {
+  "memberId": "013002601",
+  "nameBn": "আতিকুর রহমান মোজাহিদ",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/channel/UCYzdSY-YKXNLMsv-JW_HrqA",
+    "evidence": "https://www.wikidata.org/wiki/Q138225359",
+    "confirm": false
+   }
+  },
+  "notes": "Wikidata item Q138225359 (Atiqur Rahman Mojahid, MP for Kurigram-2, NCP) lists this YouTube channel ID along with the Facebook and website the site already has.",
+  "fields": {}
+ },
+ {
+  "memberId": "013002701",
+  "nameBn": "মোঃ মাহবুবুল আলম",
+  "links": {
+   "website": {
+    "url": "https://mahbubsalehi.com/",
+    "evidence": "https://bn.wikipedia.org/wiki/মো._মাহবুবুল_আলম",
+    "confirm": false
+   }
+  },
+  "notes": "bn.wikipedia links mahbubsalehi.com/biography/ as his website. The site belongs to Barrister Mahbubul Alam Salehi, but its text is still from the campaign: it calls him a Jamaat candidate for Kurigram-3 (Ulipur), not an MP. It has no social links, so the pending Facebook page (BarristerMahbubSalehiOfficial) could not be confirmed.",
+  "fields": {}
+ },
+ {
+  "memberId": "013003101",
+  "nameBn": "আবুল কাওছার মোহাম্মদ নজরুল ইসলাম",
+  "fields": {
+   "educationBn": {
+    "value": "কামিল (মাদ্রাসা শিক্ষা বোর্ড)",
+    "source": "https://bn.wikipedia.org/wiki/আবুল_কাওছার_মোহাম্মদ_নজরুল_ইসলাম"
+   }
+  },
+  "notes": "Wikipedia says all his schooling was in madrasas and gives the Kamil degree, but names no institution. He is a former principal of Merirhat Fazil (Degree) Madrasa.",
+  "links": {}
+ },
+ {
+  "memberId": "013003201",
+  "nameBn": "মোহাম্মদ শামীম কায়সার",
+  "fields": {
+   "educationBn": {
+    "value": "আইডিয়াল স্কুল অ্যান্ড কলেজ (এসএসসি); ঢাকা কলেজ (এইচএসসি); নর্থ সাউথ বিশ্ববিদ্যালয় (বিবিএ)",
+    "source": "https://bn.wikipedia.org/wiki/শামীম_কায়সার_লিংকন"
+   }
+  },
+  "notes": "Same person as Shamim Kaisar Lincoln (Gaibandha-4, BNP; State Minister for Religious Affairs per Wikipedia). Left out the IIUM master's and PhD claims, which Wikipedia tags as citation needed. The education list itself is not footnoted on Wikipedia.",
+  "links": {}
+ },
+ {
+  "memberId": "013003401",
+  "nameBn": "মোঃ ফজলুর রহমান সাঈদ",
+  "fields": {},
+  "notes": "en.wikipedia states the birthplace, but the parliament member list it cites does not show it. Treat as weakly sourced.",
+  "links": {}
+ }
+]

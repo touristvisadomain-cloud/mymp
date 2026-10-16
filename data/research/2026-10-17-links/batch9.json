@@ -1,0 +1,213 @@
+[
+ {
+  "memberId": "013031901",
+  "nameBn": "আন্না মিন্‌জ",
+  "fields": {
+   "educationBn": {
+    "value": "স্নাতকোত্তর",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "notes": "Crux says born in Dinajpur diocese; Prothom Alo calls her a Natore resident — neither states a birthplace, so birthPlaceBn left out.",
+  "links": {}
+ },
+ {
+  "memberId": "013032001",
+  "nameBn": "সূবর্না সিকদার",
+  "fields": {
+   "educationBn": {
+    "value": "স্নাতক; খুলনা সিটি কলেজ",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "notes": "Degree (স্নাতক) from bdnews24 affidavit report; Khulna City College from her own quote in https://bangla.thedailystar.net/news/bangladesh/politics/news-3918056",
+  "links": {}
+ },
+ {
+  "memberId": "013032401",
+  "nameBn": "বীথিকা বিনতে হোসাইন",
+  "fields": {
+   "educationBn": {
+    "value": "এমএ",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013032501",
+  "nameBn": "মোছাঃ সুরাইয়া জেরিন",
+  "fields": {
+   "educationBn": {
+    "value": "বিএ",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013032801",
+  "nameBn": "মমতাজ আলো আহমেদ",
+  "fields": {
+   "educationBn": {
+    "value": "স্বশিক্ষিত",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "notes": "Education per affidavit is literally 'স্বশিক্ষিত' (self-educated). birthPlaceBn is from the phrase 'মুন্সিগঞ্জের মমতাজ আলো' (home district), not an explicit birthplace statement — use with caution.",
+  "links": {}
+ },
+ {
+  "memberId": "013032901",
+  "nameBn": "ফাহিমা নাসরিন",
+  "fields": {
+   "educationBn": {
+    "value": "এমএ",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "notes": "Existing pending facebook https://www.facebook.com/dhanmondigovtgirlshs looks like a school page (Dhanmondi Govt Girls' High School), not the MP's — recommend removing.",
+  "links": {}
+ },
+ {
+  "memberId": "013033001",
+  "nameBn": "আরিফা সুলতানা",
+  "fields": {
+   "educationBn": {
+    "value": "এলএলএম",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013033101",
+  "nameBn": "মোছাঃ সানজিদা ইয়াসমিন",
+  "fields": {
+   "educationBn": {
+    "value": "স্নাতকোত্তর",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013033301",
+  "nameBn": "শওকত আরা আক্তার",
+  "fields": {
+   "educationBn": {
+    "value": "এলএলএম",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013033401",
+  "nameBn": "মাধবী মার্মা",
+  "fields": {
+   "educationBn": {
+    "value": "এলএলএম",
+    "source": "https://www.prothomalo.com/bangladesh/district/tfu26opx9b"
+   }
+  },
+  "notes": "LLM also stated in https://bangla.bdnews24.com/politics/4c463fa58892",
+  "links": {}
+ },
+ {
+  "memberId": "013033501",
+  "nameBn": "সেলিনা সুলতানা",
+  "fields": {
+   "educationBn": {
+    "value": "এলএলবি",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013033601",
+  "nameBn": "রেজেকা সুলতানা",
+  "fields": {
+   "educationBn": {
+    "value": "এলএলবি",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013034001",
+  "nameBn": "মোসাঃ নাজমুন নাহার",
+  "fields": {
+   "educationBn": {
+    "value": "স্নাতকোত্তর",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013034101",
+  "nameBn": "মাহফুজা হান্নান",
+  "fields": {
+   "educationBn": {
+    "value": "স্নাতকোত্তর",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013034201",
+  "nameBn": "মিসেস সাজেদা সামাদ",
+  "fields": {
+   "educationBn": {
+    "value": "উচ্চ মাধ্যমিক",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013034301",
+  "nameBn": "শামছুন্নাহার বেগম",
+  "fields": {
+   "educationBn": {
+    "value": "বিএসসি; বিএড",
+    "source": "https://bangla.bdnews24.com/politics/4c463fa58892"
+   }
+  },
+  "links": {}
+ },
+ {
+  "memberId": "013034401",
+  "nameBn": "মারদিয়া মমতাজ",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@MardiaMumtazMP",
+    "evidence": "https://www.mardiamumtaz.com/",
+    "confirm": false
+   },
+   "facebook": {
+    "url": "https://www.facebook.com/profile.php?id=100024476531329",
+    "evidence": "https://www.mardiamumtaz.com/",
+    "confirm": false
+   }
+  },
+  "fields": {
+   "birthPlaceBn": {
+    "value": "চট্টগ্রাম",
+    "source": "https://en.wikipedia.org/wiki/Mardia_Mumtaz"
+   }
+  },
+  "notes": "Her official site (JS bundle) lists 'Official YouTube Channel' @MardiaMumtazMP, 'Facebook Profile' facebook.com/mardia.mumtaz (already verified on site) and 'Facebook Page' profile.php?id=100024476531329 — the Page is offered as the preferred facebook link; keep the profile if you prefer. Site meta tags also name twitter.com/mardiamumtaz, but only in templated SEO sameAs (which also lists an unused facebook.com/mardiamumtaz), so X not reported. Wikipedia: 'Born in Chattogram'; she resides in Paikpara, Brahmanbaria."
+ },
+ {
+  "memberId": "013034601",
+  "nameBn": "মাহমুদা আলম মিতু",
+  "notes": "Existing pending facebook https://www.facebook.com/mahbub.neela does not match her name — doubtful; could not verify (search budget exhausted).",
+  "links": {},
+  "fields": {}
+ }
+]

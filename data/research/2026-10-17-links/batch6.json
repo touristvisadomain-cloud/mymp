@@ -1,0 +1,28 @@
+[
+ {
+  "memberId": "013022201",
+  "nameBn": "মোঃ সফিকুর রহমান (কিরন)",
+  "links": {},
+  "fields": {
+   "professionBn": {
+    "value": "ব্যবসায়ী",
+    "source": "https://www.kironshariatpur.com"
+   }
+  },
+  "notes": "Profession is from the biography text on his own site (\"পেশায় একজন ব্যবসায়ী\"). That site's JSON-LD sameAs lists https://www.facebook.com/shafikshariatpur, and its footer links https://www.facebook.com/mdshafiqurrahman.kiron.5/. The page head also links profile.php?id=61554854548456, the verified one we already have. Worth a manual look at which of these is the main page."
+ },
+ {
+  "memberId": "013023001",
+  "nameBn": "মোছাঃ তাহসিনা রুশদীর",
+  "links": {},
+  "fields": {},
+  "notes": "Doubtful existing facebook: the handle 'eliasm007' looks like her husband M. Ilias Ali's account, not hers. Not verified. Review before marking it verified."
+ },
+ {
+  "memberId": "013023801",
+  "nameBn": "মোঃ মুজিবুর রহমান চৌধুরী",
+  "links": {},
+  "fields": {},
+  "notes": "Doubtful existing facebook: the handle 'md.rahmanhossain.1485' looks like a personal profile whose name doesn't match. Could not verify. Also, en.wikipedia 'Mujibur Rahman Chowdhury' is Nixon Chowdhury (Faridpur-4, 11th parliament), a different person. Don't use it for this member."
+ }
+]

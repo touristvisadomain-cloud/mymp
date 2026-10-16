@@ -1,0 +1,203 @@
+[
+ {
+  "memberId": "013010801",
+  "nameBn": "জি, এম, নজরুল ইসলাম",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@gazinazrulofficial",
+    "evidence": "https://gazinazrulislam.com",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/gazinazrulofficial",
+    "evidence": "https://gazinazrulislam.com",
+    "confirm": false
+   }
+  },
+  "fields": {
+   "professionBn": {
+    "value": "শিক্ষক",
+    "source": "https://gazinazrulislam.com"
+   }
+  },
+  "notes": "Both links appear on his own site (already verified on mymp). The site's heading calls him a former teacher ('একজন শিক্ষক থেকে জনমানুষের নেতা') but names no school. The party field may be out of date: Jamaat expelled him in July 2026 (https://bangla.thedailystar.net/news/bangladesh/politics/news-3945451, https://www.prothomalo.com/politics/h0k5i62ufg)."
+ },
+ {
+  "memberId": "013011001",
+  "nameBn": "নূরুল ইসলাম মনি",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/NurulIslamMoniMP",
+    "evidence": "https://www.facebook.com/NurulIslamMoniMP/",
+    "confirm": true
+   }
+  },
+  "notes": "Page description (seen in search snippet): 'Member of Parliament (Barguna 2) Chief Whip of the Parliament Vice Chairman of Bangladesh Nationalist Party-BNP'. The page mentions nurulislammoni.com, but that site shows only a title and does not identify him as an MP, so it is not added.",
+  "fields": {}
+ },
+ {
+  "memberId": "013011101",
+  "nameBn": "আলতাফ হোসেন চৌধুরী",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/100094593434639",
+    "evidence": "https://www.facebook.com/100094593434639",
+    "confirm": false
+   }
+  },
+  "fields": {
+   "birthPlaceBn": {
+    "value": "কাঁঠালতলী, মির্জাগঞ্জ উপজেলা, পটুয়াখালী",
+    "source": "https://en.wikipedia.org/wiki/Altaf_Hossain_Chowdhury"
+   }
+  },
+  "notes": "Facebook: medium confidence. The profile description (seen in search snippet) names him as former chief of the Bangladesh Air Force and a BNP politician, but it is a numeric-ID profile and does not name the seat."
+ },
+ {
+  "memberId": "013011201",
+  "nameBn": "মোঃ শফিকুল ইসলাম",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@drshafiqulislammasud",
+    "evidence": "https://shafiqulislammasud.com",
+    "confirm": false
+   },
+   "x": {
+    "url": "https://twitter.com/safiqul_masud",
+    "evidence": "https://shafiqulislammasud.com",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/drsimasud/",
+    "evidence": "https://shafiqulislammasud.com",
+    "confirm": false
+   }
+  },
+  "notes": "All three links come from his own site, which mymp already lists as verified.",
+  "fields": {}
+ },
+ {
+  "memberId": "013011301",
+  "nameBn": "মোঃ নুরুল হক",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/ducsuvpnur",
+    "evidence": "https://www.facebook.com/ducsuvpnur/",
+    "confirm": true
+   },
+   "youtube": {
+    "url": "https://www.youtube.com/@vpnurulhaquenur",
+    "evidence": "https://www.facebook.com/ducsuvpnur/",
+    "confirm": false
+   }
+  },
+  "notes": "The Facebook page description (seen in search snippet) names him as MP for Patuakhali-3, state minister for expatriates' welfare and president of Gono Odhikar Parishad; the page has about 2.25M followers. The YouTube channel is listed in that page's intro but has not been confirmed by any other source. Profession not found: Wikipedia calls him only a 'political activist'.",
+  "fields": {}
+ },
+ {
+  "memberId": "013011501",
+  "nameBn": "আন্দালিভ রহমান",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/Andaleeve.Rahman",
+    "evidence": "https://www.facebook.com/Andaleeve.Rahman/",
+    "confirm": true
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/andaleeve_rahman_partho",
+    "evidence": "https://www.wikidata.org/wiki/Q16215057",
+    "confirm": false
+   }
+  },
+  "notes": "The Facebook page 'Barrister Andaleeve Rahman' calls itself the official page of Andaleeve Rahman Partho and has about 3.5M followers. Other Facebook profiles under his name are small 'digital creator' accounts; skip them. Wikipedia links only an archived 2015 copy of andaleeverahman.com, so no website is added.",
+  "fields": {}
+ },
+ {
+  "memberId": "013011701",
+  "nameBn": "হাফিজ উদ্দিন আহমদ বীর বিক্রম",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/hafizuddinahamed",
+    "evidence": "https://www.facebook.com/hafizuddinahamed/",
+    "confirm": true
+   }
+  },
+  "notes": "Page description (seen in search snippet): BNP standing committee member, former minister, constituency Bhola-3 (Lalmohan-Tazumuddin); about 487K followers. Do not use the en.wikipedia 'Hafiz_Uddin_Ahmed' page: it is a different person (Jatiya Party, Thakurgaon-3).",
+  "fields": {}
+ },
+ {
+  "memberId": "013011801",
+  "nameBn": "মোহাম্মদ নূরুল ইসলাম",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/100078354965174",
+    "evidence": "https://www.facebook.com/p/Mohammad-Nurul-Islam-Nayan-100078354965174/",
+    "confirm": false
+   }
+  },
+  "notes": "The page is 'Mohammad Nurul Islam Nayan' (politician page, about 28.7K likes), describing him as general secretary of Jatiyatabadi Jubodal. News reports name Nurul Islam Nayan as the Bhola-4 winner (https://bangla.thedailystar.net/news/bangladesh/election/news-3898196). The page itself does not name the seat, so the match rests on name plus Jubodal post.",
+  "fields": {}
+ },
+ {
+  "memberId": "013012001",
+  "nameBn": "সরদার সরফুদ্দিন আহমেদ",
+  "notes": "Existing Facebook page not confirmed. Its description (seen in search snippet) calls him a 'Bangladeshi Entrepreneur & Philanthropist' and founder of Guthia Mosque, which fits this person (Guthia is in Wazirpur, Barishal-2). It says nothing about MP, seat or party, so it was left unconfirmed.",
+  "links": {},
+  "fields": {}
+ },
+ {
+  "memberId": "013012101",
+  "nameBn": "জয়নুল আবেদীন",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/advocatezainulabedin",
+    "evidence": "https://www.facebook.com/advocatezainulabedin/",
+    "confirm": true
+   }
+  },
+  "notes": "Page description (seen in search snippet): member of parliament for 121 Barishal-3, chair of a parliamentary standing committee on the Home Ministry, tied to Babuganj.",
+  "fields": {}
+ },
+ {
+  "memberId": "013012201",
+  "nameBn": "মোঃ রাজিব আহসান",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/RajibAhsanJCD",
+    "evidence": "https://www.facebook.com/RajibAhsanJCD/",
+    "confirm": true
+   }
+  },
+  "fields": {
+   "educationBn": {
+    "value": "সরকারি পাতারহাট রসিক চন্দ্র (আর.সি.) কলেজ",
+    "source": "https://dailyinqilab.com/bangladesh/news/925976"
+   }
+  },
+  "notes": "Page 'Razib Ahsan : রাজিব আহসান' (about 52K likes) describes him as general secretary of Jatiyatabadi Swechchhasebak Dal and former president of Chhatra Dal; it does not name the seat. Education: Inqilab calls him a student of the 1993-94 session at this college (in Mehendiganj, his constituency) but does not give the degree level."
+ },
+ {
+  "memberId": "013012301",
+  "nameBn": "মোঃ মজিবর রহমান সরওয়ার",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/SarwarBarishalBNP",
+    "evidence": "https://www.facebook.com/SarwarBarishalBNP/",
+    "confirm": true
+   }
+  },
+  "notes": "Page 'Advocate Mazibor Rahman Sarwar' (about 139K likes) describes him as BNP joint secretary general, Barishal metropolitan BNP president, former mayor and whip; its videos cover his Barishal-5 campaign. The page name suggests he is a lawyer (আইনজীবী), but no news source was found to confirm it, so professionBn is not filled.",
+  "fields": {}
+ },
+ {
+  "memberId": "013012501",
+  "nameBn": "রফিকুল ইসলাম জামাল",
+  "fields": {
+   "birthPlaceBn": {
+    "value": "রাজাপুর উপজেলা, ঝালকাঠি",
+    "source": "https://en.wikipedia.org/wiki/Rafiqul_Islam_Jamal"
+   }
+  },
+  "links": {}
+ }
+]

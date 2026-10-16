@@ -1,0 +1,235 @@
+[
+ {
+  "memberId": "013007201",
+  "nameBn": "মোঃ শামছুর রহমান শিমুল বিশ্বাস",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@shimulbiswas_bnp",
+    "evidence": "https://shimulbiswas.com",
+    "confirm": false
+   }
+  },
+  "notes": "YouTube linked from his own site shimulbiswas.com (link mislabelled 'Linkedin' there). Site and Wikipedia give no birthplace/education.",
+  "fields": {}
+ },
+ {
+  "memberId": "013007301",
+  "nameBn": "মোঃ তাজউদ্দীন খান",
+  "links": {},
+  "notes": "EXISTING FACEBOOK LOOKS WRONG: facebook.com/mdtajuddin.khan (2.5k followers) describes itself as 'Please visit my web page' -> https://sites.google.com/view/tajuddinkhan, which is the site of a US-based economics assistant professor (PhD Oklahoma State 2023), a namesake. Recommend removing. BSS interview (https://www.bssnews.net/interview/359204) says the MP is a teacher by profession.",
+  "fields": {}
+ },
+ {
+  "memberId": "013007601",
+  "nameBn": "মোঃ আব্দুল গফুর",
+  "links": {},
+  "notes": "Existing facebook.com/AlhazAbdulGafur.Official could not be loaded (returns generic Facebook page; may be removed/restricted). Unconfirmed.",
+  "fields": {}
+ },
+ {
+  "memberId": "013007701",
+  "nameBn": "মোঃ আমির হামজা",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/muftiamirhamzaofficial1",
+    "evidence": "https://www.facebook.com/muftiamirhamzaofficial1",
+    "confirm": true
+   }
+  },
+  "notes": "Page meta description: 'সংসদ সদস্য, ৭৭ কুষ্টিয়া -৩ ... আমার অফিসিয়াল পেইজে আপনাদের সবাইকে স্বাগতম' (~930k followers). His earlier verified page was removed by Meta in Feb 2026 (Ittefaq report), so this is the replacement. facebook.com/amir.hamza.kushtia is a fan page ('F.P') - do not use.",
+  "fields": {}
+ },
+ {
+  "memberId": "013007901",
+  "nameBn": "মোঃ মাসুদ পারভেজ",
+  "links": {},
+  "notes": "Existing facebook.com/masud.parvez.7731 is titled 'মোঃ মাসুদ পারভেজ', 2.3k followers, category 'Digital creator', no mention of MP/Chuadanga-1/Jamaat. Cannot confirm; possibly a namesake.",
+  "fields": {}
+ },
+ {
+  "memberId": "013008401",
+  "nameBn": "মোঃ আবু তালিব",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/MawlanaAbuTalib",
+    "evidence": "https://www.facebook.com/MawlanaAbuTalib",
+    "confirm": true
+   }
+  },
+  "notes": "Page meta description: 'জাতীয় সংসদ সদস্য, ঝিনাইদহ-৪ | বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটির সদস্য'.",
+  "fields": {}
+ },
+ {
+  "memberId": "013008601",
+  "nameBn": "মোহাম্মদ মোসলেহউদ্দিন ফরিদ",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/page.moslehuddin",
+    "evidence": "https://www.facebook.com/page.moslehuddin",
+    "confirm": true
+   }
+  },
+  "notes": "Page title 'ডা: মোসলেহ উদ্দিন ফরিদ এমপি'; description: '৮৬ যশোর-২ আসনের সংসদ সদস্য | শিশু হৃদরোগ ও ইনটেনসিভ কেয়ার বিশেষজ্ঞ'.",
+  "fields": {}
+ },
+ {
+  "memberId": "013008701",
+  "nameBn": "অনিন্দ্য ইসলাম অমিত",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/amitislambnp",
+    "evidence": "https://www.facebook.com/amitislambnp",
+    "confirm": true
+   }
+  },
+  "notes": "Page title 'অনিন্দ্য ইসলাম অমিত', ~259k followers; description: 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের প্রতিমন্ত্রী (বিদ্যুৎ, জ্বালানি ও খনিজ সম্পদ মন্ত্রণালয়) এবং ভারপ্রাপ্ত সাংগঠনিক সম্পাদক' - matches his Wikipedia role as state minister.",
+  "fields": {}
+ },
+ {
+  "memberId": "013008801",
+  "nameBn": "মোঃ গোলাম রছুল",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/mpgolamrasul",
+    "evidence": "https://www.facebook.com/mpgolamrasul",
+    "confirm": true
+   }
+  },
+  "notes": "Page description: 'Member of Parliament Jashore-4 | Bangladesh Jamaat-e-Islami Jashore District Amir | Central Majlish-e-Shura Member | Official Facebook Page'.",
+  "fields": {}
+ },
+ {
+  "memberId": "013009101",
+  "nameBn": "মোঃ মনোয়ার হোসেন",
+  "links": {},
+  "fields": {
+   "educationBn": {
+    "value": "মাগুরা সরকারি উচ্চ বিদ্যালয় (এসএসসি); সরকারি ব্রজলাল কলেজ (এইচএসসি); ঢাকা বিশ্ববিদ্যালয় (স্নাতক ও স্নাতকোত্তর)",
+    "source": "https://en.wikipedia.org/wiki/Monowar_Hossain_Khan"
+   },
+   "birthPlaceBn": {
+    "value": "আবালপুর গ্রাম, মাগুরা সদর উপজেলা, মাগুরা",
+    "source": "https://en.wikipedia.org/wiki/Monowar_Hossain_Khan"
+   }
+  },
+  "notes": "Existing facebook.com/monowar.h.khan is a personal profile with no public description; cannot confirm. Wikipedia education/birthplace section is not inline-cited (article cites Jugantor https://www.jugantor.com/country-news/1065795 for the election)."
+ },
+ {
+  "memberId": "013009301",
+  "nameBn": "বিশ্বাস জাহাঙ্গীর আলম",
+  "links": {},
+  "notes": "Existing facebook.com/p/Biswas-Jahangir-Alam-100063517818776 could not be loaded (generic Facebook response). Unconfirmed.",
+  "fields": {}
+ },
+ {
+  "memberId": "013009401",
+  "nameBn": "মোঃ আতাউর রহমান",
+  "links": {},
+  "notes": "EXISTING WEBSITE IS DEAD: https://ataurrahmanbaschu.com now serves a parked 'This domain may be for sale' page. Recommend removing the website link.",
+  "fields": {}
+ },
+ {
+  "memberId": "013009501",
+  "nameBn": "মোঃ মশিউর রহমান খান",
+  "links": {},
+  "notes": "Existing facebook.com/bsl5seatalcandidatemoshiurrahmankhan could not be loaded (generic Facebook response); handle suggests a campaign page ('candidate'). Unconfirmed.",
+  "fields": {}
+ },
+ {
+  "memberId": "013009601",
+  "nameBn": "শেখ মনজুরুল হক (রাহাদ)",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@rahadnextgenleader",
+    "evidence": "https://rahadbagerhat.com",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/smhrahad.official/",
+    "evidence": "https://rahadbagerhat.com",
+    "confirm": false
+   }
+  },
+  "notes": "Both linked from his own site rahadbagerhat.com (alongside the already-verified Facebook).",
+  "fields": {}
+ },
+ {
+  "memberId": "013009701",
+  "nameBn": "শেখ ফরিদুল ইসলাম",
+  "links": {},
+  "notes": "Existing facebook.com/shaikhfaridul.islam: title 'Shaikh Faridul Islam', 74k followers, description only 'Man for Mankind' - no MP/seat identification, so not confirmed.",
+  "fields": {}
+ },
+ {
+  "memberId": "013009901",
+  "nameBn": "আমীর এজাজ খান",
+  "links": {},
+  "notes": "Existing facebook.com/amir.e.khan.10: title 'Amir Ezaz Khan', 26k followers, category 'Digital creator', no MP/seat in description. Not confirmed.",
+  "fields": {}
+ },
+ {
+  "memberId": "013010001",
+  "nameBn": "শেখ জাহাঙ্গীর হুসাইন হেলাল",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/advzahangir",
+    "evidence": "https://www.facebook.com/advzahangir",
+    "confirm": true
+   }
+  },
+  "notes": "Page description: 'সংসদ সদস্য, খুলনা–০২ (সদর-সোনাডাঙ্গা) ... সেক্রেটারি, বাংলাদেশ জামায়াতে ইসলামী, খুলনা মহানগর'.",
+  "fields": {}
+ },
+ {
+  "memberId": "013010101",
+  "nameBn": "রকিবুল ইসলাম",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@RakibulIslamBakul-Khl",
+    "evidence": "https://www.bakul.info",
+    "confirm": false
+   }
+  },
+  "notes": "YouTube linked from his own site bakul.info. Biography page there does not state a profession.",
+  "fields": {}
+ },
+ {
+  "memberId": "013010201",
+  "nameBn": "এস কে আজিজুল বারী",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/helaldhanersheesh",
+    "evidence": "https://www.facebook.com/helaldhanersheesh",
+    "confirm": true
+   }
+  },
+  "notes": "Page title 'আজিজুল বারী হেলাল এমপি'; description: 'সংসদ সদস্য, খুলনা-৪ / তথ্য সম্পাদক, বাংলাদেশ জাতীয়তাবাদী দল'.",
+  "fields": {}
+ },
+ {
+  "memberId": "013010301",
+  "nameBn": "মোহাম্মদ আলি আসগার",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/mohammadaliasgharlobbi",
+    "evidence": "https://www.facebook.com/mohammadaliasgharlobbi",
+    "confirm": true
+   }
+  },
+  "notes": "Page description: 'Member of Parliament Khulna-5. Former Member of Parliament Khulna-2. Former President of the Bangladesh Cricket Board'.",
+  "fields": {}
+ },
+ {
+  "memberId": "013010401",
+  "nameBn": "মোঃ আবুল কালাম আজাদ",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/MawlanaAbulKalamAzadOfficialPage",
+    "evidence": "https://www.facebook.com/MawlanaAbulKalamAzadOfficialPage",
+    "confirm": true
+   }
+  },
+  "notes": "Page title 'মাওলানা আবুল কালাম আজাদ এমপি'; description: 'মাননীয় সংসদ সদস্য ১০৪ খুলনা-৬ (কয়রা-পাইকগাছা)'.",
+  "fields": {}
+ }
+]

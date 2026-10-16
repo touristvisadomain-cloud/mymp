@@ -1,0 +1,132 @@
+[
+ {
+  "memberId": "013003701",
+  "nameBn": "মীর শাহে আলম",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/ShaheAlamBnp",
+    "evidence": "https://www.facebook.com/ShaheAlamBnp",
+    "confirm": true
+   }
+  },
+  "notes": "Facebook search result: page title 'Mir Shahe Alam Bogra,2', description names him state minister for LGRD and MP for Bogura-2 (Shibganj-Mokamtala). Existing website mirshahealam.com is a campaign site whose footer says it is run by Bogura Zilla BNP and has no social links.",
+  "fields": {}
+ },
+ {
+  "memberId": "013003801",
+  "nameBn": "মোঃ আব্দুল মহিত তালুকদার",
+  "links": {},
+  "fields": {
+   "birthPlaceBn": {
+    "value": "ছাতিয়ানগ্রাম ইউনিয়ন, আদমদিঘী, বগুড়া",
+    "source": "https://bn.wikipedia.org/wiki/%E0%A6%86%E0%A6%AC%E0%A6%A6%E0%A7%81%E0%A6%B2_%E0%A6%AE%E0%A6%B9%E0%A6%BF%E0%A6%A4_%E0%A6%A4%E0%A6%BE%E0%A6%B2%E0%A7%81%E0%A6%95%E0%A6%A6%E0%A6%BE%E0%A6%B0"
+   }
+  }
+ },
+ {
+  "memberId": "013003901",
+  "nameBn": "মোঃ মোশারফ হোসেন",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/mosharrf.hossain.33",
+    "evidence": "https://www.facebook.com/mosharrf.hossain.33/",
+    "confirm": true
+   }
+  },
+  "fields": {
+   "birthPlaceBn": {
+    "value": "বগুড়া",
+    "source": "https://bn.wikipedia.org/wiki/মোশারফ_হোসেন_(বগুড়ার_রাজনীতিবিদ)"
+   }
+  },
+  "notes": "Facebook search result: profile 'Md Mosharrf Hossain' with intro 'Former Member of Parliament, Bogura - 4' and 'Former Member Secretary Bogura Zilla at BNP' (same unusual spelling as the official name). It is a personal profile, not a page. Birthplace is district-level only (bn.wikipedia: 'মোশারফ হোসেনের জন্ম বগুড়া জেলায়')."
+ },
+ {
+  "memberId": "013004501",
+  "nameBn": "মোঃ নূরুল ইসলাম",
+  "links": {
+   "x": {
+    "url": "https://twitter.com/niBulbulBd",
+    "evidence": "https://nurulislambulbul.com",
+    "confirm": false
+   },
+   "youtube": {
+    "url": "https://www.youtube.com/channel/UCLh6uSB3IEYBG7JG-otWs8g",
+    "evidence": "https://nurulislambulbul.com",
+    "confirm": false
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/nibulbul.official/",
+    "evidence": "https://nurulislambulbul.com",
+    "confirm": false
+   }
+  },
+  "notes": "All three are linked from the footer of his own site (nurulislambulbul.com), together with the facebook page the site already has.",
+  "fields": {}
+ },
+ {
+  "memberId": "013005201",
+  "nameBn": "মোঃ মুজিবুর রহমান",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/ProfMujib.Official",
+    "evidence": "https://www.facebook.com/ProfMujib.Official/",
+    "confirm": true
+   }
+  },
+  "notes": "Facebook search result: page 'Professor Mujibur Rahman (@ProfMujib.Official)', description 'Official page of Professor Mujibur Rahman || Member of Parliament (MP) Rajshahi-1, Nayeb-e-Ameer of Bangladesh Jamaat-e-Islami'.",
+  "fields": {}
+ },
+ {
+  "memberId": "013005701",
+  "nameBn": "মোঃ আবু সাইদ চাঁদ",
+  "links": {},
+  "notes": "The only evidence is bn.wikipedia, which lists it as 'আবু সাইদ চাঁদ – ফেসবুক পেজ'. The handle is auto-generated and looks like a personal profile, so treat it as weak. The YouTube link on that Wikipedia page is a news video, not his channel, so it was not used.",
+  "fields": {}
+ },
+ {
+  "memberId": "013005901",
+  "nameBn": "এম, রুহুল কুদ্দুস তালুকদার দুলু",
+  "links": {
+   "youtube": {
+    "url": "https://www.youtube.com/@ruhulquddustalukderdulu",
+    "evidence": "https://votefordulu.org",
+    "confirm": false
+   }
+  },
+  "fields": {
+   "educationBn": {
+    "value": "রাজশাহী বিশ্ববিদ্যালয় (এলএলবি)",
+    "source": "https://votefordulu.org"
+   }
+  },
+  "notes": "His campaign site votefordulu.org links this YouTube channel and facebook.com/profile.php?id=61575263576100, which matches the facebook the site already has. The site lists one degree: LLB, University of Rajshahi."
+ },
+ {
+  "memberId": "013006501",
+  "nameBn": "মোঃ রফিকুল ইসলাম খান",
+  "links": {
+   "website": {
+    "url": "https://rafiqulislamkhan.com",
+    "evidence": "https://bn.wikipedia.org/wiki/%E0%A6%B0%E0%A6%AB%E0%A6%BF%E0%A6%95%E0%A7%81%E0%A6%B2_%E0%A6%87%E0%A6%B8%E0%A6%B2%E0%A6%BE%E0%A6%AE_%E0%A6%96%E0%A6%BE%E0%A6%A8",
+    "confirm": false
+   }
+  },
+  "notes": "The site is live and is his own (Jamaat leader Rafiqul Islam Khan, with biography and activities pages). bn.wikipedia, whose article names him the Sirajganj-4 MP, lists it in the infobox. The site has no social links, so the pending facebook (MRIKhanOfficial) is still unconfirmed.",
+  "fields": {}
+ },
+ {
+  "memberId": "013006601",
+  "nameBn": "মোঃ আমিরুল ইসলাম খান",
+  "links": {},
+  "notes": "Not adding the hint website amirulislamkhanalim.com: it is listed on bn.wikipedia, but both https://amirulislamkhanalim.com/ and https://www. variant failed with an SSL/TLS 'unrecognized name' error (likely down or misconfigured). Recheck before adding. No profession is stated in bn.wikipedia.",
+  "fields": {}
+ },
+ {
+  "memberId": "013007101",
+  "nameBn": "মোঃ আবু তালেব মন্ডল",
+  "links": {},
+  "notes": "Not adding the hint website professorabutalebmondol.com (from bn.wikipedia): the page shows 'This Account has been suspended'.",
+  "fields": {}
+ }
+]

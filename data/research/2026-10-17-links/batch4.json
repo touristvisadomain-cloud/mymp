@@ -1,0 +1,49 @@
+[
+ {
+  "memberId": "013014301",
+  "nameBn": "মোঃ রাশেদুল ইসলাম রাশেদ",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/RIslamOfficial",
+    "evidence": "https://www.facebook.com/RIslamOfficial/",
+    "confirm": true
+   }
+  },
+  "notes": "Page title 'Rashedul Islam (@RIslamOfficial)'; page description in search results: 'Member of Parliament | 143 Sherpur-1 Former President | Islami Chhatrashibir' - matches this MP (former Shibir central president, Jamaat, Sherpur-1).",
+  "fields": {}
+ },
+ {
+  "memberId": "013014501",
+  "nameBn": "মোঃ মাহমুদুল হক রুবেল",
+  "links": {
+   "facebook": {
+    "url": "https://www.facebook.com/mahmudulhaquerubelmp/",
+    "evidence": "https://www.facebook.com/mahmudulhaquerubelmp/",
+    "confirm": false
+   }
+  },
+  "notes": "Found page titled 'মো: মাহমুদুল হক রুবেল' whose description reads 'Ex Member of Parliament, Sherpur-3, President, Sherpur District BNP' (~9k likes). Suggest this instead of the pending https://www.facebook.com/mhrubelofficial, which could not be found or tied to him in any search.",
+  "fields": {}
+ },
+ {
+  "memberId": "013014201",
+  "nameBn": "শাহ মোঃ ওয়ারেছ আলী মামুন",
+  "links": {},
+  "notes": "Page titled 'এড.শাহ্ মোঃ ওয়ারেছ আলী মামুন' (Politician, ~6.7k likes); its bio says BNP national executive joint organizing secretary and general secretary of Jamalpur district BNP. Prothom Alo (evidence link) independently describes him as Jamalpur district BNP general secretary. Page does not itself mention MP/Jamalpur-5, so treat as probable rather than certain. The pending https://www.facebook.com/Shah.md.waresalimamun could not be found in any search.",
+  "fields": {}
+ },
+ {
+  "memberId": "013015701",
+  "nameBn": "ব্যারিষ্টার কায়সার কামাল",
+  "links": {},
+  "notes": "Pending https://www.facebook.com/barristerkayser.kamal exists (title 'Barrister Kayser Kamal', category Politician, ~200k likes) but the indexed description gives no seat/party/office, so not confirmed under the strict rule. Very likely his, but needs a news or party source.",
+  "fields": {}
+ },
+ {
+  "memberId": "013017501",
+  "nameBn": "মোঃ আমানউল্লাহ আমান",
+  "links": {},
+  "fields": {},
+  "notes": "Education is weak: Wikipedia only lists him as DUCSU vice-president (1990-91) and in the 'University of Dhaka alumni' category; no degree stated."
+ }
+]
