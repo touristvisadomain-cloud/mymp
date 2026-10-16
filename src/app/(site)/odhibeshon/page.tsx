@@ -7,6 +7,7 @@ import {
 } from '@/lib/activity';
 import { Page, PageHead, Card, Stat, Empty, PartyDot, DocLink } from '@/components/ui';
 import Icon from '@/components/Icon';
+import SessionCountdown from '@/components/SessionCountdown';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/odhibeshon' },
@@ -14,6 +15,10 @@ export const metadata: Metadata = {
   title: 'সংসদ অধিবেশন',
   description: 'ত্রয়োদশ জাতীয় সংসদের অধিবেশন, প্রতিটি বৈঠকের দিনের কার্যসূচি, পরিপত্র ও সংসদ সচিবালয়ের বিজ্ঞপ্তি, সংসদের প্রকাশনা থেকে সরাসরি।',
 };
+
+const WEEKDAY_BN = ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'];
+/** The weekday of an ISO date, as the calendar in Dhaka has it. */
+const weekdayBn = (iso: string) => WEEKDAY_BN[new Date(`${iso}T12:00:00+06:00`).getUTCDay()]!;
 
 function Fact({ label, value }: { label: string; value: string | null }) {
   return (
@@ -28,6 +33,8 @@ export default function SessionsPage() {
   const last = latestSitting();
   const ago = daysSince(last?.date ?? null);
   const notices = generalNotices();
+  const current = sessions[0] ?? null;
+  const firstCircular = current?.circulars.slice().sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))[0];
 
   return (
     <Page>
@@ -44,6 +51,21 @@ export default function SessionsPage() {
         }
       />
 
+      {current?.startDate && (
+        <div className="mt-8">
+          <SessionCountdown
+            label={sessionLabel(current)}
+            start={current.startDate}
+            startBn={dateBn(current.startDate) ?? current.startDate}
+            weekdayBn={weekdayBn(current.startDate)}
+            end={current.endDate}
+            lastSitting={current.sittings[0]?.date ?? null}
+            sittings={current.sittings.length}
+            circular={firstCircular?.pdfUrl ? { title: firstCircular.titleBn ?? 'পরিপত্র', url: firstCircular.pdfUrl } : null}
+          />
+        </div>
+      )}
+
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="flex flex-col gap-6">
           {sessions.length === 0 && (
@@ -55,7 +77,11 @@ export default function SessionsPage() {
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2.5">
                     <h2 className="display text-[22px] sm:text-[24px]">{sessionLabel(s)}</h2>
-                    {i === 0 && <span className="px-2.5 py-0.5 rounded-full bg-brandsoft text-brand text-[12px] font-bold">সর্বশেষ</span>}
+                    {i === 0 && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-brandsoft text-brand text-[12px] font-bold">
+                        {s.sittings.length === 0 ? 'আসন্ন' : 'সর্বশেষ'}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[14px] text-muted">
                     শুরু {dateBn(s.startDate) ?? 'তারিখ নেই'}{s.endDate ? `, শেষ ${dateBn(s.endDate)}` : ''}
@@ -65,17 +91,36 @@ export default function SessionsPage() {
               </div>
 
               {s.sittings.length ? (
-                <ol className="divide-y divide-rulesoft">
-                  {s.sittings.map((o, idx) => (
-                    <li key={o.id} className="px-5 sm:px-6 py-3 flex items-center gap-4">
-                      <span className="tnum text-[13px] text-muted w-8 shrink-0">{bn(s.sittings.length - idx)}</span>
-                      <span className="grow min-w-0 flex flex-col">
-                        <span className="text-[15px] font-semibold">{dateBn(o.date) ?? o.titleBn}</span>
-                        <span className="text-[12.5px] text-muted">দিনের কার্যসূচি</span>
-                      </span>
-                      {o.pdfUrl && <DocLink href={o.pdfUrl}>কার্যসূচি</DocLink>}
-                    </li>
-                  ))}
+                <ol className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {s.sittings.map((o, idx) => {
+                    const inner = (
+                      <>
+                        <span className="flex items-center justify-between gap-2 text-[12px] text-muted">
+                          <span className="tnum">বৈঠক {bn(s.sittings.length - idx)}</span>
+                          {o.pdfUrl && <Icon name="external" size={12} className="opacity-60 group-hover:opacity-100" />}
+                        </span>
+                        <span className="text-[15px] font-semibold leading-snug">{dateBn(o.date) ?? o.titleBn}</span>
+                        {o.date && <span className="text-[12.5px] text-muted">{weekdayBn(o.date)}</span>}
+                      </>
+                    );
+                    return (
+                      <li key={o.id}>
+                        {o.pdfUrl ? (
+                          <a
+                            href={o.pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="দিনের কার্যসূচি"
+                            className="group h-full rounded-xl border border-rule bg-paper/60 px-3 py-2.5 flex flex-col gap-0.5 hover:border-brand hover:bg-brandsoft/50 transition-colors"
+                          >
+                            {inner}
+                          </a>
+                        ) : (
+                          <span className="h-full rounded-xl border border-rule bg-paper/60 px-3 py-2.5 flex flex-col gap-0.5">{inner}</span>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ol>
               ) : (
                 <p className="px-6 py-4 text-[14px] text-muted">এই অধিবেশনের কোনো বৈঠকের কার্যসূচি এখনো প্রকাশিত হয়নি।</p>
