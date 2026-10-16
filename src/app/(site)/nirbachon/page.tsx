@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { shareGraph } from '@/lib/seo';
 import Link from 'next/link';
 import { seats, getMemberById, parties, statistics, districtOf, bn, bnGroup, dateBn, meta, ecs, partyShortBn, GENERAL_SEATS } from '@/lib/data';
-import { Page, PageHead, Card, Stat, CompositionBar, Empty, PartyDot } from '@/components/ui';
+import { Page, PageHead, Card, Stat, CompositionBar, PartyDot } from '@/components/ui';
 import { parliament } from '@/lib/activity';
 import { parliamentsWithRecords, partySeatsOf, parliamentLabel, resultForSeat } from '@/lib/history';
 import { partyColor } from '@/lib/data';
@@ -48,6 +48,25 @@ function pinSeats(): PinSeat[] {
   return out;
 }
 
+/** The page's sections, for the shortcuts under the heading. */
+const SECTIONS: [string, string][] = [
+  ['manchitro', 'মানচিত্র'],
+  ['fol', 'ফলাফল'],
+  ['votar', 'ভোটার ও তারিখ'],
+  ['ager', 'আগের নির্বাচন'],
+  ['jela', 'জেলা অনুযায়ী আসন'],
+];
+
+/** A section's title with a short note beside it. */
+function SectionHead({ title, note }: { title: string; note?: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule pb-2.5">
+      <h2 className="display text-[24px] sm:text-[26px] font-bold">{title}</h2>
+      {note && <span className="text-[13px] text-muted">{note}</span>}
+    </div>
+  );
+}
+
 export const metadata: Metadata = {
   alternates: { canonical: '/nirbachon' },
   openGraph: shareGraph('/nirbachon'),
@@ -86,9 +105,21 @@ export default function ElectionPage() {
         }
       />
 
-      <section id="manchitro" className="mt-8 flex flex-col gap-4 scroll-mt-24">
-        <div className="flex flex-col gap-1.5">
-          <h2 className="display text-[26px] font-bold">কোন জেলায় কে জিতল</h2>
+      <nav aria-label="এই পাতায়" className="mt-6 flex flex-wrap gap-2">
+        {SECTIONS.map(([id, label]) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className="h-8 px-3 inline-flex items-center rounded-full border border-rule bg-surface text-[13px] font-semibold text-inksoft hover:border-brand hover:text-brand transition-colors"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <section id="manchitro" className="mt-6 flex flex-col gap-4 scroll-mt-24">
+        <div className="flex flex-col gap-2">
+          <SectionHead title="কোন জেলায় কে জিতল" />
           <p className="text-[14.5px] text-inksoft text-pretty">
             দেশের মানচিত্রে {bn(GENERAL_SEATS)}টি আসন, প্রত্যেকটি তার জায়গায় দলের প্রতীকে; প্রতীকে চাপ দিলে আসনের এলাকা আর সংসদ সদস্য। “জেলার রং”-এ প্রতিটি জেলা সেখানে বেশিরভাগ আসন যে দলের, সেই রঙে।
           </p>
@@ -96,97 +127,93 @@ export default function ElectionPage() {
         <ElectionMap seats={pinSeats()} />
       </section>
 
-      <Card className="mt-8 px-5 sm:px-6 py-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {([
-          ['নির্বাচন', parliament.electionDate],
-          ['গেজেট', parliament.gazetteDate],
-          ['শপথ', parliament.oathDate],
-          ['মেয়াদ শেষ', parliament.endDate],
-        ] as [string, string | null][]).map(([label, value]) => (
-          <div key={label} className="flex flex-col gap-0.5">
-            <span className="text-[12.5px] text-muted">{label}</span>
-            <span className="text-[15.5px] font-semibold">{dateBn(value) ?? 'তারিখ নেই'}</span>
-          </div>
-        ))}
-      </Card>
-
-      <Card className="mt-4 p-6 flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <h2 className="display text-[21px] font-bold">সংসদের গঠন</h2>
-          <p className="text-[13px] text-muted">
-            সংরক্ষিত আসনসহ মোট {bn(s.total)}টি আসন। শুধু নির্বাচনের ফল আলাদা, নিচে দেখুন।
-          </p>
-        </div>
-        <CompositionBar parties={parties} total={s.total} majority={s.majority} />
-        <div className="border-t border-rule pt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-[14px]">
-          {parties.slice(0, 4).map((p) => (
-            <div key={p.abbr} className="flex flex-col gap-1">
-              <span className="flex items-center gap-2 text-muted" title={p.nameBn ?? p.abbr}>
-                <PartyDot abbr={p.abbr} />
-                {partyShortBn(p)}
-              </span>
-              <span className="tnum">
-                <strong className="text-[17px]">{bn(p.seatsTerritorial)}</strong>
-                <span className="text-muted"> আসনে নির্বাচিত</span>
-              </span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card className="mt-4 p-6 flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <h2 className="display text-[21px] font-bold">ভোটার ও ভোটকেন্দ্র</h2>
-          <p className="text-[13px] text-muted">
-            সারা দেশের হিসাব, নির্বাচন কমিশনের প্রকাশিত তথ্য অনুযায়ী
-          </p>
-        </div>
-        {/* Crore-sized figures in Bangla grouping are wide: one column on a narrow phone, so two never run together. */}
-        <div className="grid grid-cols-1 min-[440px]:grid-cols-2 lg:grid-cols-4 gap-4">
+      <section id="fol" className="mt-10 flex flex-col gap-4 scroll-mt-24">
+        <SectionHead title="ফলাফল" note={publishedSeats ? `${bn(publishedSeats)}টি আসনের ফল প্রকাশিত` : 'আসনভিত্তিক ফল এখনো যোগ হয়নি'} />
+        <Card className="p-6 flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <span className="display tnum text-[26px] font-extrabold leading-none">{bnGroup(ecs.national.registeredVoters)}</span>
-            <span className="text-[13px] text-muted">মোট ভোটার</span>
+            <h3 className="display text-[19px] font-bold">সংসদের গঠন</h3>
+            <p className="text-[13px] text-muted">সংরক্ষিত আসনসহ মোট {bn(s.total)}টি আসন; নিচে শুধু নির্বাচনে জেতা আসন।</p>
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="display tnum text-[26px] font-extrabold leading-none">{bnGroup(ecs.national.maleVoters)}</span>
-            <span className="text-[13px] text-muted">পুরুষ ভোটার</span>
+          <CompositionBar parties={parties} total={s.total} majority={s.majority} />
+          <div className="border-t border-rule pt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-[14px]">
+            {parties.slice(0, 4).map((p) => (
+              <Link key={p.abbr} href={`/dol/${p.slug}`} className="flex flex-col gap-1 rounded-lg -m-2 p-2 hover:bg-brandsoft/50 transition-colors">
+                <span className="flex items-center gap-2 text-muted" title={p.nameBn ?? p.abbr}>
+                  <PartyDot abbr={p.abbr} />
+                  {partyShortBn(p)}
+                </span>
+                <span className="tnum">
+                  <strong className="text-[17px]">{bn(p.seatsTerritorial)}</strong>
+                  <span className="text-muted"> আসনে নির্বাচিত</span>
+                </span>
+              </Link>
+            ))}
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="display tnum text-[26px] font-extrabold leading-none">{bnGroup(ecs.national.femaleVoters)}</span>
-            <span className="text-[13px] text-muted">নারী ভোটার</span>
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="display tnum text-[26px] font-extrabold leading-none">{bnGroup(ecs.national.pollingCentres)}</span>
-            <span className="text-[13px] text-muted">ভোটকেন্দ্র</span>
-          </div>
-        </div>
-        <p className="text-[12.5px] text-muted border-t border-rule pt-3">
-          তথ্যসূত্র: {ecs.source} | পড়া হয়েছে {dateBn(ecs.readOn)}
-        </p>
-      </Card>
-
-      <div className="mt-4">
-        {publishedSeats ? (
-          <Card className="p-5 sm:p-6 flex flex-col gap-2">
-            <h2 className="display text-[19px] font-bold">{bn(publishedSeats)}টি আসনের ফল প্রকাশিত</h2>
-            <p className="text-[14.5px] leading-relaxed text-inksoft">
+          {publishedSeats ? (
+            <p className="text-[13px] leading-relaxed text-muted border-t border-rule pt-3">
               প্রতিটি আসনের পাতায় সব প্রার্থী, দল ও প্রাপ্ত ভোট আছে; নিচে জেলা অনুযায়ী তালিকায় বিজয়ীর ভোট দেখুন। সূত্র দ্য বিজনেস স্ট্যান্ডার্ড ও উইকিপিডিয়া,
               নির্বাচন কমিশনের গেজেটের সঙ্গে এখনো মিলিয়ে দেখা হয়নি। যেসব আসনের ফল পাওয়া যায়নি, সেগুলোর পাতায় তা লেখা আছে।
             </p>
-          </Card>
-        ) : (
-          <Empty
-            title="আসনভিত্তিক প্রার্থী তালিকা ও ভোটের সংখ্যা এখনো যোগ করা হয়নি"
-            body="নির্বাচন কমিশনের গেজেট থেকে প্রতিটি আসনের প্রার্থী, প্রতীক ও প্রাপ্ত ভোট যোগ করা হবে। যাচাই করা সংখ্যা ছাড়া কিছু দেখানো হবে না।"
-          />
-        )}
-      </div>
+          ) : (
+            <p className="text-[13px] leading-relaxed text-muted border-t border-rule pt-3">
+              নির্বাচন কমিশনের গেজেট থেকে প্রতিটি আসনের প্রার্থী, প্রতীক ও প্রাপ্ত ভোট যোগ করা হবে। যাচাই করা সংখ্যা ছাড়া কিছু দেখানো হবে না।
+            </p>
+          )}
+        </Card>
+      </section>
 
-      <section className="mt-10 flex flex-col gap-4">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="display text-[26px]">আগের নির্বাচনগুলোতে দলগুলোর আসন</h2>
-          <span className="text-[13px] text-muted">সংসদের তথ্যভান্ডার</span>
+      <section id="votar" className="mt-10 flex flex-col gap-4 scroll-mt-24">
+        <SectionHead title="ভোটার ও নির্বাচনের তারিখ" note="নির্বাচন কমিশন ও সংসদের তথ্য" />
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-4 items-stretch">
+          <Card className="p-6 flex flex-col gap-4">
+            {/* Crore-sized figures in Bangla grouping are wide: one column on a narrow phone, so two never run together. */}
+            <div className="grid grid-cols-1 min-[440px]:grid-cols-2 gap-4">
+              {([
+                ['মোট ভোটার', ecs.national.registeredVoters],
+                ['ভোটকেন্দ্র', ecs.national.pollingCentres],
+              ] as [string, number][]).map(([label, n]) => (
+                <div key={label} className="flex flex-col gap-1">
+                  <span className="display tnum text-[26px] font-extrabold leading-none">{bnGroup(n)}</span>
+                  <span className="text-[13px] text-muted">{label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-0.5 h-3 rounded-full overflow-hidden" role="img" aria-label={`পুরুষ ভোটার ${ecs.national.maleVoters}, নারী ভোটার ${ecs.national.femaleVoters}`}>
+                <span className="bg-[#b9b4a6]" style={{ flex: `${ecs.national.maleVoters} 1 0` }} />
+                <span className="bg-brand" style={{ flex: `${ecs.national.femaleVoters} 1 0` }} />
+              </div>
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[13px]">
+                <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#b9b4a6]" aria-hidden="true" />পুরুষ <b className="tnum">{bnGroup(ecs.national.maleVoters)}</b></span>
+                <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-brand" aria-hidden="true" />নারী <b className="tnum">{bnGroup(ecs.national.femaleVoters)}</b></span>
+              </div>
+            </div>
+            <p className="text-[12.5px] text-muted border-t border-rule pt-3 mt-auto">
+              তথ্যসূত্র: {ecs.source} | পড়া হয়েছে {dateBn(ecs.readOn)}
+            </p>
+          </Card>
+          <Card className="p-6">
+            <ol className="flex flex-col">
+              {([
+                ['নির্বাচন', parliament.electionDate],
+                ['গেজেট', parliament.gazetteDate],
+                ['শপথ', parliament.oathDate],
+                ['মেয়াদ শেষ', parliament.endDate],
+              ] as [string, string | null][]).map(([label, value], i, all) => (
+                <li key={label} className="relative ps-6 pb-5 last:pb-0">
+                  <span aria-hidden="true" className={`absolute start-0 top-[6px] w-3 h-3 rounded-full border-2 ${i < all.length - 1 ? 'bg-brand border-brand' : 'bg-surface border-brand'}`} />
+                  {i < all.length - 1 && <span aria-hidden="true" className="absolute start-[5px] top-[18px] bottom-0 w-0.5 bg-brandsoft" />}
+                  <span className="block text-[12.5px] text-muted">{label}</span>
+                  <span className="block text-[15.5px] font-semibold">{dateBn(value) ?? 'তারিখ নেই'}</span>
+                </li>
+              ))}
+            </ol>
+          </Card>
         </div>
+      </section>
+
+      <section id="ager" className="mt-10 flex flex-col gap-4 scroll-mt-24">
+        <SectionHead title="আগের নির্বাচনগুলোতে দলগুলোর আসন" note="সংসদের তথ্যভান্ডার" />
         {(() => {
           const rows = parliamentsWithRecords().filter((p) => partySeatsOf(p.no).length > 0);
           const totals = new Map<string, { abbr: string; nameBn: string | null; n: number }>();
@@ -236,11 +263,8 @@ export default function ElectionPage() {
         </p>
       </section>
 
-      <section id="jela" className="mt-10 pb-14 flex flex-col gap-5">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="display text-[26px] font-bold">জেলা অনুযায়ী আসন</h2>
-          <span className="text-[14px] text-muted tnum">{bn(districts.length)} জেলা</span>
-        </div>
+      <section id="jela" className="mt-10 pb-14 flex flex-col gap-5 scroll-mt-24">
+        <SectionHead title="জেলা অনুযায়ী আসন" note={`${bn(districts.length)} জেলা`} />
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {districts.map((d) => (
             <Card key={d.bn} className="p-5 flex flex-col gap-3">

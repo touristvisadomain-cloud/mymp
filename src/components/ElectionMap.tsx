@@ -62,8 +62,17 @@ const px = (lon: number, lat: number): [number, number] => [(lon - LON0) * K * C
 const HOME: Box = { x: 0, y: 0, w: W0, h: H0 };
 /** A marker's radius on screen, whatever the zoom. */
 const R = 7;
-/** The country, for Google's first view. */
-const COUNTRY = { south: 20.6, west: 88.0, north: 26.65, east: 92.7 };
+/**
+ * The first view: the whole country, as large as the box allows. Google's
+ * road map zooms in whole steps, and a fit to the country's bounds rounds
+ * down to one that leaves it small; a box at least this tall holds the
+ * country at the next step (about 600 pixels north to south), so the view
+ * is set by the box's size rather than fitted.
+ */
+function showCountry(map: google.maps.Map, box: HTMLElement) {
+  map.setCenter({ lat: 23.65, lng: 90.35 });
+  map.setZoom(box.clientHeight >= 600 && box.clientWidth >= 520 ? 7 : 6);
+}
 
 /** The symbols in public/party, by party. A party without one wears its colour. */
 const SYMBOL: Record<string, string> = {
@@ -150,7 +159,9 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
   const [picked, setPicked] = useState<string | null>(null);
   const [pickedDistrict, setPickedDistrict] = useState<string | null>(null);
   const [areas, setAreas] = useState<Area[]>([]);
-  const [off, setOff] = useState<Set<string>>(new Set());
+  /** The parties a chip has picked; only their seats show. Empty shows every seat. */
+  const [only, setOnly] = useState<Set<string>>(new Set());
+  const hidden = (party: string | null) => only.size > 0 && !only.has(party ?? '');
   const [q, setQ] = useState('');
   /** Google Maps when the site has a key and Google takes it; SVG otherwise. Null while asking. */
   const [useGoogle, setUseGoogle] = useState<boolean | null>(BUILT_KEY ? true : null);
@@ -265,7 +276,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
     }).catch(() => {});
   };
   const pickDistrict = (slug: string) => { setPickedDistrict(slug); setPicked(null); setAreas([]); };
-  const home = () => { setVb(HOME); close(); gm.current?.map.fitBounds(COUNTRY, 12); };
+  const home = () => { setVb(HOME); close(); if (gm.current && gmBox.current) showCountry(gm.current.map, gmBox.current); };
   useEffect(() => { live.current = { mode, open, pickDistrict, close }; });
   const hits = useMemo(() => {
     const v = q.trim();
@@ -295,7 +306,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
         gestureHandling: 'greedy',
         clickableIcons: false,
       });
-      map.fitBounds(COUNTRY, 12);
+      showCountry(map, gmBox.current);
       const districts = new g.maps.Data({ map });
       districts.addGeoJson({
         type: 'FeatureCollection',
@@ -327,14 +338,14 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
         m.markers.set(s.slug, mk);
         if (s.party && SYMBOL[s.party]) symbolIcon(s.party, color, 52).then((url) => mk!.setIcon({ url, scaledSize: new google.maps.Size(26, 26), anchor: new google.maps.Point(13, 13) }));
       }
-      const shown = mode === 'seats' && !off.has(s.party ?? '');
+      const shown = mode === 'seats' && (only.size === 0 || only.has(s.party ?? ''));
       if (mk.getVisible() !== shown) mk.setVisible(shown);
       const on = picked === s.slug;
       mk.setZIndex(on ? 1000 : 1);
       const icon = mk.getIcon() as google.maps.Icon | null;
       if (icon?.url) mk.setIcon({ ...icon, scaledSize: on ? new google.maps.Size(36, 36) : new google.maps.Size(26, 26), anchor: on ? new google.maps.Point(18, 18) : new google.maps.Point(13, 13) });
     }
-  }, [gmReady, placed, mode, off, picked]);
+  }, [gmReady, placed, mode, only, picked]);
 
   // District outlines: faint under the seats; the lead party's colour in the district view.
   useEffect(() => {
@@ -414,19 +425,39 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
         </div>
       </div>
       {mode === 'seats' && (
-        <div className="flex flex-wrap gap-1.5">
-          {parties.map((p) => (
-            <button
-              key={p.abbr}
-              type="button"
-              onClick={() => setOff((o) => { const n = new Set(o); if (n.has(p.abbr)) n.delete(p.abbr); else n.add(p.abbr); return n; })}
-              aria-pressed={!off.has(p.abbr)}
-              className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full border border-rule bg-surface text-[13px] ${off.has(p.abbr) ? 'opacity-40' : ''}`}
-            >
-              <span className="w-3.5 h-3.5 rounded-full" style={{ background: p.color }} aria-hidden="true" />
-              {p.name} <span className="text-muted tnum">{BN(p.n)}</span>
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="দল বেছে নিন">
+          <button
+            type="button"
+            onClick={() => setOnly(new Set())}
+            aria-pressed={only.size === 0}
+            className={`inline-flex items-center h-8 px-3 rounded-full border text-[13px] font-semibold transition-colors ${only.size === 0 ? 'bg-ink text-surface border-ink' : 'bg-surface border-rule hover:border-ink'}`}
+          >
+            সব দল
+          </button>
+          {parties.map((p) => {
+            const on = only.has(p.abbr);
+            return (
+              <button
+                key={p.abbr}
+                type="button"
+                // A tap shows only this party; more taps add parties; a tap on a picked one takes it away.
+                onClick={() => setOnly((o) => { const n = new Set(o); if (n.has(p.abbr)) n.delete(p.abbr); else n.add(p.abbr); return n; })}
+                aria-pressed={on}
+                className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full border text-[13px] transition-colors ${
+                  on ? 'border-transparent text-white font-semibold' : only.size ? 'border-rule bg-surface opacity-55 hover:opacity-100' : 'border-rule bg-surface hover:border-ink'
+                }`}
+                style={on ? { background: p.color } : undefined}
+              >
+                <span className="w-3.5 h-3.5 rounded-full ring-2 ring-white/70" style={{ background: p.color }} aria-hidden="true" />
+                {p.name} <span className={`tnum ${on ? 'text-white/85' : 'text-muted'}`}>{BN(p.n)}</span>
+              </button>
+            );
+          })}
+          {only.size > 0 && (
+            <span className="text-[12.5px] text-muted ms-1" aria-live="polite">
+              {BN(seats.filter((s) => !hidden(s.party)).length)}টি আসন দেখানো হচ্ছে
+            </span>
+          )}
         </div>
       )}
 
@@ -510,7 +541,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
           {mode === 'seats' && (
             <g>
               {placed.map(({ s, xy }) => {
-                const dim = off.has(s.party ?? '');
+                const dim = hidden(s.party);
                 const on = picked === s.slug;
                 return (
                   <g key={s.slug} transform={`translate(${xy[0]},${xy[1]}) scale(${k})`} opacity={dim ? 0.15 : 1} style={{ pointerEvents: dim ? 'none' : undefined }}>
