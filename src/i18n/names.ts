@@ -227,6 +227,7 @@ export const GOV_POST: Record<string, string> = {
   'উপমন্ত্রী': 'Deputy Minister',
   'উপদেষ্টা': 'Adviser',
   'প্রধানমন্ত্রীর উপদেষ্টা': 'Adviser to the Prime Minister',
+  'রাজনৈতিক উপদেষ্টা': 'Political Adviser',
   'স্পিকার': 'Speaker',
   'ডেপুটি স্পিকার': 'Deputy Speaker',
   'সংসদ নেতা': 'Leader of the House',

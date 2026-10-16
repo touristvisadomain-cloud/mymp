@@ -6,6 +6,7 @@ import {
   statistics,
   getMemberById,
   getMember,
+  members,
   getSeat,
   getParty,
   GENERAL_SEATS,
@@ -236,7 +237,10 @@ export default async function Home() {
                   { label: t.en ? partyShort(getParty("bnp"), "en") : "বিএনপি", href: "/dol/bnp" },
                   {
                     label: t.en ? OFFICE.speaker!.en : "স্পিকার",
-                    href: featured[0] ? `/mp/${featured[0].m.slug}` : "/mp",
+                    href: (() => {
+                      const speaker = members.find((m) => m.offices.includes("speaker"));
+                      return speaker ? `/mp/${speaker.slug}` : "/mp";
+                    })(),
                   },
                   { label: t("সংরক্ষিত আসন", "Reserved seats"), href: "/mp?kind=reserved" },
                 ].map((c) => (

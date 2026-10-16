@@ -1,8 +1,9 @@
 import Link from '@/i18n/Link';
-import { initial, partyColor, type Member, type Party } from '@/lib/data';
+import { partyColor, type Member, type Party } from '@/lib/data';
 import { getT } from '@/i18n/server';
 import { personName, seatName, partyName, partyShort, noParty } from '@/i18n/names';
 import MemberPhoto from './MemberPhoto';
+import { memberInitial } from './mp/initial';
 import PartyBadge from './PartyBadge';
 import Icon from './Icon';
 import { siteUrl } from '@/lib/site';
@@ -170,7 +171,7 @@ export async function MemberCard({ m, badge }: { m: Member; badge?: string }) {
       style={{ borderTopColor: partyColor(m.party?.abbr), borderTopWidth: 3 }}
     >
       <div className="shrink-0 flex items-start justify-between gap-3">
-        <MemberPhoto src={m.photoUrl} alt="" initial={initial(m)} size={64} sizeClass="w-14 h-14 sm:w-16 sm:h-16" />
+        <MemberPhoto src={m.photoUrl} alt="" initial={memberInitial(m, t.lang)} size={64} sizeClass="w-14 h-14 sm:w-16 sm:h-16" />
         {badge && <span className={`hidden sm:inline-block ${badgeClass}`}>{badge}</span>}
       </div>
       <span className="grow min-w-0 flex flex-col gap-1">
@@ -198,7 +199,7 @@ export async function MemberRow({ m }: { m: Member }) {
       className="bg-surface border border-rule rounded-card shadow-card ps-3 pe-4 py-3 flex items-center gap-3.5 hover:border-brand hover:shadow-lift transition-all"
       style={{ borderInlineStartColor: partyColor(m.party?.abbr), borderInlineStartWidth: 3 }}
     >
-      <MemberPhoto src={m.photoUrl} alt="" initial={initial(m)} size={44} />
+      <MemberPhoto src={m.photoUrl} alt="" initial={memberInitial(m, t.lang)} size={44} />
       <span className="grow min-w-0 flex flex-col gap-0.5">
         <span className="display text-[15.5px] truncate">{personName(m, t.lang)}</span>
         <span className="text-[13px] text-muted truncate">

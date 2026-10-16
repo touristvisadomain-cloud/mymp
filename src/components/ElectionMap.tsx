@@ -116,27 +116,6 @@ const areaNameEn = (p: AreaFeature['properties']): string => {
   return ward ? `Ward ${ward[1]!.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)))}` : '';
 };
 
-/**
- * The Maps JavaScript API in the page's language. The shared loader
- * (src/lib/googleMaps.ts) asks Google for Bangla; the English page asks for
- * English, so the base map's names and controls are English too. Google can
- * be loaded once per page, so whichever language came first stays.
- */
-let googleEnLoading: Promise<typeof google> | null = null;
-function loadGoogleIn(lang: 'bn' | 'en', key: string): Promise<typeof google> {
-  if (lang === 'bn' || (typeof google !== 'undefined' && google.maps)) return loadGoogle(key);
-  googleEnLoading ??= new Promise((done, fail) => {
-    const cb = '__mympMapsReadyEn';
-    (window as unknown as Record<string, () => void>)[cb] = () => done(google);
-    const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&language=en&region=BD&v=weekly&loading=async&callback=${cb}`;
-    s.async = true;
-    s.onerror = () => fail(new Error('Google Maps could not be loaded'));
-    document.head.appendChild(s);
-  });
-  return googleEnLoading;
-}
-
 let overviewOnce: Promise<Overview> | null = null;
 const loadOverview = () => (overviewOnce ??= fetch('/geo/overview.json').then((r) => r.json() as Promise<Overview>));
 const areaFiles = new Map<string, Promise<AreaFeature[]>>();
@@ -342,7 +321,7 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
   useEffect(() => {
     if (useGoogle !== true || !overview || !gmBox.current || gm.current) return;
     let cancelled = false;
-    googleKey().then((k) => loadGoogleIn(t.lang, k)).then((g) => {
+    googleKey().then((k) => loadGoogle(k, t.lang)).then((g) => {
       if (cancelled || !gmBox.current) return;
       const map = new g.maps.Map(gmBox.current, {
         mapTypeControl: true,

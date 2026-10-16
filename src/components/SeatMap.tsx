@@ -209,10 +209,12 @@ interface Drawing {
   shortName: (f: Feature) => string;
   /** "You are here", in the page's language. */
   hereTitle: string;
+  /** The page's language, for Google's own names and buttons. */
+  lang: 'bn' | 'en';
 }
 
 async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<Engine> {
-  const g = await loadGoogle(key);
+  const g = await loadGoogle(key, d.lang);
   const map = new g.maps.Map(el, {
     mapTypeControl: true,
     mapTypeControlOptions: { mapTypeIds: ['roadmap', 'hybrid'] },
@@ -451,6 +453,7 @@ export default function SeatMap({
           labelZoom: 8,
           shortName: nm.shortName,
           hereTitle: t('আপনি এখানে', 'You are here'),
+          lang: t.lang,
         };
       } else {
         const tone = Object.fromEntries(Object.entries(colors ?? {}).map(([k, v]) => [k, resolve(v)]));
@@ -472,6 +475,7 @@ export default function SeatMap({
           labelZoom: 10,
           shortName: nm.shortName,
           hereTitle: t('আপনি এখানে', 'You are here'),
+          lang: t.lang,
         };
       }
       // A key Google refuses loads the script and then greys the map; Google calls this instead of failing.
