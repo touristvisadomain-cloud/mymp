@@ -122,13 +122,19 @@ const loadAreas = (district: string) => {
  * symbol, and until the symbol has loaded.
  */
 const icons = new Map<string, Promise<string>>();
+const discs = new Map<string, string>();
 function discIcon(color: string, size: number): string {
+  const key = `${color}|${size}`;
+  const done = discs.get(key);
+  if (done) return done;
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const g = c.getContext('2d')!;
   g.beginPath(); g.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2); g.fillStyle = '#ffffff'; g.fill();
   g.beginPath(); g.arc(size / 2, size / 2, size / 2 - 5, 0, Math.PI * 2); g.fillStyle = color; g.fill();
-  return c.toDataURL();
+  const url = c.toDataURL();
+  discs.set(key, url);
+  return url;
 }
 function symbolIcon(party: string, color: string, size: number): Promise<string> {
   let p = icons.get(party);
@@ -190,7 +196,11 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
 
   const bySlug = useMemo(() => new Map(seats.map((s) => [s.slug, s])), [seats]);
   const placed = useMemo(() => (overview ? seats.flatMap((s) => { const p = overview.seats[s.slug]; return p ? [{ s, lon: p[0], lat: p[1], xy: px(p[0], p[1]) }] : []; }) : []), [overview, seats]);
-  const districtPaths = useMemo(() => (overview ? overview.districts.map((d) => ({ ...d, path: pathOf(d.polys), at: px(d.center[0], d.center[1]) })) : []), [overview]);
+  // The outline paths are for the SVG map only; on Google's map the districts are a data layer.
+  const districtPaths = useMemo(
+    () => (overview ? overview.districts.map((d) => ({ ...d, path: useGoogle === false ? pathOf(d.polys) : '', at: px(d.center[0], d.center[1]) })) : []),
+    [overview, useGoogle],
+  );
   /** Each district's parties by seats held, most first. */
   const lead = useMemo(() => {
     const out = new Map<string, { abbr: string; name: string; color: string; seats: number }[]>();
@@ -329,27 +339,72 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
   }, [useGoogle, overview]);
   useEffect(() => disposeGm, []);
 
-  // Markers: one per seat, its party's symbol; hidden by a dimmed chip or in the district view.
+  // Markers: one per seat, its party's symbol; hidden by a party chip or in the district view.
+  // Built a few dozen at a time while the browser is idle, so the page stays responsive as
+  // the 300 appear; the effects after this one change only what a tap or a chip changes.
+  const shownNow = useRef<(party: string | null) => boolean>(() => true);
+  useEffect(() => {
+    shownNow.current = (party) => mode === 'seats' && (only.size === 0 || only.has(party ?? ''));
+  });
   useEffect(() => {
     const m = gm.current;
     if (!m || !placed.length) return;
-    for (const { s, lon, lat } of placed) {
-      let mk = m.markers.get(s.slug);
-      if (!mk) {
+    let cancelled = false;
+    const size = new google.maps.Size(26, 26);
+    const anchor = new google.maps.Point(13, 13);
+    const idle = (fn: () => void) => (typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(fn, { timeout: 200 }) : setTimeout(fn, 16));
+    let i = 0;
+    const batch = () => {
+      if (cancelled) return;
+      for (const end = Math.min(i + 40, placed.length); i < end; i++) {
+        const { s, lon, lat } = placed[i]!;
+        if (m.markers.has(s.slug)) continue;
         const color = resolve(s.color);
-        mk = new google.maps.Marker({ position: { lat, lng: lon }, map: m.map, title: `${s.seat} · ${s.member?.name ?? 'শূন্য'}${s.partyBn ? ` (${s.partyBn})` : ''}`, icon: { url: discIcon(color, 52), scaledSize: new google.maps.Size(26, 26), anchor: new google.maps.Point(13, 13) }, optimized: true });
+        const mk = new google.maps.Marker({
+          position: { lat, lng: lon },
+          map: m.map,
+          title: `${s.seat} · ${s.member?.name ?? 'শূন্য'}${s.partyBn ? ` (${s.partyBn})` : ''}`,
+          icon: { url: discIcon(color, 52), scaledSize: size, anchor },
+          optimized: true,
+          visible: shownNow.current(s.party),
+        });
         mk.addListener('click', () => live.current.open(s));
         m.markers.set(s.slug, mk);
-        if (s.party && SYMBOL[s.party]) symbolIcon(s.party, color, 52).then((url) => mk!.setIcon({ url, scaledSize: new google.maps.Size(26, 26), anchor: new google.maps.Point(13, 13) }));
+        if (s.party && SYMBOL[s.party]) symbolIcon(s.party, color, 52).then((url) => { const cur = mk.getIcon() as google.maps.Icon | null; mk.setIcon({ url, scaledSize: cur?.scaledSize ?? size, anchor: cur?.anchor ?? anchor }); });
       }
+      if (i < placed.length) idle(batch);
+    };
+    batch();
+    return () => { cancelled = true; };
+  }, [gmReady, placed]);
+
+  // A party chip or the district view: only the markers whose visibility changes.
+  useEffect(() => {
+    const m = gm.current;
+    if (!m) return;
+    for (const { s } of placed) {
+      const mk = m.markers.get(s.slug);
       const shown = mode === 'seats' && (only.size === 0 || only.has(s.party ?? ''));
-      if (mk.getVisible() !== shown) mk.setVisible(shown);
-      const on = picked === s.slug;
-      mk.setZIndex(on ? 1000 : 1);
-      const icon = mk.getIcon() as google.maps.Icon | null;
-      if (icon?.url) mk.setIcon({ ...icon, scaledSize: on ? new google.maps.Size(36, 36) : new google.maps.Size(26, 26), anchor: on ? new google.maps.Point(18, 18) : new google.maps.Point(13, 13) });
+      if (mk && mk.getVisible() !== shown) mk.setVisible(shown);
     }
-  }, [gmReady, placed, mode, only, picked]);
+  }, [gmReady, placed, mode, only]);
+
+  // The picked seat's marker grows; the one picked before shrinks back.
+  const pickedBefore = useRef<string | null>(null);
+  useEffect(() => {
+    const m = gm.current;
+    if (!m) return;
+    const resize = (slug: string | null, on: boolean) => {
+      const mk = slug ? m.markers.get(slug) : undefined;
+      const icon = mk?.getIcon() as google.maps.Icon | null | undefined;
+      if (!mk || !icon?.url) return;
+      mk.setZIndex(on ? 1000 : 1);
+      mk.setIcon({ ...icon, scaledSize: on ? new google.maps.Size(36, 36) : new google.maps.Size(26, 26), anchor: on ? new google.maps.Point(18, 18) : new google.maps.Point(13, 13) });
+    };
+    if (pickedBefore.current !== picked) resize(pickedBefore.current, false);
+    resize(picked, true);
+    pickedBefore.current = picked;
+  }, [gmReady, picked]);
 
   // District outlines: faint under the seats; the lead party's colour in the district view.
   useEffect(() => {

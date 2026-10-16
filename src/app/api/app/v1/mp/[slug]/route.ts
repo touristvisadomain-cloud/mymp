@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { memberDetail } from '@/lib/app/payload';
 import { members } from '@/lib/data';
+import { gzipJson } from '@/lib/gzipJson';
 
 export const revalidate = 3600;
 
@@ -13,7 +14,7 @@ export function generateStaticParams() {
   return members.map((m) => ({ slug: m.slug }));
 }
 
-export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }> }) {
+async function handle(_req: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
   const member = memberDetail(slug);
   if (!member) return NextResponse.json({ error: 'not found' }, { status: 404 });
@@ -23,4 +24,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
       'access-control-allow-origin': '*',
     },
   });
+}
+
+/** The JSON, gzipped for a browser that accepts it (lib/gzipJson). */
+export async function GET(req: Request, ctx: { params: Promise<{ slug: string }> }) {
+  return gzipJson(req, await handle(req, ctx));
 }
