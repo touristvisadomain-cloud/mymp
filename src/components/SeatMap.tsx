@@ -4,10 +4,11 @@
  * Constituencies on a street map, every village, market, road and river
  * named.
  *
- * - On a member's or a seat's page (`seat`): the seat's upazilas are filled in
- *   the party's colour, solid where the seat holds the whole upazila and pale
- *   where it holds only some unions or wards; the district's other upazilas
- *   are outlined and named with their seats.
+ * - On a member's or a seat's page (`seat`): the seat's upazilas and city
+ *   wards are filled in the party's colour, solid where the seat holds the
+ *   whole place and pale where it holds only some unions, or wards without an
+ *   outline of their own; the district's other places are outlined and named
+ *   with their seats.
  * - On a district's page (`colors` for every seat): each upazila in the colour
  *   of the party holding its seat; a tap opens the seat's page.
  *
@@ -18,7 +19,8 @@
  * counts every map it draws.
  *
  * Boundaries: public/geo/<district>.json, built by scripts/build-seat-geo.ts
- * from OpenStreetMap's upazilas (ODbL) and OCHA's city corporations (CC BY-IGO).
+ * from OpenStreetMap's upazilas (ODbL), OCHA's city corporations (CC BY-IGO)
+ * and geoBoundaries' city wards (CC BY 3.0 IGO).
  */
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -27,7 +29,7 @@ import 'leaflet/dist/leaflet.css';
 type Part = 'whole' | 'part';
 interface Feature {
   type: 'Feature';
-  properties: { name: string; kind: 'upazila' | 'city'; seats: Record<string, Part> };
+  properties: { name: string; kind: 'upazila' | 'city' | 'ward'; city?: string; seats: Record<string, Part> };
   geometry: { type: 'Polygon' | 'MultiPolygon'; coordinates: number[][][] | number[][][][] };
 }
 interface Look {
@@ -73,7 +75,28 @@ const polygonsOf = (f: Feature) => (f.geometry.type === 'Polygon' ? [f.geometry.
 function inFeature(pt: [number, number], f: Feature): boolean {
   return polygonsOf(f).some((rings) => inRing(pt, rings[0]!) && !rings.slice(1).some((hole) => inRing(pt, hole)));
 }
-const placeName = (f: Feature) => (f.properties.kind === 'city' ? f.properties.name : `${f.properties.name} উপজেলা`);
+const cityShort = (s: string) => s.replace(/ সিটি কর্পোরেশন$/, ' সিটি');
+const placeName = (f: Feature) =>
+  f.properties.kind === 'city' ? f.properties.name : f.properties.kind === 'ward' ? `${f.properties.name} (${cityShort(f.properties.city ?? '')})` : `${f.properties.name} উপজেলা`;
+/** One feature's key: a ward's name repeats across a district's two cities. */
+const keyOf = (kind: string, city: string | undefined, name: string) => `${kind}:${city ?? ''}:${name}`;
+/** The places a seat holds, one city's wards and annexed unions gathered into one line. */
+function placeList(fs: Feature[]): string[] {
+  const out: string[] = [];
+  const byCity = new Map<string, { nums: string[]; names: string[] }>();
+  for (const f of fs) {
+    if (f.properties.kind !== 'ward') { out.push(placeName(f)); continue; }
+    const city = cityShort(f.properties.city ?? '');
+    const c = byCity.get(city) ?? { nums: [], names: [] };
+    if (f.properties.name.startsWith('ওয়ার্ড ')) c.nums.push(f.properties.name.slice('ওয়ার্ড '.length));
+    else c.names.push(f.properties.name);
+    byCity.set(city, c);
+  }
+  const lines = [...byCity].map(([city, c]) => `${city}র ${[c.nums.length ? `ওয়ার্ড ${c.nums.join(', ')}` : '', ...c.names].filter(Boolean).join(', ')}`);
+  return [...lines, ...out];
+}
+/** Wards are small: their names show only from street level. */
+const labelZoomOf = (f: Feature, base: number) => (f.properties.kind === 'ward' ? Math.max(base, 12) : base);
 
 /**
  * Where a place's Bangla name sits: the centroid of its largest polygon, or
@@ -101,7 +124,7 @@ function labelPoint(f: Feature): [number, number] {
   return [(best[0]![0]! + mid[0]!) / 2, (best[0]![1]! + mid[1]!) / 2];
 }
 /** The name written on the map: our own, in Bangla, whatever language the base map is in. */
-const shortName = (f: Feature) => f.properties.name.replace(/ সিটি কর্পোরেশন$/, ' সিটি');
+const shortName = (f: Feature) => cityShort(f.properties.name);
 
 /** The Maps JavaScript API, loaded once per page, in Bangla. */
 let googleLoading: Promise<typeof google> | null = null;
@@ -140,8 +163,8 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
     fullscreenControl: false,
     gestureHandling: 'cooperative',
   });
-  const byName = new Map(d.features.map((f) => [`${f.properties.kind}:${f.properties.name}`, f]));
-  const own = (gf: google.maps.Data.Feature) => byName.get(`${gf.getProperty('kind')}:${gf.getProperty('name')}`)!;
+  const byName = new Map(d.features.map((f) => [keyOf(f.properties.kind, f.properties.city, f.properties.name), f]));
+  const own = (gf: google.maps.Data.Feature) => byName.get(keyOf(String(gf.getProperty('kind')), gf.getProperty('city') as string | undefined, String(gf.getProperty('name'))))!;
   map.data.addGeoJson({ type: 'FeatureCollection', features: d.features });
   map.data.setStyle((gf) => {
     const l = d.look(own(gf));
@@ -165,7 +188,7 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
   // Every upazila and city named in Bangla on top of Google's own labels.
   const labels = d.features.map((f) => {
     const [lng, lat] = labelPoint(f);
-    return new g.maps.Marker({
+    const marker = new g.maps.Marker({
       position: { lat, lng },
       map,
       clickable: false,
@@ -173,11 +196,12 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
       label: { text: shortName(f), className: 'seatmap-label', color: '#17201b', fontSize: '13px', fontWeight: '700' },
       zIndex: 1000,
     });
+    return { marker, zoom: labelZoomOf(f, d.labelZoom) };
   });
   // Far out, a district's names run into one another: they show from the zoom where they fit.
   const showLabels = () => {
     const z = map.getZoom() ?? 0;
-    for (const l of labels) l.setVisible(z >= d.labelZoom);
+    for (const l of labels) l.marker.setVisible(z >= l.zoom);
   };
   map.addListener('zoom_changed', showLabels);
   showLabels();
@@ -200,7 +224,7 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
     destroy() {
       ro.disconnect();
       here?.setMap(null);
-      for (const l of labels) l.setMap(null);
+      for (const l of labels) l.marker.setMap(null);
     },
   };
 }
@@ -223,15 +247,17 @@ async function startLeaflet(el: HTMLElement, d: Drawing): Promise<Engine> {
     },
   }).addTo(m);
   void layer;
-  const labelLayer = L.layerGroup(
-    d.features.map((f) => {
-      const [lng, lat] = labelPoint(f);
-      return L.marker([lat, lng], { interactive: false, icon: L.divIcon({ className: 'seatmap-label seatmap-label-osm', html: shortName(f), iconSize: undefined }) });
-    }),
-  );
+  const labels = d.features.map((f) => {
+    const [lng, lat] = labelPoint(f);
+    const marker = L.marker([lat, lng], { interactive: false, icon: L.divIcon({ className: 'seatmap-label seatmap-label-osm', html: shortName(f), iconSize: undefined }) });
+    return { marker, zoom: labelZoomOf(f, d.labelZoom) };
+  });
   const showLabels = () => {
-    if (m.getZoom() >= d.labelZoom) labelLayer.addTo(m);
-    else labelLayer.remove();
+    const z = m.getZoom();
+    for (const l of labels) {
+      if (z >= l.zoom) l.marker.addTo(m);
+      else l.marker.remove();
+    }
   };
   m.on('zoomend', showLabels);
   const focus = L.geoJSON({ type: 'FeatureCollection', features: d.focus } as never);
@@ -336,8 +362,8 @@ export default function SeatMap({
         const color = resolve(seat.color);
         const mine = fc.features.filter((f) => f.properties.seats[seat.slug]);
         setSummary({
-          whole: mine.filter((f) => f.properties.seats[seat.slug] === 'whole').map(placeName),
-          part: mine.filter((f) => f.properties.seats[seat.slug] === 'part').map(placeName),
+          whole: placeList(mine.filter((f) => f.properties.seats[seat.slug] === 'whole')),
+          part: placeList(mine.filter((f) => f.properties.seats[seat.slug] === 'part')),
         });
         drawing = {
           features: fc.features,
@@ -419,7 +445,9 @@ export default function SeatMap({
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const pt: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-        const inside = features.current.find((f) => inFeature(pt, f));
+        // A ward before the city that holds it, where a district has both.
+        const hits = features.current.filter((f) => inFeature(pt, f));
+        const inside = hits.find((f) => f.properties.kind === 'ward') ?? hits[0];
         engine.current?.showHere(pt[1], pt[0]);
         if (!inside) return setWhere('আপনি এই জেলার বাইরে আছেন।');
         const p = seat ? inside.properties.seats[seat.slug] : undefined;
@@ -497,11 +525,11 @@ export default function SeatMap({
       {seat && summary.part.length > 0 && note && (
         <p className="px-4 py-2.5 text-[13px] text-inksoft border-t border-rule bg-surface leading-relaxed">
           <span className="font-semibold">নির্বাচন কমিশনের বর্ণনা:</span> {note}
-          <span className="block text-[12px] text-muted pt-1">ইউনিয়ন ও সিটি ওয়ার্ডের আলাদা সীমানা প্রকাশিত নেই, তাই হালকা রঙে পুরো উপজেলা বা সিটি দেখানো হয়েছে।</span>
+          <span className="block text-[12px] text-muted pt-1">ইউনিয়নের, আর নতুন সিটি কর্পোরেশনগুলোর ওয়ার্ডের, আলাদা সীমানা প্রকাশিত নেই; সেখানে হালকা রঙে পুরো উপজেলা বা সিটি দেখানো হয়েছে।</span>
         </p>
       )}
       <p className="px-4 py-2.5 text-[12px] text-muted border-t border-rule bg-surface leading-relaxed">
-        সীমানা নির্বাচন কমিশনের আসনের বর্ণনা থেকে, উপজেলা OpenStreetMap ও সিটি কর্পোরেশন OCHA-র মানচিত্রে; আনুমানিক। পটভূমির মানচিত্র {source}-এর।
+        সীমানা নির্বাচন কমিশনের আসনের বর্ণনা থেকে; উপজেলা OpenStreetMap, সিটি কর্পোরেশন OCHA আর সিটি ওয়ার্ড geoBoundaries (BBS, ২০১৫)-এর মানচিত্রে; আনুমানিক। পটভূমির মানচিত্র {source}-এর।
         {colors && ` ${BN(Object.keys(colors).length)}টি আসন; এলাকায় চাপ দিলে সেই আসনের পাতা।`}
       </p>
     </div>

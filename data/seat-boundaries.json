@@ -1,0 +1,12 @@
+{
+  "_note": "Boundary text that replaces the secretariat's (parliament.gov.bd boundaryDetails, which still reads as the 2023 delimitation) for seats the Election Commission redrew for the 13th parliament in its gazette of 11 December 2025, and for two seats whose text names the wrong city corporation (Dhaka-11 and -12 hold Dhaka North wards). scripts/sync.mjs applies these by seat slug. Written from Prothom Alo's and bdnews24's reports of the final list (4–5 September 2025); the other changed seats, and the corrections gazetted on 24 December 2025 and 15 January 2026, await the gazette itself, whose PDF carries no readable text.",
+  "dhaka-2": "(ক) কেরানীগঞ্জ উপজেলার তারানগর, কলাতিয়া, হজরতপুর, রুহিতপুর, শাক্তা, কালিন্দি ও বাস্তা ইউনিয়ন এবং (খ) সাভার উপজেলার আমিনবাজার, তেঁতুলঝোড়া ও ভাকুর্তা ইউনিয়ন",
+  "dhaka-4": "ঢাকা দক্ষিণ সিটি কর্পোরেশনের ওয়ার্ড- ৪৭, ৫১, ৫২, ৫৩, ৫৪ এবং ৫৮ থেকে ৬১",
+  "dhaka-5": "ঢাকা দক্ষিণ সিটি কর্পোরেশনের ওয়ার্ড- ৪৮, ৪৯, ৫০ এবং ৬২ থেকে ৭০",
+  "dhaka-7": "ঢাকা দক্ষিণ সিটি কর্পোরেশনের ওয়ার্ড- ২৩ থেকে ৩৩, ৩৫, ৩৬, ৫৬ ও ৫৭",
+  "dhaka-10": "ঢাকা দক্ষিণ সিটি কর্পোরেশনের ওয়ার্ড- ১৪ থেকে ১৮, ২২ ও ৫৫",
+  "dhaka-11": "ঢাকা উত্তর সিটি কর্পোরেশনের ওয়ার্ড- ২১, ২২, ২৩, ৩৭, ৩৮, ৩৯, ৪০, ৪১ ও ৪২",
+  "dhaka-12": "ঢাকা উত্তর সিটি কর্পোরেশনের ওয়ার্ড- ২৪, ২৫, ২৬, ২৭, ৩৫ ও ৩৬",
+  "dhaka-14": "(ক) ঢাকা উত্তর সিটি কর্পোরেশনের ওয়ার্ড ৭ থেকে ১২ পর্যন্ত এবং (খ) সাভার উপজেলার কাউন্দিয়া ও বনগাঁও ইউনিয়ন",
+  "dhaka-19": "নিম্নলিখিত ইউনিয়ন সমূহ ব্যতীত সাভার উপজেলাঃ (১) আমিনবাজার, (২) তেঁতুলঝোড়া, (৩) ভাকুর্তা, (৪) কাউন্দিয়া ও (৫) বনগাঁও ইউনিয়ন"
+}

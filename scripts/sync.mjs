@@ -31,6 +31,9 @@ const BASE = 'https://www.parliament.gov.bd';
 const HOST = 'www.parliament.gov.bd';
 const PARLIAMENT = 13;
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
+/** Seat boundaries the Commission redrew after the secretariat's text (data/seat-boundaries.json), by seat slug. */
+const BOUNDARY_FIX = JSON.parse(readFileSync(join(OUT, 'seat-boundaries.json'), 'utf8'));
+const boundaryOf = (c) => BOUNDARY_FIX[slugify(c.constituencyEng || `seat-${c.constituencyNo}`)] ?? clean(c.boundaryDetails);
 
 /**
  * --soft: used by the production build. If parliament.gov.bd cannot be reached,
@@ -498,7 +501,7 @@ async function main() {
             nameBn: clean(c.constituencyBng),
             nameEn: clean(c.constituencyEng),
             slug: slugify(c.constituencyEng || `seat-${seatNo}`),
-            boundaryBn: clean(c.boundaryDetails),
+            boundaryBn: boundaryOf(c),
           }
         : null,
       offices: [
@@ -606,7 +609,7 @@ async function main() {
       const rows = electionId === null ? null : await optional('constituencies', () => getAllPagesLive('/api/constituencies', 400));
       for (const c of rows ?? []) {
         if (c.electionId !== electionId || !missing.includes(c.constituencyNo)) continue;
-        seats.push({ no: c.constituencyNo, reserved: false, nameBn: clean(c.constituencyBng), nameEn: clean(c.constituencyEng), slug: slugify(c.constituencyEng || `seat-${c.constituencyNo}`), boundaryBn: clean(c.boundaryDetails), memberId: null, vacantSince: null });
+        seats.push({ no: c.constituencyNo, reserved: false, nameBn: clean(c.constituencyBng), nameEn: clean(c.constituencyEng), slug: slugify(c.constituencyEng || `seat-${c.constituencyNo}`), boundaryBn: boundaryOf(c), memberId: null, vacantSince: null });
       }
       seats.sort((a, b) => a.no - b.no);
       const still = missing.filter((n) => !seats.some((s) => s.no === n));

@@ -54,6 +54,22 @@ export function fold(s: string): string {
 }
 
 const words = (s: string) => fold(s).split(' ').filter(Boolean);
+const toLatin = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+
+/**
+ * The ward numbers a city clause names: "ওয়ার্ড- ০৪,১৩,১৪, ও ১৬", "ওয়ার্ড ৭
+ * থেকে ১২ পর্যন্ত", "১ হতে ১৮ নং ওয়ার্ড". A range runs from the number before
+ * থেকে or হতে to the one after.
+ */
+export function wardNumbers(clause: string): number[] {
+  const out = new Set<number>();
+  const rest = toLatin(clause.normalize('NFC')).replace(/(\d+)\s*(?:থেকে|হতে)\s*(\d+)/g, (_, a: string, b: string) => {
+    for (let n = Number(a); n <= Number(b) && n < Number(a) + 200; n++) out.add(n);
+    return ' ';
+  });
+  for (const m of rest.matchAll(/\d+/g)) out.add(Number(m[0]));
+  return [...out].sort((a, b) => a - b);
+}
 
 /** Does the folded word list `hay` contain `needle` as whole words? The last word may be half typed. */
 function hasRun(hay: string[], needle: string[], prefixLast: boolean): boolean {
@@ -132,11 +148,12 @@ function searchSeats(query: string, seats: FinderSeat[], limit: number, prefix: 
     const number = q.slice(wardAt + 1).find((w) => /^[০-৯]+$/.test(w));
     const city = q.filter((w, i) => i !== wardAt && w !== number);
     if (number) {
+      const n = Number(toLatin(number));
       for (const seat of seats) {
         for (const c of seat.boundary ? clausesOf(seat.boundary) : []) {
           if (c.kind !== 'ward') continue;
           const cw = words(c.text);
-          if (!cw.includes(number) || !city.every((w) => cw.some((h) => h.startsWith(w)))) continue;
+          if (!wardNumbers(c.text).includes(n) || !city.every((w) => cw.some((h) => h.startsWith(w)))) continue;
           out.push({ seat, kind: 'ward', clause: c.text, partial: false, score: RANK.ward });
           break;
         }
