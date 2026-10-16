@@ -3,7 +3,6 @@ import { publishedNews } from '@/lib/data';
 import { NAV, NAV_MORE, navIn } from '@/lib/nav';
 import { getT } from '@/i18n/server';
 import LangSwitch from '@/components/LangSwitch';
-import SiteSearch from '@/components/SiteSearch';
 import Brand from '@/components/Brand';
 import MobileNav from '@/components/MobileNav';
 import HeaderClock from '@/components/HeaderClock';
@@ -115,11 +114,10 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
               ))}
             </nav>
 
-            <div className="ms-auto lg:ms-0 w-[128px] sm:w-auto sm:grow lg:grow-0 min-w-0 sm:max-w-[300px] flex justify-end">
-              <SiteSearch compact />
+            {/* No search box in the header (owner, 2026-10-17); the home page's finder is the search. */}
+            <div className="ms-auto lg:hidden">
+              <MobileNav items={nav} more={navMore} />
             </div>
-
-            <MobileNav items={nav} more={navMore} />
           </div>
         </div>
       </header>
