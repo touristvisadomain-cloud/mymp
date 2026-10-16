@@ -84,6 +84,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The public site has a root layout per language (app/[lang]) and the admin its own, so an
+  // address no route answers gets app/global-not-found.tsx.
+  experimental: { globalNotFound: true },
   ...(staticExport
     ? {
         output: "export",
@@ -118,7 +121,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["harfbuzzjs"],
   outputFileTracingIncludes: {
     "/api/og/mp/\\[slug\\]": [HARFBUZZ_WASM],
+    "/api/og/mp/\\[slug\\]/en": [HARFBUZZ_WASM],
     "/api/og/party/\\[slug\\]": [HARFBUZZ_WASM, "./public/party/og/*.jpg"],
+    "/api/og/party/\\[slug\\]/en": [HARFBUZZ_WASM, "./public/party/og/*.jpg"],
   },
 };
 

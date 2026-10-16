@@ -1,6 +1,6 @@
 /**
  * The Maps JavaScript API for the site's maps (SeatMap, ElectionMap): the
- * key, the script loaded once per page in Bangla, and colours for a library
+ * key, the script loaded once per page in the page's language, and colours for a library
  * that takes them as text. Browser only.
  */
 
@@ -16,15 +16,19 @@ export function googleKey(): Promise<string> {
   return keyAsked;
 }
 
-/** The Maps JavaScript API, loaded once per page, in Bangla. */
+/**
+ * The Maps JavaScript API, loaded once per page, in the page's language: the
+ * base map's place names and its own buttons follow it. Google can be loaded
+ * only once per page, so a second map on the page gets the first one's.
+ */
 let googleLoading: Promise<typeof google> | null = null;
-export function loadGoogle(key: string): Promise<typeof google> {
+export function loadGoogle(key: string, lang: 'bn' | 'en' = 'bn'): Promise<typeof google> {
   if (typeof google !== 'undefined' && google.maps) return Promise.resolve(google);
   googleLoading ??= new Promise((resolve, reject) => {
     const cb = '__mympMapsReady';
     (window as unknown as Record<string, () => void>)[cb] = () => resolve(google);
     const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&language=bn&region=BD&v=weekly&loading=async&callback=${cb}`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&language=${lang}&region=BD&v=weekly&loading=async&callback=${cb}`;
     s.async = true;
     s.onerror = () => reject(new Error('Google Maps could not be loaded'));
     document.head.appendChild(s);

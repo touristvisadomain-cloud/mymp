@@ -14,6 +14,9 @@
  */
 import type { Member } from '@/lib/data';
 import { dateBn } from '@/lib/data';
+import { makeT, type Lang } from '@/i18n/core';
+import { inLang } from '@/i18n/content';
+import { partyName, partyShort, personName, seatName } from '@/i18n/names';
 
 /** The full Bangla name of each party in the database, and its genitive as a sentence needs it. */
 export const PARTY_BN: Record<string, { name: string; of: string }> = {
@@ -64,6 +67,8 @@ const GOV_POST_BN: Record<string, string> = {
 };
 
 type SeoMember = Pick<Member, 'nameBn' | 'nameEn' | 'party' | 'seat' | 'resignedOn'> & {
+  id?: string;
+  gender?: string | null;
   partyRoleBn?: string | null;
   ministryBn?: string | null;
   govPost?: string | null;
@@ -76,22 +81,107 @@ export function constituencyBn(m: SeoMember): string | null {
   return m.seat.reserved ? `সংরক্ষিত নারী আসন (${seat})` : seat;
 }
 
+/** "Dhaka-17", or "reserved seat for women (Women's Seat-1)": the English of constituencyBn. */
+export function constituencyEn(m: SeoMember): string | null {
+  if (!m.seat) return null;
+  const seat = seatName(m.seat, 'en');
+  return m.seat.reserved ? `reserved seat for women (${seat})` : seat;
+}
+
+/* ---------------- English ---------------- */
+
+/** The member's name in English, with the source's capitals and garbles fixed (src/i18n/names.ts). */
+const nameEn = (m: SeoMember) => personName({ id: m.id, nameBn: m.nameBn, nameEn: m.nameEn }, 'en');
+
+/** "his" / "her", from the source's gender field. */
+export const possessiveEn = (gender: string | null | undefined) => (gender === 'Female' ? 'her' : gender === 'Male' ? 'his' : 'their');
+
+/** A party's English name without the abbreviation in brackets, as a sentence needs it: "Bangladesh Nationalist Party". */
+export function partyEnBare(party: Member['party']): string | null {
+  if (!party) return null;
+  return partyName(party, 'en').replace(/\s*\([^)]*\)\s*$/, '').trim() || null;
+}
+
+/** "the Bangladesh Nationalist Party", but "Bangladesh Jamaat-e-Islami": English puts "the" before a name that ends in a common noun. */
+export const withThe = (name: string) =>
+  /\b(Party|League|Front|Federation|Forum|Council|Alliance|Opposition|Movement)$/.test(name) ? `the ${name}` : name;
+
+const aOrAn = (word: string) => (/^[AEIOU]/i.test(word) ? 'an' : 'a');
+
+const GOV_POST_EN: Record<string, string> = {
+  minister: 'Minister',
+  'state-minister': 'State Minister',
+  'state minister': 'State Minister',
+  'deputy-minister': 'Deputy Minister',
+  'deputy minister': 'Deputy Minister',
+  মন্ত্রী: 'Minister',
+  প্রতিমন্ত্রী: 'State Minister',
+  উপমন্ত্রী: 'Deputy Minister',
+};
+
+/** The party post in English when its translation is on file; null otherwise, and the sentence then leaves it out. */
+function partyRoleEn(m: SeoMember): string | null {
+  const bn = m.partyRoleBn?.trim();
+  return bn ? inLang(bn, 'en')?.trim() || null : null;
+}
+
 /**
  * `{name} | ঢাকা-১৭ আসনের এমপি | আমার এমপি`
  *
  * Search Console (28 days to 21 September 2026) shows people looking a member
  * up by name and by "<seat> আসনের এমপি"; the title says both, in their words.
  * A member who has resigned keeps the plain seat name, since "এমপি" would be
- * untrue.
+ * untrue. In English: `{name} | MP for Dhaka-17 | My MP`.
  */
-export function mpTitle(m: SeoMember): string {
+export function mpTitle(m: SeoMember, lang: Lang = 'bn'): string {
+  if (lang === 'en') {
+    const where = constituencyEn(m);
+    const role = !where || m.resignedOn ? where : m.seat?.reserved ? `Member of Parliament, ${where}` : `MP for ${where}`;
+    return [nameEn(m), role, 'My MP'].filter(Boolean).join(' | ');
+  }
   const where = constituencyBn(m);
   const role = !where || m.resignedOn ? where : m.seat?.reserved ? `${where}ের সংসদ সদস্য` : `${where} আসনের এমপি`;
   return [m.nameBn ?? m.nameEn, role, 'আমার এমপি'].filter(Boolean).join(' | ');
 }
 
+/**
+ * Sentence 1 in English: the same facts, in English order.
+ *   "Forhad Hossain Azad is a member of the 13th Parliament elected from
+ *    Panchagarh-2, Rural Development Affairs Secretary of the Bangladesh
+ *    Nationalist Party and currently State Minister in the Ministry of Water
+ *    Resources."
+ * A party post or ministry with no English on file yet is left out; the post
+ * itself (State Minister) is still said.
+ */
+function mpSentence1En(m: SeoMember): string {
+  const t = makeT('en');
+  const name = nameEn(m);
+  const where = constituencyEn(m);
+  const elected = where ? ` elected from ${m.seat?.reserved ? `a ${where}` : where}` : '';
+  if (m.resignedOn) {
+    return `${name} was a member of the 13th Parliament${elected} and resigned on ${t.date(m.resignedOn)}.`;
+  }
+  const party = isIndependent(m) ? null : partyEnBare(m.party);
+  const role = party ? partyRoleEn(m) : null;
+  const who = isIndependent(m) ? 'an independent member' : party && !role ? `${aOrAn(party)} ${party} member` : 'a member';
+  const parts: string[] = [];
+  if (party && role) {
+    const names = [party, partyShort(m.party, 'en'), m.party?.abbr].filter(Boolean) as string[];
+    // A post that already names its party ("Ameer, Nilphamari District, Bangladesh Jamaat-e-Islami") is not followed by the party again.
+    parts.push(names.some((n) => role.includes(n)) ? role : `${role} of ${withThe(party)}`);
+  }
+  const post = m.govPost ? GOV_POST_EN[m.govPost.trim().toLowerCase()] ?? GOV_POST_EN[m.govPost.trim()] : undefined;
+  if (m.ministryBn?.trim() && post) {
+    const ministry = inLang(m.ministryBn.trim(), 'en')?.trim().replace(/^the\s+/i, '');
+    parts.push(ministry ? `currently ${post} in the ${ministry}` : `currently ${aOrAn(post)} ${post}`);
+  }
+  const tail = parts.length === 0 ? '' : parts.length === 1 ? ` and ${parts[0]}` : `, ${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+  return `${name} is ${who} of the 13th Parliament${elected}${tail}.`;
+}
+
 /** Sentence 1: who the member is, the party, and a government post when one is on record. */
-export function mpSentence1(m: SeoMember): string {
+export function mpSentence1(m: SeoMember, lang: Lang = 'bn'): string {
+  if (lang === 'en') return mpSentence1En(m);
   const name = m.nameBn ?? m.nameEn ?? '';
   const where = constituencyBn(m);
   const from = where ? `${where}${m.seat?.reserved ? '' : ' আসন'} থেকে ` : '';
@@ -113,8 +203,23 @@ const ITEMS = ['পরিচিতি', 'নির্বাচনী ফলা�
 const DROP_ORDER = ['নির্বাচনী ফলাফল', 'আগের মেয়াদ', 'সংসদীয় কমিটি'];
 export const DESCRIPTION_MAX = 160;
 
+/** The same items in English, by their Bangla. */
+const ITEMS_EN: Record<string, string> = {
+  পরিচিতি: 'profile',
+  'নির্বাচনী ফলাফল': 'election result',
+  'আগের মেয়াদ': 'earlier terms',
+  'সংসদীয় কমিটি': 'parliamentary committees',
+  যোগাযোগের: 'contact details',
+};
+
 const sentence2 = (items: string[]) =>
   `এই পাতায় তাঁর ${items.length > 1 ? `${items.slice(0, -1).join(', ')} ও ${items[items.length - 1]}` : items[0]} তথ্য রয়েছে।`;
+
+/** "This page gives his profile, election result, earlier terms, parliamentary committees and contact details." */
+const sentence2En = (items: string[], gender: string | null | undefined) => {
+  const en = items.map((i) => ITEMS_EN[i] ?? i);
+  return `This page gives ${possessiveEn(gender)} ${en.length > 1 ? `${en.slice(0, -1).join(', ')} and ${en[en.length - 1]}` : en[0]}.`;
+};
 
 /**
  * Characters as a reader sees them: grapheme clusters, so a conjunct with its
@@ -125,15 +230,16 @@ const graphemes = new Intl.Segmenter('bn', { granularity: 'grapheme' });
 export const charCount = (s: string) => [...graphemes.segment(s)].length;
 
 /** The description: sentence 1 whole, then as much of sentence 2 as fits in 160 characters. */
-export function mpDescription(m: SeoMember): string {
-  const first = mpSentence1(m);
+export function mpDescription(m: SeoMember, lang: Lang = 'bn'): string {
+  const first = mpSentence1(m, lang);
+  const second = (items: string[]) => (lang === 'en' ? sentence2En(items, m.gender) : sentence2(items));
   let items = [...ITEMS];
   const fits = (s: string) => charCount(s) <= DESCRIPTION_MAX;
-  let text = `${first} ${sentence2(items)}`;
+  let text = `${first} ${second(items)}`;
   for (const drop of DROP_ORDER) {
     if (fits(text)) break;
     items = items.filter((i) => i !== drop);
-    text = `${first} ${sentence2(items)}`;
+    text = `${first} ${second(items)}`;
   }
   // Sentence 1 is never cut; when even the shortest second sentence will not fit, it stands alone.
   return fits(text) ? text : first;

@@ -15,8 +15,14 @@
 
 export type EntryType = 'seat' | 'member' | 'party' | 'district' | 'division';
 
-/** One row as published in search-index.json: [type, bengali, english, url, subtitle] */
-export type IndexRow = [EntryType, string, string, string, string];
+/**
+ * One row as published in search-index.json: [type, bengali, english, url,
+ * Bangla subtitle, English subtitle]. The English name is the one English
+ * pages show. Indexes written before the English pages have no sixth column.
+ */
+export type IndexRow =
+  | [EntryType, string, string, string, string]
+  | [EntryType, string, string, string, string, string];
 
 export interface Entry {
   type: EntryType;
@@ -24,9 +30,14 @@ export interface Entry {
   en: string;
   url: string;
   sub: string;
+  /** The subtitle in English; null when the index has none (an older index's member rows). */
+  subEn: string | null;
   /** normalised match keys, built in the browser */
   keys: string[];
 }
+
+/** An older index's subtitles that are a single word, in English; anything else it wrote has no English. */
+const SUB_EN: Record<string, string> = { 'আসন': 'Seat', 'সংরক্ষিত আসন': 'Reserved seat', 'দল': 'Party', 'জেলা': 'District' };
 
 const BN_DIGITS: Record<string, string> = {
   '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
@@ -100,9 +111,13 @@ export function normalise(raw: string): string {
  */
 export function buildEntry(row: IndexRow): Entry {
   const [type, bn, en, url, sub] = row;
-  const base = [bn, en].filter(Boolean).map(normalise).filter(Boolean);
+  const subEn = row.length > 5 ? row[5] || null : SUB_EN[sub] ?? null;
+  // A party is also found by its abbreviation, which is its address ("bjei", "gop"):
+  // the English name shown no longer carries it.
+  const abbr = type === 'party' ? url.split('/').pop() ?? '' : '';
+  const base = [bn, en, abbr].filter(Boolean).map(normalise).filter(Boolean);
   const compact = base.map((k) => k.replace(/ /g, '')).filter(Boolean);
-  return { type, bn, en, url, sub, keys: [...new Set([...base, ...compact])] };
+  return { type, bn, en, url, sub, subEn, keys: [...new Set([...base, ...compact])] };
 }
 
 export function buildIndex(rows: IndexRow[]): Entry[] {

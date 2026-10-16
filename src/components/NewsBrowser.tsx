@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryParam } from '@/lib/useQueryParam';
-import StoryCard from './StoryCard';
-import RangePicker, { parseRange, rangeLabel } from './RangePicker';
-import type { StoryView } from '@/lib/newsView';
+import StoryCard, { outletIn } from './StoryCard';
+import RangePicker, { dateLabel, parseRange, rangeLabel } from './RangePicker';
+import type { StoryView, StoryMember } from '@/lib/newsView';
+import { useT } from '@/i18n/client';
+import { plural } from '@/i18n/core';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const bn = (n: number) => String(n).replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
@@ -29,6 +31,14 @@ async function loadPage(key: string, before: string | null): Promise<{ stories: 
   return (await r.json()) as { stories: StoryView[]; next: string | null; counts: { news: number; video: number } | null };
 }
 
+/** "120 items (100 news, 20 videos), 30 shown": a span's real totals in English. */
+function spanCountEn(kind: string, counts: { news: number; video: number }, shown: number | null) {
+  const n = (kind === 'video' ? 0 : counts.news) + (kind === 'news' ? 0 : counts.video);
+  const noun = kind === 'video' ? plural(n, 'video', 'videos') : kind === 'news' ? plural(n, 'story', 'stories') : plural(n, 'item', 'items');
+  const g = (x: number) => x.toLocaleString('en-GB');
+  return `${g(n)} ${noun}${kind ? '' : ` (${g(counts.news)} news, ${g(counts.video)} ${plural(counts.video, 'video', 'videos')})`}${shown !== null ? `, ${g(shown)} shown` : ''}`;
+}
+
 /** The filters live in the address ("/songbad?mp=<slug>"), so a member page can link to its own news; "#mp=" links from before still work. */
 const legacyMember = (hash: string) => hash.match(/^#mp=([\w-]+)$/)?.[1] ?? null;
 
@@ -37,13 +47,22 @@ export default function NewsBrowser({
   members: latestMembers,
   outlets: latestOutlets,
   today,
+  namesEn,
 }: {
   stories: StoryView[];
+  /** `name` is in the page's language. */
   members: { slug: string; name: string; count: number }[];
   outlets: { name: string; count: number }[];
   /** Today in Dhaka, yyyy-mm-dd, from the server, so the picker and the page agree. */
   today: string;
+  /**
+   * English pages only: every member's English name by slug, so the stories
+   * a span brings from /api/news/range (which carry the Bangla name) show
+   * the English one.
+   */
+  namesEn?: Record<string, string>;
 }) {
+  const t = useT();
   const [member, setMemberHash] = useQueryParam('mp', legacyMember);
   const [outlet, setOutlet] = useQueryParam('outlet');
   const [kind, setKind] = useQueryParam('type');
@@ -76,7 +95,13 @@ export default function NewsBrowser({
     });
   };
   const loading = !!range && picked?.key !== rangeKey;
-  const stories = useMemo(() => (rangeKey ? (picked?.key === rangeKey ? picked.stories : NONE) : latest), [rangeKey, picked, latest]);
+  const rawStories = useMemo(() => (rangeKey ? (picked?.key === rangeKey ? picked.stories : NONE) : latest), [rangeKey, picked, latest]);
+  // English pages: each member named in English, whichever list the story came from.
+  const stories = useMemo(() => {
+    if (!t.en || !namesEn) return rawStories;
+    const en = (m: StoryMember): StoryMember => (m.nameEn || !namesEn[m.slug] ? m : { ...m, nameEn: namesEn[m.slug] });
+    return rawStories.map((s) => ({ ...s, member: s.member ? en(s.member) : s.member, members: s.members?.map(en) }));
+  }, [rawStories, namesEn, t.en]);
 
   // The member and outlet lists follow what is shown: the span's, or the newest.
   const { members, outlets } = useMemo(() => {
@@ -85,14 +110,14 @@ export default function NewsBrowser({
     const o = new Map<string, number>();
     for (const s of stories) {
       for (const p of s.members?.length ? s.members : s.member ? [s.member] : []) {
-        const e = m.get(p.slug) ?? { slug: p.slug, name: p.name, count: 0 };
+        const e = m.get(p.slug) ?? { slug: p.slug, name: t.en ? p.nameEn || p.name : p.name, count: 0 };
         e.count++;
         m.set(p.slug, e);
       }
       for (const src of [s.lead.source, ...s.also.map((a) => a.source)]) o.set(src, (o.get(src) ?? 0) + 1);
     }
     return {
-      members: [...m.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'bn')),
+      members: [...m.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, t.lang)),
       outlets: [...o.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'bn')),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- range is rangeKey's parse
@@ -111,7 +136,7 @@ export default function NewsBrowser({
   const keyed = useMemo(
     () => stories.map((s) => ({
       s,
-      key: fold([s.lead.title, ...s.also.map((a) => a.title), ...(s.members ?? (s.member ? [s.member] : [])).map((m) => m.name)].join(' ')),
+      key: fold([s.lead.title, ...s.also.map((a) => a.title), ...(s.members ?? (s.member ? [s.member] : [])).flatMap((m) => [m.name, m.nameEn ?? ''])].join(' ')),
     })),
     [stories],
   );
@@ -148,20 +173,20 @@ export default function NewsBrowser({
       {videos > 0 && (
         <div className="flex gap-2">
           {[
-            { value: '', label: 'সব' },
-            { value: 'news', label: 'সংবাদ' },
-            { value: 'video', label: `ভিডিও (${bn(videos)})` },
-          ].map((t) => (
+            { value: '', label: t('সব', 'All') },
+            { value: 'news', label: t('সংবাদ', 'News') },
+            { value: 'video', label: t.en ? `Videos (${videos})` : `ভিডিও (${bn(videos)})` },
+          ].map((tab) => (
             <button
-              key={t.value}
+              key={tab.value}
               type="button"
-              onClick={() => { setKind(t.value); setShown(PAGE); }}
-              aria-pressed={kind === t.value}
+              onClick={() => { setKind(tab.value); setShown(PAGE); }}
+              aria-pressed={kind === tab.value}
               className={`px-4 h-9 rounded-full border text-[14px] font-semibold transition-colors ${
-                kind === t.value ? 'border-ink bg-ink text-paper' : 'border-rule bg-surface hover:border-brand hover:text-brand'
+                kind === tab.value ? 'border-ink bg-ink text-paper' : 'border-rule bg-surface hover:border-brand hover:text-brand'
               }`}
             >
-              {t.label}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -172,32 +197,32 @@ export default function NewsBrowser({
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted shrink-0" aria-hidden="true">
             <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
           </svg>
-          <span className="sr-only">শিরোনামে খুঁজুন</span>
+          <span className="sr-only">{t('শিরোনামে খুঁজুন', 'Search the headlines')}</span>
           <input
             type="search"
             value={q}
             onChange={(e) => { setQ(e.target.value); setShown(PAGE); }}
-            placeholder="শিরোনামে খুঁজুন"
+            placeholder={t('শিরোনামে খুঁজুন', 'Search the headlines')}
             className="grow min-w-0 bg-transparent outline-none placeholder:text-muted"
           />
         </label>
         <select
-          aria-label="সংসদ সদস্য"
+          aria-label={t('সংসদ সদস্য', 'Member of Parliament')}
           value={member}
           onChange={(e) => { setMemberHash(e.target.value); setShown(PAGE); }}
           className={`${field} min-w-0 sm:w-[220px] sm:shrink-0`}
         >
-          <option value="">সব সংসদ সদস্য</option>
-          {members.map((m) => <option key={m.slug} value={m.slug}>{m.name} ({bn(m.count)})</option>)}
+          <option value="">{t('সব সংসদ সদস্য', 'All MPs')}</option>
+          {members.map((m) => <option key={m.slug} value={m.slug}>{m.name} ({t.en ? m.count : bn(m.count)})</option>)}
         </select>
         <select
-          aria-label="সংবাদমাধ্যম"
+          aria-label={t('সংবাদমাধ্যম', 'News outlet')}
           value={outlet}
           onChange={(e) => { setOutlet(e.target.value); setShown(PAGE); }}
           className={`${field} min-w-0 sm:w-[200px] sm:shrink-0`}
         >
-          <option value="">সব সংবাদমাধ্যম</option>
-          {outlets.map((o) => <option key={o.name} value={o.name}>{o.name} ({bn(o.count)})</option>)}
+          <option value="">{t('সব সংবাদমাধ্যম', 'All outlets')}</option>
+          {outlets.map((o) => <option key={o.name} value={o.name}>{outletIn(o.name, t.lang)} ({t.en ? o.count : bn(o.count)})</option>)}
         </select>
       </div>
 
@@ -207,14 +232,18 @@ export default function NewsBrowser({
 
 
       <p className="text-[14px] text-muted flex flex-wrap items-center gap-x-3 gap-y-1" aria-live="polite">
-        {range && <strong className="text-ink font-semibold">{rangeLabel(range.from, range.to)}:</strong>}
+        {range && <strong className="text-ink font-semibold">{rangeLabel(range.from, range.to, t.lang)}:</strong>}
         <span>
           {loading
-            ? 'আনা হচ্ছে…'
+            ? t('আনা হচ্ছে…', 'Loading…')
             : range && picked?.counts && !member && !outlet && !q.trim()
               // The span's real totals; the list fills in as the reader goes down it.
-              ? `${bn((kind === 'video' ? 0 : picked.counts.news) + (kind === 'news' ? 0 : picked.counts.video))}টি${kind ? '' : ` (${bn(picked.counts.news)} সংবাদ, ${bn(picked.counts.video)} ভিডিও)`}${picked.next ? `, ${bn(filtered.length)}টি দেখানো হচ্ছে` : ''}`
-              : `${bn(filtered.length)}টি ${kind === 'video' ? 'ভিডিও' : 'খবর'}`}
+              ? t.en
+                ? spanCountEn(kind, picked.counts, picked.next ? filtered.length : null)
+                : `${bn((kind === 'video' ? 0 : picked.counts.news) + (kind === 'news' ? 0 : picked.counts.video))}টি${kind ? '' : ` (${bn(picked.counts.news)} সংবাদ, ${bn(picked.counts.video)} ভিডিও)`}${picked.next ? `, ${bn(filtered.length)}টি দেখানো হচ্ছে` : ''}`
+              : t.en
+                ? `${filtered.length} ${kind === 'video' ? plural(filtered.length, 'video', 'videos') : plural(filtered.length, 'story', 'stories')}`
+                : `${bn(filtered.length)}টি ${kind === 'video' ? 'ভিডিও' : 'খবর'}`}
         </span>
         {filtering && (
           <button
@@ -222,19 +251,23 @@ export default function NewsBrowser({
             onClick={() => { setMemberHash(''); setOutlet(''); setKind(''); setQ(''); setRangeParam(''); setShown(PAGE); }}
             className="font-semibold text-brand hover:underline"
           >
-            সব খবর দেখুন
+            {t('সব খবর দেখুন', 'See all news')}
           </button>
         )}
       </p>
 
       {loading ? null : filtered.length === 0 ? (
-        <p className="py-10 text-center text-[15px] text-muted">{range ? 'এই সময়ে' : 'এই খোঁজে'} কোনো খবর পাওয়া যায়নি।</p>
+        <p className="py-10 text-center text-[15px] text-muted">
+          {t.en
+            ? range ? 'No news found for this period.' : 'No news found for this search.'
+            : <>{range ? 'এই সময়ে' : 'এই খোঁজে'} কোনো খবর পাওয়া যায়নি।</>}
+        </p>
       ) : (
         days.map((d) => (
           <section key={d.date} className="flex flex-col gap-3">
             <h2 className="flex items-baseline gap-2.5 text-[15px] font-bold text-ink">
-              {d.label}
-              <span className="text-[13px] font-medium text-muted">{bn(perDay.get(d.date) ?? d.items.length)}টি</span>
+              {t.en ? dateLabel(d.date, 'en') : d.label}
+              <span className="text-[13px] font-medium text-muted">{t.en ? perDay.get(d.date) ?? d.items.length : <>{bn(perDay.get(d.date) ?? d.items.length)}টি</>}</span>
             </h2>
             <ul className="flex flex-col gap-3">
               {d.items.map((s) => <li key={s.id}><StoryCard s={s} /></li>)}
@@ -254,7 +287,7 @@ export default function NewsBrowser({
           }}
           className="self-center px-6 h-12 rounded-full border border-ink font-semibold text-[15px] hover:bg-surface disabled:opacity-60"
         >
-          {fetching ? 'আনা হচ্ছে…' : 'আরও দেখুন'}
+          {fetching ? t('আনা হচ্ছে…', 'Loading…') : t('আরও দেখুন', 'See more')}
         </button>
       )}
     </div>

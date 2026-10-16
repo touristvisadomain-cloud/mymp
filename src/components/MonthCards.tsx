@@ -8,6 +8,7 @@
  * The link still works without JavaScript, as a plain page load.
  */
 import { useQueryParam } from '@/lib/useQueryParam';
+import { useT } from '@/i18n/client';
 
 export interface MonthCard {
   /** "2026-09" */
@@ -16,7 +17,7 @@ export interface MonthCard {
   /** "2026-09-01~2026-09-30" */
   span: string;
   current: boolean;
-  /** Bangla figures, already formatted. */
+  /** Figures in the page's language, already formatted. */
   total: string;
   news: string;
   video: string;
@@ -25,6 +26,7 @@ export interface MonthCard {
 }
 
 export default function MonthCards({ months, listId }: { months: MonthCard[]; listId: string }) {
+  const t = useT();
   const [d, setD] = useQueryParam('d');
   const pick = (m: MonthCard) => {
     setD(d === m.span ? '' : m.span);
@@ -46,17 +48,17 @@ export default function MonthCards({ months, listId }: { months: MonthCard[]; li
             >
               <span className={`text-[13px] font-semibold ${on ? 'text-white/85' : 'text-muted'}`}>
                 {m.label}
-                {m.current && <span className={`ms-1.5 ${on ? 'text-white' : 'text-brand'}`}>· চলতি</span>}
+                {m.current && <span className={`ms-1.5 ${on ? 'text-white' : 'text-brand'}`}>{t('· চলতি', '· current')}</span>}
               </span>
               <span className="display text-[26px] font-bold leading-none tnum">{m.total}</span>
               <span className={`h-1.5 rounded-full overflow-hidden ${on ? 'bg-white/25' : 'bg-rulesoft'}`} aria-hidden="true">
                 <span className={`block h-full rounded-full ${on ? 'bg-white' : 'bg-brand'}`} style={{ width: `${m.pct}%` }} />
               </span>
               <span className={`text-[12.5px] tnum ${on ? 'text-white/90' : 'text-inksoft'}`}>
-                {m.news} সংবাদ · {m.video} ভিডিও
+                {t.en ? `${m.news} news · ${m.video} ${m.video === '1' ? 'video' : 'videos'}` : <>{m.news} সংবাদ · {m.video} ভিডিও</>}
               </span>
               <span className={`text-[12px] font-semibold ${on ? 'text-white' : 'text-brand opacity-0 group-hover:opacity-100 transition-opacity'}`}>
-                {on ? 'দেখানো হচ্ছে · আবার চাপলে সব খবর' : 'এই মাসের খবর দেখুন ↓'}
+                {on ? t('দেখানো হচ্ছে · আবার চাপলে সব খবর', 'Showing · tap again for all news') : t('এই মাসের খবর দেখুন ↓', "See this month's news ↓")}
               </span>
             </a>
           </li>

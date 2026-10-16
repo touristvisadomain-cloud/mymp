@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getMemberById, bn, dateBn } from '@/lib/data';
+import { withEnglish } from '@/i18n/content';
 import { requireAdmin } from '@/lib/admin/auth';
 import { overridesFor, isHidden } from '@/lib/admin/store';
 import { AdminPage, Panel, Button, Notice, when } from '@/app/admin/ui';
@@ -95,7 +96,7 @@ export default async function EditMember({
         <EntityEditor
           type="member"
           id={id}
-          snapshot={m as unknown as Record<string, string | null | undefined>}
+          snapshot={withEnglish(m, ['bioBn', 'educationBn', 'birthPlaceBn', 'professionBn', 'partyRoleBn', 'ministryBn']) as unknown as Record<string, string | null | undefined>}
           overrides={overrides}
           backHref="/admin/members"
         />

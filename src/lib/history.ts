@@ -11,6 +11,8 @@
 import historyJson from '../../data/history.json';
 import resultsJson from '../../data/results.json';
 import { members, bn, type Member } from './data';
+import type { Lang } from '@/i18n/core';
+import { ordinalWord } from '@/i18n/names';
 
 export interface PriorTerm {
   parliamentNo: number;
@@ -76,14 +78,16 @@ const ORDINALS = ['', 'প্রথম', 'দ্বিতীয়', 'তৃত�
 
 export const parliamentInfo = (no: number) => history.parliaments.find((p) => p.no === no) ?? null;
 
-/** "নবম সংসদ" */
-export const parliamentOrdinal = (no: number) => `${ORDINALS[no] ?? `${bn(no)}তম`} সংসদ`;
+/** "নবম সংসদ" / "9th Parliament" */
+export const parliamentOrdinal = (no: number, lang: Lang = 'bn') =>
+  lang === 'en' ? `${ordinalWord(no, 'en')} Parliament` : `${ORDINALS[no] ?? `${bn(no)}তম`} সংসদ`;
 
-/** "নবম সংসদ, ২০০৮" (the year of that parliament's election, when the source has it). */
-export function parliamentLabel(no: number): string {
+/** "নবম সংসদ, ২০০৮" / "9th Parliament, 2008" (the year of that parliament's election, when the source has it). */
+export function parliamentLabel(no: number, lang: Lang = 'bn'): string {
   const p = parliamentInfo(no);
-  const year = p?.electionDate ? bn(new Date(p.electionDate).getFullYear()) : null;
-  return year ? `${parliamentOrdinal(no)}, ${year}` : parliamentOrdinal(no);
+  const y = p?.electionDate ? new Date(p.electionDate).getFullYear() : null;
+  const year = y ? (lang === 'en' ? String(y) : bn(y)) : null;
+  return year ? `${parliamentOrdinal(no, lang)}, ${year}` : parliamentOrdinal(no, lang);
 }
 
 export const electionYear = (no: number) => {
@@ -111,15 +115,16 @@ export const resultForSeat = (seatNo: number, parliamentNo: number): SeatResult 
   results.find((r) => r.seatNo === seatNo && r.parliamentNo === parliamentNo) ?? null;
 
 /** How many sitting members are new to the House, and who has served most. */
-export function experienceStats() {
+export function experienceStats(lang: Lang = 'bn') {
+  const en = lang === 'en';
   // Earlier terms: the secretariat's own count when it has one (it also covers the 1st to 3rd
   // and 6th parliaments, whose lists are not in the database), otherwise the terms matched here.
   const withTerms = members.map((m) => ({ m, prior: m.termsCount ? m.termsCount - 1 : priorTermsOf(m.id).length }));
   const bands = [
-    { label: 'প্রথমবার', count: withTerms.filter((x) => x.prior === 0).length },
-    { label: 'দ্বিতীয় মেয়াদ', count: withTerms.filter((x) => x.prior === 1).length },
-    { label: 'তৃতীয় মেয়াদ', count: withTerms.filter((x) => x.prior === 2).length },
-    { label: 'চতুর্থ বা তার বেশি', count: withTerms.filter((x) => x.prior >= 3).length },
+    { label: en ? 'First term' : 'প্রথমবার', count: withTerms.filter((x) => x.prior === 0).length },
+    { label: en ? 'Second term' : 'দ্বিতীয় মেয়াদ', count: withTerms.filter((x) => x.prior === 1).length },
+    { label: en ? 'Third term' : 'তৃতীয় মেয়াদ', count: withTerms.filter((x) => x.prior === 2).length },
+    { label: en ? 'Fourth or more' : 'চতুর্থ বা তার বেশি', count: withTerms.filter((x) => x.prior >= 3).length },
   ];
   const most: { m: Member; terms: number }[] = withTerms
     .filter((x) => x.prior > 0)
@@ -140,11 +145,11 @@ export function experienceStats() {
  * being checked drops the word (see socialsOf).
  */
 export const SOCIAL_FIELDS = [
-  { key: 'facebook', label: 'অফিসিয়াল ফেসবুক পেজ', icon: 'facebook' },
-  { key: 'x', label: 'অফিসিয়াল X', icon: 'x' },
-  { key: 'youtube', label: 'অফিসিয়াল ইউটিউব চ্যানেল', icon: 'youtube' },
-  { key: 'instagram', label: 'অফিসিয়াল ইনস্টাগ্রাম', icon: 'instagram' },
-  { key: 'website', label: 'অফিসিয়াল ওয়েবসাইট', icon: 'globe' },
+  { key: 'facebook', label: 'অফিসিয়াল ফেসবুক পেজ', labelEn: 'Official Facebook page', icon: 'facebook' },
+  { key: 'x', label: 'অফিসিয়াল X', labelEn: 'Official X', icon: 'x' },
+  { key: 'youtube', label: 'অফিসিয়াল ইউটিউব চ্যানেল', labelEn: 'Official YouTube channel', icon: 'youtube' },
+  { key: 'instagram', label: 'অফিসিয়াল ইনস্টাগ্রাম', labelEn: 'Official Instagram', icon: 'instagram' },
+  { key: 'website', label: 'অফিসিয়াল ওয়েবসাইট', labelEn: 'Official website', icon: 'globe' },
 ] as const;
 
 /**
@@ -154,34 +159,37 @@ export const SOCIAL_FIELDS = [
  *   disputed               no link, only "ফেসবুক পেজ যাচাই করা হয়নি"
  *   not_found              nothing
  */
-export function facebookState(m: Member): { show: 'link'; unverified: boolean } | { show: 'notice'; text: string } | { show: 'nothing' } {
+export function facebookState(m: Member, lang: Lang = 'bn'): { show: 'link'; unverified: boolean } | { show: 'notice'; text: string } | { show: 'nothing' } {
   const status = m.fbStatus ?? null;
-  if (status === 'disputed') return { show: 'notice', text: 'ফেসবুক পেজ যাচাই করা হয়নি' };
+  if (status === 'disputed') return { show: 'notice', text: lang === 'en' ? 'Facebook page not verified' : 'ফেসবুক পেজ যাচাই করা হয়নি' };
   if (status === 'not_found' || !m.facebook) return { show: 'nothing' };
   return { show: 'link', unverified: status === 'pending' };
 }
 
 export const UNVERIFIED_LABEL = 'যাচাই করা হয়নি';
+export const unverifiedLabel = (lang: Lang = 'bn') => (lang === 'en' ? 'Not verified' : UNVERIFIED_LABEL);
 
 export interface SocialLink { key: string; label: string; icon: string; url: string; unverified: boolean }
 
 /** The member's links the page shows, Facebook by the rule above. */
-export const socialsOf = (m: Member): SocialLink[] => {
-  const fb = facebookState(m);
+export const socialsOf = (m: Member, lang: Lang = 'bn'): SocialLink[] => {
+  const fb = facebookState(m, lang);
+  const en = lang === 'en';
   return SOCIAL_FIELDS.flatMap((f): SocialLink[] => {
     const url = (m as unknown as Record<string, string | null>)[f.key] ?? null;
     if (!url) return [];
+    const label = en ? f.labelEn : f.label;
     // A page still being checked is not called official.
     if (f.key === 'facebook') {
       if (fb.show !== 'link') return [];
-      return [{ ...f, url, unverified: fb.unverified, label: fb.unverified ? 'ফেসবুক পেজ' : f.label }];
+      return [{ key: f.key, icon: f.icon, url, unverified: fb.unverified, label: fb.unverified ? (en ? 'Facebook page' : 'ফেসবুক পেজ') : label }];
     }
-    return [{ ...f, url, unverified: false }];
+    return [{ key: f.key, icon: f.icon, url, unverified: false, label }];
   });
 };
 
 /** The line shown in place of a Facebook link that is in dispute, or null. */
-export const facebookNotice = (m: Member): string | null => {
-  const fb = facebookState(m);
+export const facebookNotice = (m: Member, lang: Lang = 'bn'): string | null => {
+  const fb = facebookState(m, lang);
   return fb.show === 'notice' ? fb.text : null;
 };

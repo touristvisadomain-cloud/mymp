@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore, type MouseEvent } from 'react';
 import Icon from './Icon';
 import BrandIcon, { type Brand } from './BrandIcon';
+import { useT } from '@/i18n/client';
 
 /** Whether the browser has a share sheet; false while rendering on the server. */
 const noSubscribe = () => () => {};
@@ -29,6 +30,7 @@ const MESSENGER_WEB = 'https://www.messenger.com/';
  * button copies the link and opens messenger.com to paste it into a chat.
  */
 export default function ShareButtons({ url, title, text }: { url: string; title: string; text: string }) {
+  const t = useT();
   const canShare = useCanShare();
   const [copied, setCopied] = useState<'messenger' | null>(null);
 
@@ -80,8 +82,8 @@ export default function ShareButtons({ url, title, text }: { url: string; title:
     'inline-flex items-center justify-center gap-1.5 h-9 w-9 sm:h-8 sm:w-auto sm:px-3 rounded-lg border border-rule bg-surface text-[13px] font-semibold hover:border-brand hover:text-brand transition-colors';
 
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="এই পাতা শেয়ার করুন">
-      <span className="hidden sm:inline text-[12.5px] font-semibold text-muted me-0.5">শেয়ার করুন</span>
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t('এই পাতা শেয়ার করুন', 'Share this page')}>
+      <span className="hidden sm:inline text-[12.5px] font-semibold text-muted me-0.5">{t('শেয়ার করুন', 'Share')}</span>
       {canShare && (
         <button
           type="button"
@@ -89,7 +91,7 @@ export default function ShareButtons({ url, title, text }: { url: string; title:
           className="inline-flex items-center gap-1.5 h-9 sm:h-8 px-3.5 sm:px-3 rounded-lg bg-brand text-white text-[13px] font-semibold hover:bg-branddark transition-colors"
         >
           <Icon name="share" size={14} />
-          শেয়ার
+          {t('শেয়ার', 'Share')}
         </button>
       )}
       {links.map((l) => (
@@ -100,15 +102,31 @@ export default function ShareButtons({ url, title, text }: { url: string; title:
           rel="noopener noreferrer"
           onClick={l.onClick}
           className={button}
-          aria-label={l.key === 'messenger' ? 'Messenger-এ পাঠান' : `${l.label}-এ শেয়ার করুন`}
-          title={l.key === 'messenger' ? 'ফোনে Messenger অ্যাপে খোলে। কম্পিউটারে লিংক কপি হয় আর messenger.com খোলে; চ্যাটে পেস্ট করুন।' : undefined}
+          aria-label={
+            t.en
+              ? l.key === 'messenger' ? 'Send on Messenger' : `Share on ${l.label}`
+              : l.key === 'messenger' ? 'Messenger-এ পাঠান' : `${l.label}-এ শেয়ার করুন`
+          }
+          title={
+            l.key === 'messenger'
+              ? t(
+                  'ফোনে Messenger অ্যাপে খোলে। কম্পিউটারে লিংক কপি হয় আর messenger.com খোলে; চ্যাটে পেস্ট করুন।',
+                  'Opens the Messenger app on a phone. On a computer the link is copied and messenger.com opens; paste it into a chat.',
+                )
+              : undefined
+          }
         >
           <BrandIcon name={l.key} size={16} />
-          <span className="hidden sm:inline">{l.key === 'messenger' && copied === 'messenger' ? 'লিংক কপি হয়েছে, চ্যাটে পেস্ট করুন' : l.label}</span>
+          <span className="hidden sm:inline">{l.key === 'messenger' && copied === 'messenger' ? t('লিংক কপি হয়েছে, চ্যাটে পেস্ট করুন', 'Link copied, paste it into a chat') : l.label}</span>
         </a>
       ))}
       <span className="sr-only" role="status">
-        {copied === 'messenger' ? 'লিংক কপি হয়েছে। Messenger খুলেছে, যাকে পাঠাতে চান তার চ্যাটে পেস্ট করুন।' : ''}
+        {copied === 'messenger'
+          ? t(
+              'লিংক কপি হয়েছে। Messenger খুলেছে, যাকে পাঠাতে চান তার চ্যাটে পেস্ট করুন।',
+              'Link copied. Messenger has opened; paste the link into the chat of the person you want to send it to.',
+            )
+          : ''}
       </span>
     </div>
   );

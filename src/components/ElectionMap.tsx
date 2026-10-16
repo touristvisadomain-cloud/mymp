@@ -18,19 +18,23 @@
  * from public/geo/overview.json (scripts/build-district-geo.ts).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/Link';
 import MemberPhoto from './MemberPhoto';
+import { useT } from '@/i18n/client';
+import { plural } from '@/i18n/core';
 import { BUILT_KEY, googleKey, loadGoogle, onAuthFailure, resolve } from '@/lib/googleMaps';
 
+/** A seat as the page gives it, its names and words already in the page's language. */
 export interface PinSeat {
   no: number;
   seat: string;
   slug: string;
   district: string;
-  districtBn: string;
+  districtName: string;
   member: { name: string; slug: string; photo: string | null; initial: string; profession: string | null } | null;
   party: string | null;
-  partyBn: string | null;
+  /** The party's everyday short name ("বিএনপি" / "BNP"). */
+  partyShort: string | null;
   partyFull: string | null;
   /** The party's colour token, "var(--color-pbnp)". */
   color: string;
@@ -82,8 +86,6 @@ const SYMBOL: Record<string, string> = {
   BNP: '/party/bnp.webp', BJEI: '/party/bjei.svg', NCP: '/party/ncp.svg', BKM: '/party/bkm.webp', IMB: '/party/imb.webp',
   GOP: '/party/gop.svg', KM: '/party/km.webp', JAGPA: '/party/jagpa.svg', PSM: '/party/psm.svg', BJP: '/party/bjp.webp',
 };
-const BN = (n: number | string) => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[Number(d)]!);
-const GRP = (n: number) => BN(n.toLocaleString('en-IN'));
 const SHORT: Record<string, string> = { chapainawabganj: 'চাঁপাইনবাবগঞ্জ' };
 
 const ringsOf = (g: AreaFeature['geometry']): number[][][][] => (g.type === 'Polygon' ? [g.coordinates as number[][][]] : (g.coordinates as number[][][][]));
@@ -102,6 +104,16 @@ const fitBox = (pts: [number, number][]): Box => {
 const framePoints = (areas: Area[]): number[][] => {
   const whole = areas.filter((a) => a.part === 'whole');
   return (whole.length ? whole : areas).flatMap((a) => ringsOf(a.f.geometry).flatMap((poly) => poly[0]!));
+};
+
+/**
+ * An area's name on the English page. The geo files name places in Bangla
+ * only; a numbered ward reads "Ward 9", and a named place is left unnamed
+ * rather than spelt out by hand.
+ */
+const areaNameEn = (p: AreaFeature['properties']): string => {
+  const ward = /^ওয়ার্ড\s*([০-৯\d]+)$/.exec(p.name.trim());
+  return ward ? `Ward ${ward[1]!.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)))}` : '';
 };
 
 let overviewOnce: Promise<Overview> | null = null;
@@ -161,7 +173,14 @@ function symbolIcon(party: string, color: string, size: number): Promise<string>
   return p;
 }
 
-export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
+/**
+ * `districtNames`: the districts' English names by slug, on the English page;
+ * the Bangla page names them from public/geo/overview.json.
+ */
+export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]; districtNames?: Record<string, string> }) {
+  const t = useT();
+  /** A district's name on the map: the English page's own, or overview.json's Bangla (shortened where long). */
+  const nameOf = (d: { slug: string; name: string }, short = false) => districtNames?.[d.slug] ?? (short ? SHORT[d.slug] ?? d.name : d.name);
   const [mode, setMode] = useState<Mode>('seats');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [vb, setVb] = useState<Box>(HOME);
@@ -207,7 +226,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
     for (const s of seats) {
       if (!s.party) continue;
       const list = out.get(s.district) ?? [];
-      const p = list.find((x) => x.abbr === s.party) ?? (list.push({ abbr: s.party, name: s.partyBn ?? s.party, color: s.color, seats: 0 }), list[list.length - 1]!);
+      const p = list.find((x) => x.abbr === s.party) ?? (list.push({ abbr: s.party, name: s.partyShort ?? s.party, color: s.color, seats: 0 }), list[list.length - 1]!);
       p.seats++;
       out.set(s.district, list);
     }
@@ -216,7 +235,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
   }, [seats]);
   const parties = useMemo(() => {
     const m = new Map<string, { abbr: string; name: string; color: string; n: number }>();
-    for (const s of seats) if (s.party) { const p = m.get(s.party) ?? { abbr: s.party, name: s.partyBn ?? s.party, color: s.color, n: 0 }; p.n++; m.set(s.party, p); }
+    for (const s of seats) if (s.party) { const p = m.get(s.party) ?? { abbr: s.party, name: s.partyShort ?? s.party, color: s.color, n: 0 }; p.n++; m.set(s.party, p); }
     return [...m.values()].sort((a, b) => b.n - a.n);
   }, [seats]);
   const current = picked ? bySlug.get(picked) ?? null : null;
@@ -283,7 +302,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
     setPickedDistrict(s.district);
     setQ('');
     loadAreas(s.district).then((fs) => {
-      const mine: Area[] = fs.filter((f) => f.properties.seats[s.slug]).map((f) => ({ f, name: f.properties.name + (f.properties.kind === 'upazila' ? ' উপজেলা' : ''), part: f.properties.seats[s.slug]! }));
+      const mine: Area[] = fs.filter((f) => f.properties.seats[s.slug]).map((f) => ({ f, name: t.en ? areaNameEn(f.properties) : f.properties.name + (f.properties.kind === 'upazila' ? ' উপজেলা' : ''), part: f.properties.seats[s.slug]! }));
       setAreas(mine);
       const pts = framePoints(mine);
       if (pts.length) setVb(fitBox(pts.map(([lon, lat]) => px(lon!, lat!))));
@@ -295,8 +314,10 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
   const hits = useMemo(() => {
     const v = q.trim();
     if (v.length < 2) return [];
-    return seats.filter((s) => s.seat.includes(v) || s.slug.includes(v.toLowerCase()) || s.member?.name.includes(v) || s.districtBn.includes(v)).slice(0, 8);
-  }, [q, seats]);
+    // English names match whatever their capitals.
+    const has = (x: string | undefined) => (x == null ? false : t.en ? x.toLowerCase().includes(v.toLowerCase()) : x.includes(v));
+    return seats.filter((s) => has(s.seat) || s.slug.includes(v.toLowerCase()) || has(s.member?.name) || has(s.districtName)).slice(0, 8);
+  }, [q, seats, t]);
 
   // --- Google Maps: the map once its box is there, then what each change needs ---
   const disposeGm = () => {
@@ -310,7 +331,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
   useEffect(() => {
     if (useGoogle !== true || !overview || !gmBox.current || gm.current) return;
     let cancelled = false;
-    googleKey().then(loadGoogle).then((g) => {
+    googleKey().then((k) => loadGoogle(k, t.lang)).then((g) => {
       if (cancelled || !gmBox.current) return;
       const map = new g.maps.Map(gmBox.current, {
         mapTypeControl: true,
@@ -336,7 +357,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
       setGmReady((n) => n + 1);
     }).catch(() => setUseGoogle(false));
     return () => { cancelled = true; };
-  }, [useGoogle, overview]);
+  }, [useGoogle, overview, t.lang]);
   useEffect(() => disposeGm, []);
 
   // Markers: one per seat, its party's symbol; hidden by a party chip or in the district view.
@@ -363,7 +384,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
         const mk = new google.maps.Marker({
           position: { lat, lng: lon },
           map: m.map,
-          title: `${s.seat} · ${s.member?.name ?? 'শূন্য'}${s.partyBn ? ` (${s.partyBn})` : ''}`,
+          title: `${s.seat} · ${s.member?.name ?? t('শূন্য', 'Vacant')}${s.partyShort ? ` (${s.partyShort})` : ''}`,
           icon: { url: discIcon(color, 52), scaledSize: size, anchor },
           optimized: true,
           visible: shownNow.current(s.party),
@@ -376,7 +397,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
     };
     batch();
     return () => { cancelled = true; };
-  }, [gmReady, placed]);
+  }, [gmReady, placed, t]);
 
   // A party chip or the district view: only the markers whose visibility changes.
   useEffect(() => {
@@ -446,7 +467,8 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
   }, [current, pickedDistrict]);
 
   const districtSeats = pickedDistrict ? seats.filter((s) => s.district === pickedDistrict).sort((a, b) => a.no - b.no) : [];
-  const districtName = districtPaths.find((d) => d.slug === pickedDistrict)?.name ?? pickedDistrict;
+  const pickedPath = districtPaths.find((d) => d.slug === pickedDistrict);
+  const districtName = pickedPath ? nameOf(pickedPath) : districtNames?.[pickedDistrict ?? ''] ?? pickedDistrict;
 
   const tab = (m: Mode, label: string) => (
     <button
@@ -463,16 +485,16 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        {tab('seats', 'আসন ও প্রতীক')}
-        {tab('districts', 'জেলার রং')}
+        {tab('seats', t('আসন ও প্রতীক', 'Seats and symbols'))}
+        {tab('districts', t('জেলার রং', 'District colours'))}
         <div className="relative ms-auto w-full sm:w-[300px]">
-          <label htmlFor="election-map-q" className="sr-only">এমপি, আসন বা জেলা খুঁজুন</label>
+          <label htmlFor="election-map-q" className="sr-only">{t('এমপি, আসন বা জেলা খুঁজুন', 'Find an MP, seat or district')}</label>
           <input
             id="election-map-q"
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="এমপি, আসন বা জেলার নাম…"
+            placeholder={t('এমপি, আসন বা জেলার নাম…', 'Name of an MP, seat or district…')}
             autoComplete="off"
             className="w-full h-10 px-3 rounded-[10px] border-[1.5px] border-rule bg-surface text-[14px] outline-none focus:border-brand"
           />
@@ -481,7 +503,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
               {hits.map((s) => (
                 <li key={s.slug} role="option" aria-selected={false}>
                   <button type="button" onClick={() => { setMode('seats'); open(s); }} className="w-full text-start px-3 py-2 flex justify-between gap-3 hover:bg-brandsoft">
-                    <span className="font-semibold text-[14px] truncate">{s.member?.name ?? 'আসনটি শূন্য'}</span>
+                    <span className="font-semibold text-[14px] truncate">{s.member?.name ?? t('আসনটি শূন্য', 'Seat vacant')}</span>
                     <span className="text-[12.5px] text-muted shrink-0">{s.seat}</span>
                   </button>
                 </li>
@@ -491,14 +513,14 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
         </div>
       </div>
       {mode === 'seats' && (
-        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="দল বেছে নিন">
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('দল বেছে নিন', 'Choose parties')}>
           <button
             type="button"
             onClick={() => setOnly(new Set())}
             aria-pressed={only.size === 0}
             className={`inline-flex items-center h-8 px-3 rounded-full border text-[13px] font-semibold transition-colors ${only.size === 0 ? 'bg-ink text-surface border-ink' : 'bg-surface border-rule hover:border-ink'}`}
           >
-            সব দল
+            {t('সব দল', 'All parties')}
           </button>
           {parties.map((p) => {
             const on = only.has(p.abbr);
@@ -515,13 +537,16 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
                 style={on ? { background: p.color } : undefined}
               >
                 <span className="w-3.5 h-3.5 rounded-full ring-2 ring-white/70" style={{ background: p.color }} aria-hidden="true" />
-                {p.name} <span className={`tnum ${on ? 'text-white/85' : 'text-muted'}`}>{BN(p.n)}</span>
+                {p.name} <span className={`tnum ${on ? 'text-white/85' : 'text-muted'}`}>{t.n(p.n)}</span>
               </button>
             );
           })}
           {only.size > 0 && (
             <span className="text-[12.5px] text-muted ms-1" aria-live="polite">
-              {BN(seats.filter((s) => !hidden(s.party)).length)}টি আসন দেখানো হচ্ছে
+              {(() => {
+                const n = seats.filter((s) => !hidden(s.party)).length;
+                return t(`${t.n(n)}টি আসন দেখানো হচ্ছে`, `Showing ${n} ${plural(n, 'seat', 'seats')}`);
+              })()}
             </span>
           )}
         </div>
@@ -530,14 +555,14 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
       <div className="relative">
       <div className="relative bg-surface border border-rule rounded-card shadow-card overflow-hidden h-[520px] sm:h-[640px]" style={{ touchAction: useGoogle === false ? 'none' : undefined }}>
         {useGoogle !== false ? (
-          <div ref={gmBox} className="w-full h-full" role="region" aria-label={mode === 'seats' ? 'বাংলাদেশের ৩০০ সংসদীয় আসন, দলের প্রতীকে' : 'বাংলাদেশের ৬৪ জেলা, দলের রঙে'} />
+          <div ref={gmBox} className="w-full h-full" role="region" aria-label={mode === 'seats' ? t('বাংলাদেশের ৩০০ সংসদীয় আসন, দলের প্রতীকে', 'Bangladesh’s 300 parliamentary seats, by party symbol') : t('বাংলাদেশের ৬৪ জেলা, দলের রঙে', 'Bangladesh’s 64 districts, in party colours')} />
         ) : (
         <svg
           ref={svgRef}
           viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
           className="w-full h-full cursor-grab active:cursor-grabbing"
           role="img"
-          aria-label={mode === 'seats' ? 'বাংলাদেশের ৩০০ সংসদীয় আসন, দলের প্রতীকে' : 'বাংলাদেশের ৬৪ জেলা, দলের রঙে'}
+          aria-label={mode === 'seats' ? t('বাংলাদেশের ৩০০ সংসদীয় আসন, দলের প্রতীকে', 'Bangladesh’s 300 parliamentary seats, by party symbol') : t('বাংলাদেশের ৬৪ জেলা, দলের রঙে', 'Bangladesh’s 64 districts, in party colours')}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -573,7 +598,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
                     style={{ cursor: mode === 'districts' ? 'pointer' : undefined }}
                     onClick={(e) => { if (mode === 'districts') { e.stopPropagation(); pickDistrict(d.slug); } }}
                   >
-                    <title>{mode === 'districts' && a ? `${d.name}: ${(lead.get(d.slug) ?? []).map((p) => `${p.name} ${BN(p.seats)}`).join(', ')}` : d.name}</title>
+                    <title>{mode === 'districts' && a ? `${nameOf(d)}: ${(lead.get(d.slug) ?? []).map((p) => `${p.name} ${t.n(p.seats)}`).join(', ')}` : nameOf(d)}</title>
                   </path>
                 </g>
               );
@@ -582,7 +607,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
           <g>
             {areaPaths.map((a, i) => (
               <path key={i} d={a.d} fill={current?.color} fillOpacity={a.part === 'whole' ? 0.3 : 0.12} stroke={current?.color} strokeWidth={2.5} strokeDasharray={a.part === 'part' ? '6 4' : undefined} strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none">
-                <title>{`${a.name} · ${a.part === 'whole' ? 'পুরোটা এই আসনে' : 'একাংশ এই আসনে'}`}</title>
+                <title>{t.en ? [a.name, a.part === 'whole' ? 'Wholly in this seat' : 'Partly in this seat'].filter(Boolean).join(' · ') : `${a.name} · ${a.part === 'whole' ? 'পুরোটা এই আসনে' : 'একাংশ এই আসনে'}`}</title>
               </path>
             ))}
           </g>
@@ -601,7 +626,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
                 paintOrder="stroke"
                 className="seatmap-label"
               >
-                {SHORT[d.slug] ?? d.name}
+                {nameOf(d, true)}
               </text>
             ))}
           </g>
@@ -620,7 +645,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
                       style={{ cursor: 'pointer' }}
                       onClick={(e) => { e.stopPropagation(); open(s); }}
                     >
-                      <title>{`${s.seat} · ${s.member?.name ?? 'শূন্য'}${s.partyBn ? ` (${s.partyBn})` : ''}`}</title>
+                      <title>{`${s.seat} · ${s.member?.name ?? t('শূন্য', 'Vacant')}${s.partyShort ? ` (${s.partyShort})` : ''}`}</title>
                     </circle>
                   </g>
                 );
@@ -631,21 +656,21 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
         )}
         {useGoogle === false && (
           <div className="absolute right-3 top-3 flex flex-col gap-1.5">
-            <button type="button" onClick={() => zoomAt(1.5, vb.x + vb.w / 2, vb.y + vb.h / 2)} aria-label="বড় করুন" title="বড় করুন" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">+</button>
-            <button type="button" onClick={() => zoomAt(1 / 1.5, vb.x + vb.w / 2, vb.y + vb.h / 2)} aria-label="ছোট করুন" title="ছোট করুন" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">−</button>
-            <button type="button" onClick={home} aria-label="পুরো দেশ" title="পুরো দেশ" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">⌂</button>
+            <button type="button" onClick={() => zoomAt(1.5, vb.x + vb.w / 2, vb.y + vb.h / 2)} aria-label={t('বড় করুন', 'Zoom in')} title={t('বড় করুন', 'Zoom in')} className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">+</button>
+            <button type="button" onClick={() => zoomAt(1 / 1.5, vb.x + vb.w / 2, vb.y + vb.h / 2)} aria-label={t('ছোট করুন', 'Zoom out')} title={t('ছোট করুন', 'Zoom out')} className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">−</button>
+            <button type="button" onClick={home} aria-label={t('পুরো দেশ', 'Whole country')} title={t('পুরো দেশ', 'Whole country')} className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">⌂</button>
           </div>
         )}
         {useGoogle !== false && (
-          <button type="button" onClick={home} aria-label="পুরো দেশ" title="পুরো দেশ" className="absolute right-3 bottom-24 w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">⌂</button>
+          <button type="button" onClick={home} aria-label={t('পুরো দেশ', 'Whole country')} title={t('পুরো দেশ', 'Whole country')} className="absolute right-3 bottom-24 w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">⌂</button>
         )}
-        {!overview && <p className="absolute inset-0 grid place-items-center text-[14px] text-muted">মানচিত্র আসছে…</p>}
-        {useGoogle === false && <p className="absolute left-3 bottom-3 text-[12px] text-muted bg-surface border border-rule rounded-full px-2.5 py-1">স্ক্রল বা দুই আঙুলে zoom, টেনে সরান</p>}
+        {!overview && <p className="absolute inset-0 grid place-items-center text-[14px] text-muted">{t('মানচিত্র আসছে…', 'Loading the map…')}</p>}
+        {useGoogle === false && <p className="absolute left-3 bottom-3 text-[12px] text-muted bg-surface border border-rule rounded-full px-2.5 py-1">{t('স্ক্রল বা দুই আঙুলে zoom, টেনে সরান', 'Scroll or pinch to zoom, drag to move')}</p>}
 
       </div>
         {(current || (mode === 'districts' && pickedDistrict)) && (
           <aside ref={cardRef} className="relative mt-3 sm:mt-0 sm:absolute sm:left-3 sm:top-3 sm:w-[min(340px,calc(100%-24px))] sm:max-h-[calc(100%-24px)] sm:overflow-y-auto bg-surface border border-rule rounded-card shadow-lift p-4 z-10 scroll-mt-24" aria-live="polite">
-            <button type="button" onClick={close} aria-label="বন্ধ করুন" className="absolute right-2.5 top-1.5 text-[22px] leading-none text-muted hover:text-ink">×</button>
+            <button type="button" onClick={close} aria-label={t('বন্ধ করুন', 'Close')} className="absolute right-2.5 top-1.5 text-[22px] leading-none text-muted hover:text-ink">×</button>
             {current ? (
               <>
                 <div className="flex items-center gap-3 pe-6">
@@ -655,44 +680,44 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
                     <span className="w-14 h-14 rounded-full bg-rulesoft grid place-items-center text-muted text-[20px]" aria-hidden="true">—</span>
                   )}
                   <div className="min-w-0">
-                    <h3 className="display text-[17px] font-bold leading-snug">{current.member?.name ?? 'আসনটি এখন শূন্য'}</h3>
-                    <p className="text-[13px] text-muted">{current.seat} · {current.districtBn} জেলা{current.member?.profession ? ` · ${current.member.profession}` : ''}</p>
+                    <h3 className="display text-[17px] font-bold leading-snug">{current.member?.name ?? t('আসনটি এখন শূন্য', 'This seat is vacant')}</h3>
+                    <p className="text-[13px] text-muted">{current.seat} · {current.districtName}{t(' জেলা', ' district')}{current.member?.profession ? ` · ${current.member.profession}` : ''}</p>
                   </div>
                 </div>
                 {current.party && (
                   <span className="inline-flex items-center gap-1.5 mt-2.5 text-[13px] font-semibold rounded-full bg-brandsoft ps-1 pe-2.5 py-0.5">
                     <span className="w-5 h-5 rounded-full bg-center bg-cover" style={{ background: current.color, backgroundImage: SYMBOL[current.party] ? `url(${SYMBOL[current.party]})` : undefined }} aria-hidden="true" />
-                    {current.partyFull ?? current.partyBn}
+                    {current.partyFull ?? current.partyShort}
                   </span>
                 )}
                 <dl className="grid grid-cols-2 gap-2.5 mt-3">
-                  <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">প্রাপ্ত ভোট</dt><dd className="text-[16px] font-bold tnum">{current.votes != null ? GRP(current.votes) : '—'}</dd></div>
-                  <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">ব্যবধান</dt><dd className="text-[16px] font-bold tnum">{current.margin != null ? GRP(current.margin) : '—'}</dd></div>
+                  <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">{t('প্রাপ্ত ভোট', 'Votes received')}</dt><dd className="text-[16px] font-bold tnum">{current.votes != null ? t.group(current.votes) : '—'}</dd></div>
+                  <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">{t('ব্যবধান', 'Margin')}</dt><dd className="text-[16px] font-bold tnum">{current.margin != null ? t.group(current.margin) : '—'}</dd></div>
                 </dl>
                 {current.runnerUp && (
-                  <p className="mt-2.5 text-[12.5px] text-muted">নিকটতম: {current.runnerUp.name}{current.runnerUp.party ? ` (${current.runnerUp.party})` : ''}, {GRP(current.runnerUp.votes)} ভোট</p>
+                  <p className="mt-2.5 text-[12.5px] text-muted">{t('নিকটতম: ', 'Runner-up: ')}{current.runnerUp.name}{current.runnerUp.party ? ` (${current.runnerUp.party})` : ''}, {t.group(current.runnerUp.votes)}{t(' ভোট', plural(current.runnerUp.votes, ' vote', ' votes'))}</p>
                 )}
                 <div className="flex gap-2 mt-3">
-                  {current.member && <Link href={`/mp/${current.member.slug}`} className="flex-1 text-center h-9 leading-9 rounded-[9px] bg-brand text-white text-[13.5px] font-bold hover:bg-branddark">প্রোফাইল</Link>}
-                  <Link href={`/ason/${current.slug}`} className="flex-1 text-center h-9 leading-9 rounded-[9px] border-[1.5px] border-rule text-[13.5px] font-bold hover:border-brand">আসনের পাতা</Link>
+                  {current.member && <Link href={`/mp/${current.member.slug}`} className="flex-1 text-center h-9 leading-9 rounded-[9px] bg-brand text-white text-[13.5px] font-bold hover:bg-branddark">{t('প্রোফাইল', 'Profile')}</Link>}
+                  <Link href={`/ason/${current.slug}`} className="flex-1 text-center h-9 leading-9 rounded-[9px] border-[1.5px] border-rule text-[13.5px] font-bold hover:border-brand">{t('আসনের পাতা', 'Seat page')}</Link>
                 </div>
-                {areas.some((a) => a.part === 'part') && <p className="mt-2.5 text-[11.5px] text-muted">হালকা জায়গার একাংশ এই আসনে।</p>}
+                {areas.some((a) => a.part === 'part') && <p className="mt-2.5 text-[11.5px] text-muted">{t('হালকা জায়গার একাংশ এই আসনে।', 'Only part of each lightly shaded area is in this seat.')}</p>}
               </>
             ) : (
               <>
                 <div className="flex items-baseline justify-between gap-3 pe-6">
                   <h3 className="display text-[18px] font-bold">{districtName}</h3>
-                  <Link href={`/jela/${pickedDistrict}`} className="text-[13px] font-semibold text-brand hover:underline shrink-0">জেলার পাতা →</Link>
+                  <Link href={`/jela/${pickedDistrict}`} className="text-[13px] font-semibold text-brand hover:underline shrink-0">{t('জেলার পাতা →', 'District page →')}</Link>
                 </div>
-                <p className="text-[13px] text-muted">{BN(districtSeats.length)}টি আসন: {(lead.get(pickedDistrict!) ?? []).map((p) => `${p.name} ${BN(p.seats)}`).join(', ') || 'ফল নেই'}</p>
+                <p className="text-[13px] text-muted">{t.count(districtSeats.length, 'টি আসন', 'seat', 'seats')}: {(lead.get(pickedDistrict!) ?? []).map((p) => `${p.name} ${t.n(p.seats)}`).join(', ') || t('ফল নেই', 'no results')}</p>
                 <ul className="mt-2 flex flex-col divide-y divide-rulesoft">
                   {districtSeats.map((s) => (
                     <li key={s.no} className="py-2 flex items-start gap-2.5">
                       <span className="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} aria-hidden="true" />
                       <div className="min-w-0 flex flex-col">
                         <button type="button" onClick={() => { setMode('seats'); open(s); }} className="text-start text-[13px] font-bold text-brand hover:underline">{s.seat}</button>
-                        <span className="text-[14px] font-semibold leading-snug">{s.member?.name ?? <span className="text-muted font-normal">আসনটি এখন শূন্য</span>}</span>
-                        <span className="text-[12.5px] text-muted tnum">{[s.partyBn, s.votes ? `${GRP(s.votes)} ভোট` : null, s.margin ? `ব্যবধান ${GRP(s.margin)}` : null].filter(Boolean).join(' · ')}</span>
+                        <span className="text-[14px] font-semibold leading-snug">{s.member?.name ?? <span className="text-muted font-normal">{t('আসনটি এখন শূন্য', 'This seat is vacant')}</span>}</span>
+                        <span className="text-[12.5px] text-muted tnum">{[s.partyShort, s.votes ? t(`${t.group(s.votes)} ভোট`, `${t.group(s.votes)} ${plural(s.votes, 'vote', 'votes')}`) : null, s.margin ? t(`ব্যবধান ${t.group(s.margin)}`, `margin ${t.group(s.margin)}`) : null].filter(Boolean).join(' · ')}</span>
                       </div>
                     </li>
                   ))}
@@ -702,9 +727,15 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
           </aside>
         )}
       </div>
-      <p className="text-[12.5px] text-muted leading-relaxed">
-        জেলার সীমানা OCHA-র মানচিত্রে; আসনের জায়গা তার উপজেলা ও ওয়ার্ডের সীমানা থেকে হিসাব করা, আনুমানিক। {mode === 'districts' ? 'রং সেই জেলার বেশিরভাগ আসন যে দলের বর্তমান সংসদ সদস্যদের; দুই রং মানে সমান সমান।' : 'প্রতীকে চাপ দিলে আসনের এলাকা ও সংসদ সদস্য।'}{useGoogle !== false ? ' পটভূমির মানচিত্র Google Maps-এর।' : ''}
-      </p>
+      {t.en ? (
+        <p className="text-[12.5px] text-muted leading-relaxed">
+          District boundaries from OCHA’s map; each seat’s area is worked out from the boundaries of its upazilas and wards, and is approximate. {mode === 'districts' ? 'Each district is in the colour of the party whose current Members of Parliament hold most of its seats; two colours mean a tie.' : 'Tap a symbol to see the seat’s area and its Member of Parliament.'}{useGoogle !== false ? ' Background map from Google Maps.' : ''}
+        </p>
+      ) : (
+        <p className="text-[12.5px] text-muted leading-relaxed">
+          জেলার সীমানা OCHA-র মানচিত্রে; আসনের জায়গা তার উপজেলা ও ওয়ার্ডের সীমানা থেকে হিসাব করা, আনুমানিক। {mode === 'districts' ? 'রং সেই জেলার বেশিরভাগ আসন যে দলের বর্তমান সংসদ সদস্যদের; দুই রং মানে সমান সমান।' : 'প্রতীকে চাপ দিলে আসনের এলাকা ও সংসদ সদস্য।'}{useGoogle !== false ? ' পটভূমির মানচিত্র Google Maps-এর।' : ''}
+        </p>
+      )}
     </div>
   );
 }

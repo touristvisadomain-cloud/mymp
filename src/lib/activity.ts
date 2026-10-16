@@ -5,6 +5,8 @@
  */
 import activityJson from '../../data/activity.json';
 import { bn } from './data';
+import type { Lang } from '@/i18n/core';
+import { HOUSE_ROLE, ordinalWord } from '@/i18n/names';
 
 export interface Sitting {
   id: string;
@@ -78,19 +80,21 @@ export const ROLE_LABELS: Record<string, string> = {
   WHIP: 'হুইপ',
 };
 
-/** Every office the source lists for a member, in Bengali. */
-export const rolesOf = (memberId: string) =>
-  officers.filter((o) => o.memberId === memberId).map((o) => ROLE_LABELS[o.role] ?? o.role);
+/** Every office the source lists for a member, in Bengali (or English). */
+export const rolesOf = (memberId: string, lang: Lang = 'bn') =>
+  officers.filter((o) => o.memberId === memberId).map((o) => (lang === 'en' ? HOUSE_ROLE[o.role]?.en : ROLE_LABELS[o.role]) ?? o.role);
 
 const ORDINALS = ['', 'প্রথম', 'দ্বিতীয়', 'তৃতীয়', 'চতুর্থ', 'পঞ্চম', 'ষষ্ঠ', 'সপ্তম', 'অষ্টম', 'নবম', 'দশম'];
 
 /** The secretariat's notice categories, for readers. */
 export const NOTICE_CATEGORY_BN: Record<string, string> = { NOC: 'অনাপত্তিপত্র', GO: 'সরকারি আদেশ', notification: 'প্রজ্ঞাপন' };
+export const NOTICE_CATEGORY_EN: Record<string, string> = { NOC: 'No-objection certificate', GO: 'Government order', notification: 'Notification' };
 
 /** "সেশন ৩" and "সেশন-১" both become "তৃতীয় অধিবেশন" / "প্রথম অধিবেশন". */
-export function sessionLabel(s: Session): string {
+export function sessionLabel(s: Session, lang: Lang = 'bn'): string {
   const raw = (s.titleBn ?? s.titleEn ?? '').match(/[০-৯\d]+/)?.[0] ?? '';
   const n = Number(raw.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d))));
+  if (lang === 'en') return n ? `${ordinalWord(n, 'en')} session` : s.titleEn ?? 'Session';
   if (!n) return s.titleBn ?? s.titleEn ?? 'অধিবেশন';
   return `${ORDINALS[n] ?? `${bn(n)}তম`} অধিবেশন`;
 }

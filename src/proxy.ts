@@ -2,26 +2,51 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 /**
- * Keeps the admin session alive. Supabase access tokens expire hourly; this
- * refreshes them on each /admin request and writes the new cookies back.
- * It matches /admin, plus the bare homepage only to catch a stray reset link;
- * public pages are otherwise never touched and stay static.
+ * Two jobs.
+ *
+ * The public site's language. Bangla pages live at the plain addresses
+ * (/mp/x) and English ones under /en (/en/mp/x), but in the app both are
+ * built under app/[lang]: a plain address is quietly served from /bn, so no
+ * Bangla link or bookmark changes. Someone who types /bn/... is sent to the
+ * plain address, so each Bangla page has one address only. The pages
+ * themselves stay prerendered; this only picks which one.
+ *
+ * The admin session. Supabase access tokens expire hourly; this refreshes
+ * them on each /admin request and writes the new cookies back.
  */
 export default async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) return adminSession(request);
+
   // A password-reset link whose redirect Supabase refused (the site URL is not
   // on its allow list) lands on the homepage with the code or error still in
-  // the query. Hand it to the recovery route instead of losing it. Any other
-  // homepage request passes straight through, untouched.
-  if (request.nextUrl.pathname === '/') {
+  // the query. Hand it to the recovery route instead of losing it.
+  if (pathname === '/') {
     const q = request.nextUrl.searchParams;
     if (q.has('code') || q.has('error_code')) {
       const to = request.nextUrl.clone();
       to.pathname = '/admin/recover';
       return NextResponse.redirect(to);
     }
-    return NextResponse.next({ request });
   }
 
+  // English: served as it is.
+  if (pathname === '/en' || pathname.startsWith('/en/')) return NextResponse.next();
+
+  // The internal Bangla prefix, typed by hand: the plain address is the page's one address.
+  if (pathname === '/bn' || pathname.startsWith('/bn/')) {
+    const to = request.nextUrl.clone();
+    to.pathname = pathname.slice(3) || '/';
+    return NextResponse.redirect(to, 308);
+  }
+
+  const to = request.nextUrl.clone();
+  to.pathname = pathname === '/' ? '/bn' : `/bn${pathname}`;
+  return NextResponse.rewrite(to);
+}
+
+async function adminSession(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   let response = NextResponse.next({ request });
@@ -44,5 +69,8 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/'],
+  // Every page, of either language, and the admin. Not the API, Next's own
+  // files, or any file in public/ or app/ with an extension (geo/*.json,
+  // sitemap.xml, icons), which are the same in both languages.
+  matcher: ['/((?!api/|_next/|.*\\.[A-Za-z0-9]+$).*)'],
 };

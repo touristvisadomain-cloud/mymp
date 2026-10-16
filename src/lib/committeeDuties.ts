@@ -1,4 +1,6 @@
 import type { Committee } from './data';
+import type { Lang } from '@/i18n/core';
+import { COMMITTEE_TYPE, committeeName } from '@/i18n/names';
 
 /*
  * What each committee does (owner, 2026-09-12). The parliament's data gives
@@ -8,6 +10,9 @@ import type { Committee } from './data';
  * for the two committees it requires. Nothing is added that the rules do not
  * say; a special committee's task is set by the motion that creates it, so
  * its entry says only that.
+ *
+ * The English beside each entry follows the rules' own English wording
+ * wherever it can, so the English page says what the Bangla says.
  */
 export const RULES_URL = 'https://www.parliament.gov.bd/parliament-business/rules-of-procedure';
 
@@ -19,8 +24,8 @@ export type CommitteeDuty = {
   note?: string;
   /** Where the duties come from, e.g. "বিধি ২৩৩-২৩৪". */
   rule: string;
-  /** A sub-committee's parent committee. */
-  parent?: { slug: string; nameBn: string };
+  /** A sub-committee's parent committee; `name` is in the duty's language. */
+  parent?: { slug: string; nameBn: string; name: string };
 };
 
 export const TYPE_BN: Record<string, string> = {
@@ -28,6 +33,9 @@ export const TYPE_BN: Record<string, string> = {
   'Ministry Related Standing Committee': 'মন্ত্রণালয় সম্পর্কিত স্থায়ী কমিটি',
 };
 export const typeBn = (type: string | null | undefined) => (type ? TYPE_BN[type] ?? type : null);
+export const typeEn = (type: string | null | undefined) => (type ? COMMITTEE_TYPE[type]?.en ?? type : null);
+/** The committee's type in either language. */
+export const typeName = (type: string | null | undefined, lang: Lang = 'bn') => (lang === 'en' ? typeEn(type) : typeBn(type));
 
 const PUBLIC_ACCOUNTS: CommitteeDuty = {
   summary:
@@ -49,7 +57,7 @@ const subCommittee = (parent: { slug: string; nameBn: string }): CommitteeDuty =
     'উপ-কমিটির প্রতিবেদন মূল কমিটি বিবেচনা করে; পুরো কমিটির বৈঠকে অনুমোদিত হলে সেটি মূল কমিটির প্রতিবেদন হিসেবে গণ্য হয়।',
   ],
   rule: 'বিধি ১৯৬',
-  parent,
+  parent: { ...parent, name: parent.nameBn },
 });
 
 /** The committees the rules name one by one, by slug. */
@@ -167,6 +175,145 @@ const BY_SLUG: Record<string, CommitteeDuty> = {
   },
 };
 
+/* ---------------- English ---------------- */
+
+const PUBLIC_ACCOUNTS_EN: CommitteeDuty = {
+  summary:
+    'Examines, with the reports of the Comptroller and Auditor-General, whether the Government has spent the money granted by Parliament lawfully and on the purposes it was granted for. The Constitution requires this committee.',
+  duties: [
+    'Examining the accounts showing the appropriation of sums granted by Parliament for the expenditure of the Government, the annual finance accounts of the Government and other accounts laid before Parliament.',
+    'Satisfying itself, from the reports of the Comptroller and Auditor-General, that the money was legally available for, and spent on, the purpose to which it was applied, that the expenditure conforms to the authority which governs it, and that every re-appropriation was made in accordance with the rules.',
+    'Examining the statements of income and expenditure, balance sheets and profit and loss accounts of state corporations and government trading schemes and projects.',
+    'Looking into irregularities and faults in these bodies, and reporting to Parliament with recommendations to remedy them.',
+  ],
+  rule: 'Article 76 of the Constitution; rules 233–234',
+};
+
+/** A sub-committee of any committee: rule 196. */
+const subCommitteeEn = (parent: { slug: string; nameBn: string; name: string }): CommitteeDuty => ({
+  summary: `A sub-committee of the ${parent.name}. It examines the particular matters the parent committee refers to it.`,
+  duties: [
+    'Examining the particular matters or questions referred to it by the parent committee, with the same powers as the parent committee.',
+    "The parent committee considers the sub-committee's report; if it is approved at a meeting of the whole committee, it is treated as the report of the parent committee.",
+  ],
+  rule: 'rule 196',
+  parent,
+});
+
+const BY_SLUG_EN: Record<string, CommitteeDuty> = {
+  'business-advisory-committee': {
+    summary: 'Recommends how much time Parliament should spend discussing each stage of Government Bills and other business. The Speaker is its chair.',
+    duties: [
+      'Recommending the time to be allotted for discussing the Government Bills and other business that the Speaker, in consultation with the Leader of the House, refers to it.',
+      'Indicating in the proposed timetable when each stage of a Bill or other business is to be completed.',
+      'Carrying out any other functions the Speaker assigns to it.',
+    ],
+    note: 'The Speaker nominates the committee, of not more than 15 members including the Speaker, and is its chair.',
+    rule: 'rules 219–221',
+  },
+  'committee-on-private-members-bills-and-resolutions': {
+    summary:
+      'Examines the Bills and resolutions brought by Members of Parliament who are not Ministers (private members), classifies them by importance and recommends time for their discussion.',
+    duties: [
+      'When a private member seeks to bring a Bill to amend the Constitution, examining it before the motion for leave to introduce it is included in the list of business.',
+      "Examining every private member's Bill after it is introduced and before it is discussed, and classifying it by its nature, urgency and importance into one of two categories, A and B.",
+      "Recommending the time for discussing each private member's Bill and when each of its stages is to be completed.",
+      "Recommending the time limit for discussing private members' resolutions.",
+    ],
+    rule: 'rules 222–224',
+  },
+  'house-committee': {
+    summary: "Looks after the housing of Members of Parliament and the accommodation, food, medical care and other amenities in the members' hostels. Its role is advisory.",
+    duties: [
+      'Dealing with all questions relating to the accommodation of Members of Parliament.',
+      "Supervising the accommodation, food, medical care and other amenities in the members' hostels.",
+      'Its accommodation sub-committee advises on the allotment of housing to members.',
+    ],
+    note: 'The Speaker nominates the committee, of not more than 12 members including the chair.',
+    rule: 'rules 249–252',
+  },
+  'library-committee': {
+    summary: 'Advises on the development and services of the Parliament Library, so that Members of Parliament can make full use of it.',
+    duties: [
+      'Considering and advising on matters concerning the Library referred to it by the Speaker.',
+      'Considering proposals for the improvement of the Library.',
+      'Helping Members of Parliament make full use of the services of the Library.',
+    ],
+    rule: 'rules 257–258',
+  },
+  'special-committee': {
+    summary: 'Parliament sets up a special committee, by passing a motion, to look into a particular matter; that motion fixes its members and its task.',
+    duties: ['Carrying out the matters and duties set out in the motion of Parliament that set it up.'],
+    rule: 'rule 266',
+  },
+  'special-committee-on-reformation-of-constitution': {
+    summary: "Parliament has set up this special committee to work on amending the Constitution. Parliament fixes a special committee's members and task by passing a motion.",
+    duties: ['Considering the amendment of the Constitution, in line with the task set out in the motion of Parliament that set it up.'],
+    rule: 'rule 266',
+  },
+  'standing-committee-of-privileges': {
+    summary:
+      'Examines complaints of breach of the privileges of Parliament or of its members, and makes recommendations. The Constitution requires this committee.',
+    duties: [
+      'Determining, from the facts of the case, whether a question referred to it by Parliament involves a breach of privilege.',
+      'If it does, stating the nature of the breach and the circumstances leading to it, and making recommendations; the report may also state the procedure Parliament is to follow in giving effect to them.',
+    ],
+    note: 'Each Parliament appoints this committee, of not more than 10 members, at its first session.',
+    rule: 'Article 76 of the Constitution; rules 240–243',
+  },
+  'standing-committee-on-public-accounts': PUBLIC_ACCOUNTS_EN,
+  'public-accounts-committee-pac': PUBLIC_ACCOUNTS_EN,
+  'committee-on-estimates': {
+    summary: "Examines the Government's budget estimates and recommends ways to make economies, improve efficiency and reform administration.",
+    duties: [
+      'Examining such estimates as it thinks fit or as Parliament refers to it.',
+      'Reporting what economies, improvements in organisation, efficiency or administrative reform, consistent with the policy underlying the estimates, can be made.',
+      'Suggesting alternative policies to bring about efficiency and economy in administration.',
+      'Examining whether the money is well laid out within the limits of the policy, and recommending the form in which the estimates are to be presented to Parliament.',
+    ],
+    note: 'The committee has not more than 10 members.',
+    rule: 'rules 235–237',
+  },
+  'committee-on-government-assurances': {
+    summary: 'Checks how far, and how quickly, the promises Ministers make in Parliament have been carried out, and reports to Parliament.',
+    duties: [
+      'Scrutinising the assurances, promises and undertakings given by Ministers in Parliament.',
+      'Reporting on the extent to which they have been implemented and, where implemented, whether this was done within the minimum time necessary.',
+    ],
+    note: 'Parliament appoints the committee, of not more than 8 members.',
+    rule: 'rules 244–245',
+  },
+  'committee-on-petitions': {
+    summary: 'Examines petitions presented to Parliament, reports to Parliament on the complaints they make and proposes specific remedies.',
+    duties: [
+      'Examining every petition referred to it; it may direct that a petition that complies with the rules be circulated to members.',
+      'Reporting to Parliament on specific complaints made in a petition and proposing specific remedial measures.',
+    ],
+    note: 'The Speaker nominates the committee, of at least 10 members; no Minister may be a member.',
+    rule: 'rules 231–232',
+  },
+  'committee-on-public-undertakings': {
+    summary: 'Examines the accounts and work of state-owned undertakings, checks whether they are run on sound business principles and recommends how to remove irregularities.',
+    duties: [
+      'Examining the reports and accounts of the public undertakings listed in the Fourth Schedule to the Rules of Procedure.',
+      'Examining the reports of the Comptroller and Auditor-General on these undertakings.',
+      'Checking whether the undertakings are managed in accordance with sound business principles and prudent commercial practices, and reporting to Parliament with recommendations to remedy irregularities and rid the undertakings of corruption.',
+      "Matters of major government policy and day-to-day administration are outside the committee's examination.",
+    ],
+    note: 'Parliament elects not more than 10 members; no Minister may be a member.',
+    rule: 'rules 238–239',
+  },
+  'standing-committee-on-rules-of-procedure': {
+    summary: 'Considers matters of procedure and the conduct of business in Parliament, and recommends any amendments needed to the Rules of Procedure. The Speaker is its chair.',
+    duties: [
+      'Considering matters of procedure and the conduct of business in Parliament.',
+      "Recommending additions to, changes in, substitutions in or repeals of the Rules of Procedure; the committee's report is presented to Parliament.",
+    ],
+    note: 'Parliament appoints the committee, of 12 members including the chair; the Speaker is its chair ex officio.',
+    rule: 'rules 263–265',
+  },
+};
+
 /*
  * The parliament's records spell "য়" both as one code point and as য + nukta,
  * so names are compared in NFC (which always splits it).
@@ -196,27 +343,60 @@ function ministryCommittee(ministry: string): CommitteeDuty {
   };
 }
 
-export function committeeDuty(c: Committee, all: Committee[]): CommitteeDuty | null {
-  const own = BY_SLUG[c.slug];
+/** "Ministry of Land" from "Standing Committee on Ministry of Land" (or "…on Expatriates' Welfare…", which leaves "Ministry of" out). */
+function ministryEnOf(nameEn: string | null | undefined): string | null {
+  const name = tidy(nameEn);
+  const m = /\bMinistry of (.+)$/i.exec(name) ?? /^Standing Committee on (?:the )?(.+)$/i.exec(name);
+  return m ? `Ministry of ${m[1]!.replace(/\.$/, '')}` : null;
+}
+
+function ministryCommitteeEn(ministryEn: string | null): CommitteeDuty {
+  const ministry = ministryEn ? `the ${ministryEn}` : 'its ministry';
+  return {
+    summary: `Oversees the work of ${ministry} on behalf of Parliament: it reviews the ministry's Bills and work, inquires into irregularities and serious complaints, and makes recommendations.`,
+    duties: [
+      'Examining Bills and other matters referred to it by Parliament, and draft Bills and other legislative proposals.',
+      `Reviewing the work of ${ministry}.`,
+      'Inquiring into any activity, irregularity or serious complaint concerning the ministry, and making recommendations.',
+      'Reviewing the enforcement of laws and proposing measures for their enforcement.',
+    ],
+    note: 'The committee meets at least once a month. Parliament appoints not more than 10 members, including the chair; no Minister may chair it, but the Minister concerned is a member ex officio.',
+    rule: 'Article 76 of the Constitution; rules 246–248',
+  };
+}
+
+/** The source's English names carry doubled spaces and stray full stops ("Sub-Committee No. 5 of  Library Committee"). */
+const tidy = (s: string | null | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
+/** A committee's name in the page's language; the English tidied of the source's doubled spaces and closing full stop. */
+export const committeeTitle = (c: { nameBn?: string | null; nameEn?: string | null } | null | undefined, lang: Lang = 'bn') =>
+  lang === 'en' ? tidy(committeeName(c, 'en')).replace(/([a-z]{3,})\.$/i, '$1') : committeeName(c, 'bn');
+
+/** What a committee does, in Bangla (the default) or English. */
+export function committeeDuty(c: Committee, all: Committee[], lang: Lang = 'bn'): CommitteeDuty | null {
+  const en = lang === 'en';
+  const own = (en ? BY_SLUG_EN : BY_SLUG)[c.slug];
   if (own) return own;
   const name = nfc(c.nameBn);
+  const sub = (p: { slug: string; nameBn: string; nameEn?: string | null }) =>
+    en ? subCommitteeEn({ slug: p.slug, nameBn: p.nameBn, name: committeeTitle(p, 'en') }) : subCommittee({ slug: p.slug, nameBn: p.nameBn });
 
   if (/উপ-কমিটি|সাব-কমিটি/.test(name)) {
     if (/^লাইব্রের[ীি] কমিটি/.test(name)) {
       const lib = all.find((x) => x.slug === 'library-committee');
-      return subCommittee({ slug: lib?.slug ?? 'library-committee', nameBn: lib?.nameBn ?? 'লাইব্রেরি কমিটি' });
+      return sub({ slug: lib?.slug ?? 'library-committee', nameBn: lib?.nameBn ?? 'লাইব্রেরি কমিটি', nameEn: lib?.nameEn ?? 'Library Committee' });
     }
     const ministry = ministryOf(name);
     const parent = ministry
       ? all.find((x) => x.type === 'Ministry Related Standing Committee' && nfc(x.nameBn).startsWith(ministry))
       : undefined;
-    if (parent?.nameBn) return subCommittee({ slug: parent.slug, nameBn: parent.nameBn });
+    if (parent?.nameBn) return sub({ slug: parent.slug, nameBn: parent.nameBn, nameEn: parent.nameEn });
     return null;
   }
 
   if (c.type === 'Ministry Related Standing Committee') {
     const ministry = ministryOf(name);
-    return ministry ? ministryCommittee(ministry) : null;
+    if (!ministry) return null;
+    return en ? ministryCommitteeEn(ministryEnOf(c.nameEn)) : ministryCommittee(ministry);
   }
   return null;
 }

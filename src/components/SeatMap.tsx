@@ -26,6 +26,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import 'leaflet/dist/leaflet.css';
 import { BUILT_KEY, googleKey, loadGoogle, onAuthFailure, resolve } from '@/lib/googleMaps';
+import { useT } from '@/i18n/client';
 
 type Part = 'whole' | 'part';
 interface Feature {
@@ -116,6 +117,83 @@ function labelPoint(f: Feature): [number, number] {
 /** The name written on the map: our own, in Bangla, whatever language the base map is in. */
 const shortName = (f: Feature) => cityShort(f.properties.name);
 
+/** How the map names its places: in Bangla as above, or in English. */
+interface Namer {
+  placeName: (f: Feature) => string;
+  placeList: (fs: Feature[]) => string[];
+  shortName: (f: Feature) => string;
+}
+const NAMER_BN: Namer = { placeName, placeList, shortName };
+
+/**
+ * The places in English. Upazilas by OpenStreetMap's English names
+ * (data/upazila-en.json); a city corporation by its district's English name,
+ * which every city corporation shares ("ঢাকা দক্ষিণ সিটি কর্পোরেশন" in Dhaka
+ * district: "Dhaka South City Corporation"); a ward by its number. A place
+ * with no English name on record (the unions Dhaka's city corporations took
+ * in, which are wards without a number) keeps its Bangla name.
+ */
+function namerEn(upazilas: [string, string][], districtEn: string | null): Namer {
+  const key = (s: string) => s.normalize('NFC').replace(/[\u200c\u200d]/g, '').trim();
+  const table = new Map(upazilas.map(([en, bnName]) => [key(bnName), en] as const).reverse());
+  const latin = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+  /** "ঢাকা দক্ষিণ সিটি কর্পোরেশন" → "Dhaka South"; null when the district's English name is unknown. */
+  const cityBase = (bnCity: string): string | null => {
+    if (!districtEn) return null;
+    const rest = bnCity.replace(/\s*সিটি কর্পোরেশন$/, '').trim();
+    const side = /\s(উত্তর|দক্ষিণ|দক্ষিন)$/.exec(rest)?.[1];
+    return side ? `${districtEn} ${side === 'উত্তর' ? 'North' : 'South'}` : districtEn;
+  };
+  const city = (bnCity: string) => {
+    const base = cityBase(bnCity);
+    return base ? `${base} City Corporation` : bnCity;
+  };
+  const cityShortEn = (bnCity: string) => {
+    const base = cityBase(bnCity);
+    return base ? `${base} City` : cityShort(bnCity);
+  };
+  /** A ward: "ওয়ার্ড ৪৭" → "47"; null for a ward known only by its name. */
+  const wardNo = (name: string) => (/^ওয়ার্ড [০-৯\d]+$/.test(name) ? latin(name.slice('ওয়ার্ড '.length)) : null);
+  const place = (name: string) => table.get(key(name)) ?? name;
+  const placeNameEn = (f: Feature) => {
+    const p = f.properties;
+    if (p.kind === 'city') return city(p.name);
+    if (p.kind === 'ward') {
+      const no = wardNo(p.name);
+      return `${no ? `Ward ${no}` : place(p.name)} (${cityShortEn(p.city ?? '')})`;
+    }
+    return `${place(p.name)} upazila`;
+  };
+  return {
+    placeName: placeNameEn,
+    placeList: (fs) => {
+      const out: string[] = [];
+      const byCity = new Map<string, { nums: string[]; names: string[] }>();
+      for (const f of fs) {
+        if (f.properties.kind !== 'ward') { out.push(placeNameEn(f)); continue; }
+        const c0 = cityShortEn(f.properties.city ?? '');
+        const c = byCity.get(c0) ?? { nums: [], names: [] };
+        const no = wardNo(f.properties.name);
+        if (no) c.nums.push(no);
+        else c.names.push(place(f.properties.name));
+        byCity.set(c0, c);
+      }
+      const lines = [...byCity].map(([c0, c]) =>
+        `${c0} ${[c.nums.length ? `${c.nums.length === 1 ? 'ward' : 'wards'} ${c.nums.join(', ')}` : '', ...c.names].filter(Boolean).join(', ')}`);
+      return [...lines, ...out];
+    },
+    shortName: (f) => {
+      const p = f.properties;
+      if (p.kind === 'city') return cityShortEn(p.name);
+      if (p.kind === 'ward') {
+        const no = wardNo(p.name);
+        return no ? `Ward ${no}` : place(p.name);
+      }
+      return place(p.name);
+    },
+  };
+}
+
 
 interface Drawing {
   features: Feature[];
@@ -127,10 +205,16 @@ interface Drawing {
   onHover: (text: string | null) => void;
   /** The zoom from which the Bangla place names show. */
   labelZoom: number;
+  /** The name written on the map, in the page's language. */
+  shortName: (f: Feature) => string;
+  /** "You are here", in the page's language. */
+  hereTitle: string;
+  /** The page's language, for Google's own names and buttons. */
+  lang: 'bn' | 'en';
 }
 
 async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<Engine> {
-  const g = await loadGoogle(key);
+  const g = await loadGoogle(key, d.lang);
   const map = new g.maps.Map(el, {
     mapTypeControl: true,
     mapTypeControlOptions: { mapTypeIds: ['roadmap', 'hybrid'] },
@@ -168,7 +252,7 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
       map,
       clickable: false,
       icon: { path: g.maps.SymbolPath.CIRCLE, scale: 0 },
-      label: { text: shortName(f), className: 'seatmap-label', color: '#17201b', fontSize: '13px', fontWeight: '700' },
+      label: { text: d.shortName(f), className: 'seatmap-label', color: '#17201b', fontSize: '13px', fontWeight: '700' },
       zIndex: 1000,
     });
     return { marker, zoom: labelZoomOf(f, d.labelZoom) };
@@ -187,7 +271,7 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
       here = new g.maps.Marker({
         position: { lat, lng },
         map,
-        title: 'আপনি এখানে',
+        title: d.hereTitle,
         icon: { path: g.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#1a73e8', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 },
       });
       map.panTo({ lat, lng });
@@ -224,7 +308,7 @@ async function startLeaflet(el: HTMLElement, d: Drawing): Promise<Engine> {
   void layer;
   const labels = d.features.map((f) => {
     const [lng, lat] = labelPoint(f);
-    const marker = L.marker([lat, lng], { interactive: false, icon: L.divIcon({ className: 'seatmap-label seatmap-label-osm', html: shortName(f), iconSize: undefined }) });
+    const marker = L.marker([lat, lng], { interactive: false, icon: L.divIcon({ className: 'seatmap-label seatmap-label-osm', html: d.shortName(f), iconSize: undefined }) });
     return { marker, zoom: labelZoomOf(f, d.labelZoom) };
   });
   const showLabels = () => {
@@ -293,6 +377,9 @@ export default function SeatMap({
   startOnClick?: boolean;
 }) {
   const router = useRouter();
+  const t = useT();
+  /** The places' names in the page's language; English once its table has loaded. */
+  const namer = useRef<Namer>(NAMER_BN);
   const frame = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const engine = useRef<Engine | null>(null);
@@ -323,10 +410,19 @@ export default function SeatMap({
     let cancelled = false;
     let offAuth = () => {};
     (async () => {
-      const res = await fetch(geoUrl);
+      // English pages also fetch the upazilas' English names, which Bangla pages never load.
+      const [res, upazilas] = await Promise.all([
+        fetch(geoUrl),
+        t.en ? import('../../data/upazila-en.json').then((m) => m.default as [string, string][]) : null,
+      ]);
       const fc = (await res.json()) as { features: Feature[] };
       if (cancelled || !box.current) return;
       features.current = fc.features;
+      // The district's English name, from its seats' ("Dhaka-10" → "Dhaka"), for its city corporations.
+      const districtEn = Object.values(seatNames).map((n) => n.replace(/[\s-]*\d+$/, '').trim()).find((n) => /^[A-Za-z' ]+$/.test(n)) ?? null;
+      const nm = upazilas ? namerEn(upazilas, districtEn) : NAMER_BN;
+      namer.current = nm;
+      const { placeName, placeList } = nm;
       const names = (f: Feature) => Object.keys(f.properties.seats).map((s) => seatNames[s] ?? s).join(', ');
       let drawing: Drawing;
       if (seat) {
@@ -351,10 +447,13 @@ export default function SeatMap({
           },
           label: (f) => {
             const p = f.properties.seats[seat.slug];
-            return `${placeName(f)} · ${p === 'whole' ? 'পুরোটা এই আসনে' : p === 'part' ? 'একাংশ এই আসনে' : names(f)}`;
+            return `${placeName(f)} · ${p === 'whole' ? t('পুরোটা এই আসনে', 'wholly in this seat') : p === 'part' ? t('একাংশ এই আসনে', 'partly in this seat') : names(f)}`;
           },
           onHover: setHover,
           labelZoom: 8,
+          shortName: nm.shortName,
+          hereTitle: t('আপনি এখানে', 'You are here'),
+          lang: t.lang,
         };
       } else {
         const tone = Object.fromEntries(Object.entries(colors ?? {}).map(([k, v]) => [k, resolve(v)]));
@@ -370,10 +469,13 @@ export default function SeatMap({
           label: (f) => `${placeName(f)} · ${names(f)}`,
           onClick: (f) => {
             const only = Object.keys(f.properties.seats);
-            if (only.length === 1) router.push(`/ason/${only[0]}`);
+            if (only.length === 1) router.push(t.href(`/ason/${only[0]}`));
           },
           onHover: setHover,
           labelZoom: 10,
+          shortName: nm.shortName,
+          hereTitle: t('আপনি এখানে', 'You are here'),
+          lang: t.lang,
         };
       }
       // A key Google refuses loads the script and then greys the map; Google calls this instead of failing.
@@ -401,7 +503,7 @@ export default function SeatMap({
       engine.current?.destroy();
       engine.current = null;
     };
-  }, [wanted, geoUrl, seat, colors, seatNames, router]);
+  }, [wanted, geoUrl, seat, colors, seatNames, router, t]);
 
   // The map's box changes size when it goes full screen.
   useEffect(() => {
@@ -414,10 +516,10 @@ export default function SeatMap({
 
   function locate() {
     if (!('geolocation' in navigator)) {
-      setWhere('এই ব্রাউজারে অবস্থান জানা যায় না।');
+      setWhere(t('এই ব্রাউজারে অবস্থান জানা যায় না।', 'This browser cannot tell where you are.'));
       return;
     }
-    setWhere('অবস্থান খোঁজা হচ্ছে…');
+    setWhere(t('অবস্থান খোঁজা হচ্ছে…', 'Finding your location…'));
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const pt: [number, number] = [pos.coords.longitude, pos.coords.latitude];
@@ -425,24 +527,28 @@ export default function SeatMap({
         const hits = features.current.filter((f) => inFeature(pt, f));
         const inside = hits.find((f) => f.properties.kind === 'ward') ?? hits[0];
         engine.current?.showHere(pt[1], pt[0]);
-        if (!inside) return setWhere('আপনি এই জেলার বাইরে আছেন।');
+        if (!inside) return setWhere(t('আপনি এই জেলার বাইরে আছেন।', 'You are outside this district.'));
         const p = seat ? inside.properties.seats[seat.slug] : undefined;
         const others = Object.keys(inside.properties.seats).map((s) => seatNames[s] ?? s).join(', ');
+        const { placeName } = namer.current;
         setWhere(
           p === 'whole'
-            ? `আপনি ${placeName(inside)}, এই আসনের ভেতরে।`
+            ? t(`আপনি ${placeName(inside)}, এই আসনের ভেতরে।`, `You are in ${placeName(inside)}, inside this seat.`)
             : p === 'part'
-              ? `আপনি ${placeName(inside)}। এর একাংশ এই আসনে; নিচের ইউনিয়ন বা ওয়ার্ডের তালিকা মিলিয়ে দেখুন।`
-              : `আপনি ${placeName(inside)}, ${others} আসনে।`,
+              ? t(
+                `আপনি ${placeName(inside)}। এর একাংশ এই আসনে; নিচের ইউনিয়ন বা ওয়ার্ডের তালিকা মিলিয়ে দেখুন।`,
+                `You are in ${placeName(inside)}. Part of it is in this seat; check against the list of unions or wards below.`,
+              )
+              : t(`আপনি ${placeName(inside)}, ${others} আসনে।`, `You are in ${placeName(inside)}, in ${others}.`),
         );
       },
-      () => setWhere('অবস্থান পাওয়া যায়নি বা অনুমতি দেওয়া হয়নি।'),
+      () => setWhere(t('অবস্থান পাওয়া যায়নি বা অনুমতি দেওয়া হয়নি।', 'Your location could not be found, or permission was not given.')),
       { timeout: 15000, maximumAge: 600000 },
     );
   }
 
   const source = usingGoogle && !failed ? 'Google Maps' : 'OpenStreetMap';
-  const places = [...summary.whole, ...summary.part.map((p) => `${p}-এর একাংশ`)];
+  const places = [...summary.whole, ...summary.part.map((p) => t(`${p}-এর একাংশ`, `part of ${p}`))];
 
   return (
     <div
@@ -459,7 +565,7 @@ export default function SeatMap({
         {wanted && (
           <div className="flex gap-2 shrink-0">
             <button type="button" onClick={() => setBig((b) => !b)} className="h-9 px-3 rounded-lg bg-brand text-white text-[13px] font-semibold hover:bg-brand/90">
-              {big ? 'বন্ধ করুন' : 'বড় করে দেখুন'}
+              {big ? t('বন্ধ করুন', 'Close') : t('বড় করে দেখুন', 'View larger')}
             </button>
           </div>
         )}
@@ -467,7 +573,7 @@ export default function SeatMap({
       <style>{`.seatmap-label{font-family:var(--font-body),'Noto Sans Bengali',sans-serif;font-weight:700;font-size:13px;color:#17201b;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;background:none;border:0;}.seatmap-label-osm{transform:translate(-50%,-50%);}`}</style>
       {/* The base map adds its own classes to its box, so only the wrapper's size changes. */}
       <div className={big ? 'relative grow min-h-0' : 'relative h-[420px] sm:h-[480px] bg-sunk'}>
-        <div ref={box} className="h-full w-full" role="region" aria-label={`${title} মানচিত্র`} />
+        <div ref={box} className="h-full w-full" role="region" aria-label={t(`${title} মানচিত্র`, `Map of ${title}`)} />
         {wanted && (
           // Where Google Maps keeps its own "my location": on the map, top right, clear of the map-type buttons.
           <button
@@ -482,7 +588,7 @@ export default function SeatMap({
                 <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
               </svg>
             </span>
-            {seat ? 'আমি কি এই আসনে?' : 'আমার আসন কোনটি?'}
+            {seat ? t('আমি কি এই আসনে?', 'Am I in this seat?') : t('আমার আসন কোনটি?', 'Which is my seat?')}
           </button>
         )}
         {!wanted && (
@@ -492,7 +598,7 @@ export default function SeatMap({
               onClick={() => setWanted(true)}
               className="h-11 px-5 rounded-xl bg-brand text-white font-bold text-[14.5px] shadow-card hover:bg-brand/90"
             >
-              ম্যাপ দেখুন
+              {t('ম্যাপ দেখুন', 'Show the map')}
             </button>
           </div>
         )}
@@ -500,13 +606,27 @@ export default function SeatMap({
       {where && <p className="px-4 py-2.5 text-[13.5px] border-t border-rule bg-surface" role="status">{where}</p>}
       {seat && summary.part.length > 0 && note && (
         <p className="px-4 py-2.5 text-[13px] text-inksoft border-t border-rule bg-surface leading-relaxed">
-          <span className="font-semibold">নির্বাচন কমিশনের বর্ণনা:</span> {note}
-          <span className="block text-[12px] text-muted pt-1">ইউনিয়নের, আর নতুন সিটি কর্পোরেশনগুলোর ওয়ার্ডের, আলাদা সীমানা প্রকাশিত নেই; সেখানে হালকা রঙে পুরো উপজেলা বা সিটি দেখানো হয়েছে।</span>
+          <span className="font-semibold">{t('নির্বাচন কমিশনের বর্ণনা:', "The Election Commission's description:")}</span> {note}
+          <span className="block text-[12px] text-muted pt-1">
+            {t(
+              'ইউনিয়নের, আর নতুন সিটি কর্পোরেশনগুলোর ওয়ার্ডের, আলাদা সীমানা প্রকাশিত নেই; সেখানে হালকা রঙে পুরো উপজেলা বা সিটি দেখানো হয়েছে।',
+              'No separate boundaries have been published for unions, or for the wards of the newer city corporations; there the whole upazila or city is shown in a paler colour.',
+            )}
+          </span>
         </p>
       )}
       <p className="px-4 py-2.5 text-[12px] text-muted border-t border-rule bg-surface leading-relaxed">
-        সীমানা নির্বাচন কমিশনের আসনের বর্ণনা থেকে; উপজেলা OpenStreetMap, সিটি কর্পোরেশন OCHA আর সিটি ওয়ার্ড geoBoundaries (BBS, ২০১৫)-এর মানচিত্রে; আনুমানিক। পটভূমির মানচিত্র {source}-এর।
-        {colors && ` ${BN(Object.keys(colors).length)}টি আসন; এলাকায় চাপ দিলে সেই আসনের পাতা।`}
+        {t.en ? (
+          <>
+            Boundaries from the Election Commission&apos;s description of the seats, drawn on the maps of OpenStreetMap (upazilas), OCHA (city corporations) and geoBoundaries (city wards; BBS, 2015); approximate. Background map from {source}.
+            {colors && ` ${t.count(Object.keys(colors).length, '', 'seat', 'seats')}; tap an area to open that seat's page.`}
+          </>
+        ) : (
+          <>
+            সীমানা নির্বাচন কমিশনের আসনের বর্ণনা থেকে; উপজেলা OpenStreetMap, সিটি কর্পোরেশন OCHA আর সিটি ওয়ার্ড geoBoundaries (BBS, ২০১৫)-এর মানচিত্রে; আনুমানিক। পটভূমির মানচিত্র {source}-এর।
+            {colors && ` ${BN(Object.keys(colors).length)}টি আসন; এলাকায় চাপ দিলে সেই আসনের পাতা।`}
+          </>
+        )}
       </p>
     </div>
   );

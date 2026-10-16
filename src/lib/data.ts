@@ -397,6 +397,10 @@ const PROFESSION_CANON: Record<string, string> = {
   'অ্যাডভোকেট': 'আইনজীবী',
 };
 
+const PROFESSION_FOLD = new Map(Object.entries(PROFESSION_CANON).map(([k, v]) => [normalise(k), normalise(v)]));
+/** A folded job is shown in the table's own spelling ("ব্যবসা"), not whichever variant came first. */
+const PROFESSION_LABEL = new Map(Object.values(PROFESSION_CANON).map((v) => [normalise(v), v]));
+
 export function statistics() {
   const territorial = members.filter((m) => m.seat && !m.seat.reserved);
   const reserved = members.filter((m) => m.seat?.reserved);
@@ -423,9 +427,10 @@ export function statistics() {
     if (!m.professionBn) continue;
     // Spellings of the same job fold to one key ("ব্যবসায়ী" and "ব্যবসা" are one
     // occupation), or the chart shows the same bar twice.
-    const key = PROFESSION_CANON[normalise(m.professionBn)] ?? normalise(m.professionBn);
+    // The table's spellings are folded the same way as the value, or a key never matches.
+    const key = PROFESSION_FOLD.get(normalise(m.professionBn)) ?? normalise(m.professionBn);
     if (!key) continue;
-    const e = profs.get(key) ?? { label: m.professionBn.trim(), count: 0 };
+    const e = profs.get(key) ?? { label: PROFESSION_LABEL.get(key) ?? m.professionBn.trim(), count: 0 };
     e.count++;
     profs.set(key, e);
   }

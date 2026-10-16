@@ -1,10 +1,13 @@
-import Link from 'next/link';
-import { bn, initial, partyColor, type Member, type Party } from '@/lib/data';
+import Link from '@/i18n/Link';
+import { partyColor, type Member, type Party } from '@/lib/data';
+import { getT } from '@/i18n/server';
+import { personName, seatName, partyName, partyShort, noParty } from '@/i18n/names';
 import MemberPhoto from './MemberPhoto';
+import { memberInitial } from './mp/initial';
 import PartyBadge from './PartyBadge';
 import Icon from './Icon';
 import { siteUrl } from '@/lib/site';
-import { partyLogo } from '@/lib/partyLogos';
+import { partyLogo, logoLicence } from '@/lib/partyLogos';
 
 export function Page({ children }: { children: React.ReactNode }) {
   return <div className="mx-auto max-w-[1200px] px-4 sm:px-5">{children}</div>;
@@ -42,7 +45,7 @@ export function PageHead({
 }
 
 /** A section heading with an optional link on the right, used on every listing page. */
-export function SectionHead({
+export async function SectionHead({
   title,
   href,
   linkLabel,
@@ -53,6 +56,7 @@ export function SectionHead({
   linkLabel?: string;
   count?: string;
 }) {
+  const t = await getT();
   return (
     <div className="flex items-baseline justify-between gap-4">
       <h2 className="display text-[22px] sm:text-[26px] flex items-center gap-2.5">
@@ -62,7 +66,7 @@ export function SectionHead({
       </h2>
       {href && (
         <Link href={href} className="shrink-0 text-[14px] font-semibold text-brand hover:underline whitespace-nowrap">
-          {linkLabel ?? 'সব দেখুন'} →
+          {linkLabel ?? t('সব দেখুন', 'See all')} →
         </Link>
       )}
     </div>
@@ -125,17 +129,18 @@ export function PartyMark({ abbr, size = 52 }: { abbr: string; size?: number }) 
 }
 
 /** Where a party's logo came from and on what terms; a CC BY licence needs its author named. */
-export function LogoCredit({ abbr }: { abbr: string }) {
+export async function LogoCredit({ abbr }: { abbr: string }) {
   const logo = partyLogo(abbr);
   if (!logo) return null;
-  const where = logo.page.includes('commons.wikimedia.org') ? 'উইকিমিডিয়া কমন্স' : 'বাংলা উইকিপিডিয়া';
+  const t = await getT();
+  const where = logo.page.includes('commons.wikimedia.org') ? t('উইকিমিডিয়া কমন্স', 'Wikimedia Commons') : t('বাংলা উইকিপিডিয়া', 'Bangla Wikipedia');
   const link = 'underline decoration-rule underline-offset-2 hover:text-brand';
   return (
     <span>
       <a href={logo.page} target="_blank" rel="noopener noreferrer" className={link}>{where}</a>
       {logo.author && <>, {logo.author}</>}
       {', '}
-      {logo.licenceUrl ? <a href={logo.licenceUrl} target="_blank" rel="noopener noreferrer" className={link}>{logo.licence}</a> : logo.licence}
+      {logo.licenceUrl ? <a href={logo.licenceUrl} target="_blank" rel="noopener noreferrer" className={link}>{logoLicence(logo, t.lang)}</a> : logoLicence(logo, t.lang)}
     </span>
   );
 }
@@ -156,7 +161,8 @@ export function DocLink({ href, children }: { href: string; children: React.Reac
 }
 
 /** A member as a card: photo beside the name on a phone, photo above it in a grid from sm up. */
-export function MemberCard({ m, badge }: { m: Member; badge?: string }) {
+export async function MemberCard({ m, badge }: { m: Member; badge?: string }) {
+  const t = await getT();
   const badgeClass = 'px-2.5 py-1 rounded-full bg-ink text-white text-[11.5px] font-bold whitespace-nowrap';
   return (
     <Link
@@ -165,38 +171,39 @@ export function MemberCard({ m, badge }: { m: Member; badge?: string }) {
       style={{ borderTopColor: partyColor(m.party?.abbr), borderTopWidth: 3 }}
     >
       <div className="shrink-0 flex items-start justify-between gap-3">
-        <MemberPhoto src={m.photoUrl} alt="" initial={initial(m)} size={64} sizeClass="w-14 h-14 sm:w-16 sm:h-16" />
+        <MemberPhoto src={m.photoUrl} alt="" initial={memberInitial(m, t.lang)} size={64} sizeClass="w-14 h-14 sm:w-16 sm:h-16" />
         {badge && <span className={`hidden sm:inline-block ${badgeClass}`}>{badge}</span>}
       </div>
       <span className="grow min-w-0 flex flex-col gap-1">
         {badge && <span className={`sm:hidden self-start mb-0.5 ${badgeClass}`}>{badge}</span>}
         <span className="display text-[16.5px] sm:text-[17px] leading-snug sm:min-h-[2.6em] group-hover:text-brand transition-colors">
-          {m.nameBn || m.nameEn}
+          {personName(m, t.lang)}
         </span>
         <span className="text-[13.5px] text-muted">
-          {m.seat?.nameBn ?? 'আসন নেই'}
+          {m.seat ? seatName(m.seat, t.lang) : t('আসন নেই', 'No seat')}
         </span>
         <span className="flex items-center gap-2 text-[13px] font-semibold text-inksoft mt-1 sm:mt-auto sm:pt-3">
           <PartyDot abbr={m.party?.abbr} />
-          <span className="truncate">{m.party?.nameBn ?? m.party?.abbr ?? 'দল নেই'}</span>
+          <span className="truncate">{m.party ? partyName(m.party, t.lang) : noParty(t.lang)}</span>
         </span>
       </span>
     </Link>
   );
 }
 
-export function MemberRow({ m }: { m: Member }) {
+export async function MemberRow({ m }: { m: Member }) {
+  const t = await getT();
   return (
     <Link
       href={`/mp/${m.slug}`}
       className="bg-surface border border-rule rounded-card shadow-card ps-3 pe-4 py-3 flex items-center gap-3.5 hover:border-brand hover:shadow-lift transition-all"
       style={{ borderInlineStartColor: partyColor(m.party?.abbr), borderInlineStartWidth: 3 }}
     >
-      <MemberPhoto src={m.photoUrl} alt="" initial={initial(m)} size={44} />
+      <MemberPhoto src={m.photoUrl} alt="" initial={memberInitial(m, t.lang)} size={44} />
       <span className="grow min-w-0 flex flex-col gap-0.5">
-        <span className="display text-[15.5px] truncate">{m.nameBn || m.nameEn}</span>
+        <span className="display text-[15.5px] truncate">{personName(m, t.lang)}</span>
         <span className="text-[13px] text-muted truncate">
-          {[m.seat?.nameBn, m.party?.abbr].filter(Boolean).join(', ')}
+          {[m.seat ? seatName(m.seat, t.lang) : null, m.party ? (t.en ? partyShort(m.party, 'en') : m.party.abbr) : null].filter(Boolean).join(', ')}
         </span>
       </span>
       <Icon name="arrow" size={16} className="text-muted" />
@@ -209,7 +216,7 @@ export function MemberRow({ m }: { m: Member }) {
  * the constituency result and the seated parliament are different numbers,
  * because the fifty reserved seats are allocated after the general result.
  */
-export function CompositionBar({
+export async function CompositionBar({
   parties,
   total,
   majority,
@@ -218,12 +225,13 @@ export function CompositionBar({
   total: number;
   majority: number;
 }) {
+  const t = await getT();
   const top = parties.slice(0, 4);
   const restSeats = parties.slice(4).reduce((n, p) => n + p.seats, 0);
   const rows = [
-    ...top.map((p) => ({ label: p.nameBn ?? p.abbr, abbr: p.abbr, seats: p.seats })),
+    ...top.map((p) => ({ label: partyName(p, t.lang), abbr: p.abbr, seats: p.seats })),
     ...(restSeats
-      ? [{ label: `অন্য ${bn(parties.length - 4)} দল`, abbr: 'other', seats: restSeats }]
+      ? [{ label: t(`অন্য ${t.n(parties.length - 4)} দল`, `${parties.length - 4} other parties`), abbr: 'other', seats: restSeats }]
       : []),
   ];
   const majorityPct = (majority / total) * 100;
@@ -240,7 +248,7 @@ export function CompositionBar({
           className="absolute top-0 -translate-x-1/2 text-[11px] font-bold whitespace-nowrap"
           style={{ left: `${majorityPct}%` }}
         >
-          সংখ্যাগরিষ্ঠতা {bn(majority)}
+          {t('সংখ্যাগরিষ্ঠতা', 'Majority')} {t.n(majority)}
         </div>
         <div
           className="bar-fill flex gap-0.5 h-[30px] rounded-md overflow-hidden"
@@ -257,7 +265,7 @@ export function CompositionBar({
                 color: r.abbr === 'BJEI' ? 'var(--color-ink)' : '#fff',
               }}
             >
-              {r.seats / total > 0.06 ? bn(r.seats) : ''}
+              {r.seats / total > 0.06 ? t.n(r.seats) : ''}
             </div>
           ))}
         </div>
@@ -271,7 +279,7 @@ export function CompositionBar({
               style={{ background: partyColor(r.abbr === 'other' ? null : r.abbr) }}
             />
             <span className="grow truncate">{r.label}</span>
-            <span className="font-bold tnum">{bn(r.seats)}</span>
+            <span className="font-bold tnum">{t.n(r.seats)}</span>
           </div>
         ))}
       </div>
@@ -302,7 +310,8 @@ export function Notice({ title, children }: { title: string; children: React.Rea
 }
 
 /** The trail above a page, and the same trail as BreadcrumbList data for search engines. */
-export function Breadcrumb({ items }: { items: { href?: string; label: string }[] }) {
+export async function Breadcrumb({ items }: { items: { href?: string; label: string }[] }) {
+  const t = await getT();
   const trail = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -310,11 +319,11 @@ export function Breadcrumb({ items }: { items: { href?: string; label: string }[
       '@type': 'ListItem',
       position: i + 1,
       name: it.label,
-      ...(it.href ? { item: `${siteUrl}${it.href === '/' ? '' : it.href}` } : {}),
+      ...(it.href ? { item: `${siteUrl}${t.href(it.href) === '/' ? '' : t.href(it.href)}` } : {}),
     })),
   };
   return (
-    <nav aria-label="পথ" className="flex flex-wrap gap-2 text-[13.5px] text-muted pt-6">
+    <nav aria-label={t('পথ', 'Breadcrumb')} className="flex flex-wrap gap-2 text-[13.5px] text-muted pt-6">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(trail) }} />
       {items.map((it, i) => (
         <span key={`${it.label}-${i}`} className="flex gap-2">
@@ -324,5 +333,23 @@ export function Breadcrumb({ items }: { items: { href?: string; label: string }[
         </span>
       ))}
     </nav>
+  );
+}
+
+/**
+ * Under text that was written in Bangla and translated for the English page
+ * (a biography, a seat's boundary): it says so, and links to the original.
+ * Nothing on a Bangla page.
+ */
+export async function TranslatedNote({ bnHref, className = '' }: { bnHref: string; className?: string }) {
+  const t = await getT();
+  if (!t.en) return null;
+  return (
+    <p className={`text-[12.5px] text-muted leading-snug ${className}`}>
+      Translated from Bangla.{' '}
+      <a href={bnHref} hrefLang="bn" className="underline decoration-rule underline-offset-2 hover:text-brand">
+        Read the original
+      </a>
+    </p>
   );
 }

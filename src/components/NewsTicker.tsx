@@ -3,7 +3,9 @@
 import { bnText } from '@/lib/bnText';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/Link';
+import { useT } from '@/i18n/client';
+import { outletName } from '@/i18n/names';
 
 export type TickerItem = { id: string; titleBn: string; sourceName: string; sourceUrl: string };
 
@@ -18,6 +20,7 @@ const REFRESH_MS = 5 * 60_000;
  * the outlet that published it; hovering or focusing stops the slide.
  */
 export default function NewsTicker({ initial }: { initial: TickerItem[] }) {
+  const t = useT();
   const [items, setItems] = useState(initial);
 
   useEffect(() => {
@@ -46,7 +49,8 @@ export default function NewsTicker({ initial }: { initial: TickerItem[] }) {
   const duration = Math.max(25, Math.round(chars / 6.5));
 
   const row = (copy: boolean) => (
-    <ul className="ticker-row flex shrink-0" aria-hidden={copy || undefined}>
+    // The headlines are the outlets' own, in Bangla, on the English pages too.
+    <ul className="ticker-row flex shrink-0" aria-hidden={copy || undefined} lang="bn">
       {items.map((n) => (
         <li key={n.id} className="flex items-center whitespace-nowrap">
           <a
@@ -57,7 +61,7 @@ export default function NewsTicker({ initial }: { initial: TickerItem[] }) {
             className="hover:text-brand"
           >
             {bnText(n.titleBn)}
-            <span className="ms-1.5 text-[12.5px] font-normal text-muted">({n.sourceName})</span>
+            <span className="ms-1.5 text-[12.5px] font-normal text-muted" lang={t.lang}>({outletName(n.sourceName, t.lang)})</span>
           </a>
         </li>
       ))}
@@ -65,14 +69,14 @@ export default function NewsTicker({ initial }: { initial: TickerItem[] }) {
   );
 
   return (
-    <section aria-label="সর্বশেষ সংবাদ" className="ticker bg-surface border-b border-rule">
+    <section aria-label={t('সর্বশেষ সংবাদ', 'Latest news')} className="ticker bg-surface border-b border-rule">
       <div className="mx-auto max-w-[1200px] ps-4 sm:ps-5 flex items-center h-10 gap-3">
         <Link
           href="/songbad"
           className="shrink-0 inline-flex items-center gap-2 h-8 px-3 rounded-md bg-live text-white text-[13px] font-bold hover:bg-danger transition-colors"
         >
           <span className="live-dot" aria-hidden="true" />
-          সর্বশেষ
+          {t('সর্বশেষ', 'Latest')}
         </Link>
         <div className="ticker-viewport grow min-w-0 overflow-hidden no-scrollbar">
           <div className="ticker-track text-[14px] font-semibold text-ink" style={{ '--ticker-duration': `${duration}s` } as React.CSSProperties}>

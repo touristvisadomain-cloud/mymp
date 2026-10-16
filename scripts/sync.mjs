@@ -26,6 +26,7 @@ import tls from 'node:tls';
 import { fixJoiners } from '../src/lib/joiners.mjs';
 import { PARLIAMENT_CA } from '../src/lib/parliament-ca.mjs';
 import { FLOORS, dataDrop, dataDropError } from '../src/lib/dataFloor.mjs';
+import { buildSearchIndex } from './search-index.mjs';
 
 const BASE = 'https://www.parliament.gov.bd';
 const HOST = 'www.parliament.gov.bd';
@@ -884,29 +885,10 @@ async function main() {
   const activity = { parliament, speakers, sessions, notices };
 
   // ---- search index ----
-  // Names only, in both scripts. Match keys are built in the browser, which halves
-  // the download for about 8 ms of work once on load.
-  // Districts group exactly as districtOf() in src/lib/data.ts, which makes the /jela
-  // pages: the source writes "Pabna 5" with a space, "Chittagong-8" beside Chattogram,
-  // and "Cox'sBazar" unspaced. Split naively, those were extra one-seat districts in
-  // search, and the Cox's Bazar hit linked to /jela/coxsbazar, which does not exist.
-  const DISTRICT_EN_ALIASES = { Chittagong: 'Chattogram', "Cox'sBazar": "Cox's Bazar" };
-  const districts = new Map();
-  for (const s of seats) {
-    if (s.reserved || !s.nameEn || !s.nameBn) continue;
-    const raw = s.nameEn.replace(/[\s-]+\d+$/, '').trim();
-    const en = DISTRICT_EN_ALIASES[raw] ?? raw;
-    const bnName = s.nameBn.replace(/[\s-]+[০-৯\d]+$/, '').trim();
-    if (!districts.has(en)) districts.set(en, bnName);
-  }
-
-  const searchIndex = [
-    ...seats.map((s) => ['seat', s.nameBn ?? '', s.nameEn ?? '', `/ason/${s.slug}`, s.reserved ? 'সংরক্ষিত আসন' : 'আসন']),
-    ...members.map((m) => ['member', m.nameBn ?? '', m.nameEn ?? '', `/mp/${m.slug}`,
-      [m.seat?.nameBn, m.party?.abbr, m.resignedOn ? 'পদত্যাগ করেছেন' : null].filter(Boolean).join(', ')]),
-    ...parties.map((p) => ['party', p.nameBn ?? '', `${p.nameEn ?? ''} ${p.abbr}`, `/dol/${p.slug}`, 'দল']),
-    ...[...districts].map(([en, bnName]) => ['district', bnName, en, `/jela/${slugify(en)}`, 'জেলা']),
-  ];
+  // Names only, in both scripts, with a subtitle in each (scripts/search-index.mjs).
+  // Match keys are built in the browser, which halves the download for about 8 ms
+  // of work once on load.
+  const searchIndex = await buildSearchIndex({ seats, members, parties });
 
   await mkdir(OUT, { recursive: true });
   for (const [name, value] of Object.entries({ members, committees, parties, seats, meta, activity, history })) {

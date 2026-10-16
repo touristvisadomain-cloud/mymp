@@ -23,7 +23,8 @@ export interface FinderSeat {
   district: string;
   districtEn: string | null;
   boundary: string | null;
-  member: { name: string; slug: string; party: string | null; partyBn: string | null; color: string; photo: string | null } | null;
+  /** `name` is the Bangla name; `nameEn`, given to English pages only, the English one. */
+  member: { name: string; nameEn?: string; slug: string; party: string | null; partyBn: string | null; color: string; photo: string | null } | null;
 }
 
 export type MatchKind = 'seat' | 'district' | 'upazila' | 'union' | 'ward' | 'place';
@@ -188,26 +189,37 @@ function searchSeats(query: string, seats: FinderSeat[], limit: number, prefix: 
   return out.sort((a, b) => b.score - a.score || a.seat.no - b.seat.no).slice(0, limit);
 }
 
+/** The address fields that name a place, most precise first. */
+const PLACE_KEYS = ['village', 'suburb', 'town', 'municipality', 'city_district', 'county', 'city', 'state_district'];
+
+/** A place name without the word that only names its kind: "সাভার উপজেলা" is সাভার. */
+export const cleanPlaceName = (v: string) =>
+  v.replace(/\s*(উপজেলা|জেলা|ইউনিয়ন|থানা|পৌরসভা|সিটি কর্পোরেশন|Upazila|Union|District|Thana|Municipality|City Corporation)\s*$/i, '').trim();
+
+/** placeNames, with the address field each name came from. */
+export function placeEntries(address: Record<string, string | undefined>): { key: string; name: string }[] {
+  const seen = new Set<string>();
+  const out: { key: string; name: string }[] = [];
+  for (const k of PLACE_KEYS) {
+    const v = address[k];
+    if (!v) continue;
+    const clean = cleanPlaceName(v);
+    const key = fold(clean);
+    if (clean && !seen.has(key)) {
+      seen.add(key);
+      out.push({ key: k, name: clean });
+    }
+  }
+  return out;
+}
+
 /**
  * The names an OpenStreetMap address gives for where someone stands, most
  * precise first: the union or town, the upazila, then the district. Words that
  * only name the kind of place are dropped ("সাভার উপজেলা" is সাভার).
  */
 export function placeNames(address: Record<string, string | undefined>): string[] {
-  const keys = ['village', 'suburb', 'town', 'municipality', 'city_district', 'county', 'city', 'state_district'];
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const k of keys) {
-    const v = address[k];
-    if (!v) continue;
-    const clean = v.replace(/\s*(উপজেলা|জেলা|ইউনিয়ন|থানা|পৌরসভা|সিটি কর্পোরেশন|Upazila|Union|District|Thana|Municipality|City Corporation)\s*$/i, '').trim();
-    const key = fold(clean);
-    if (clean && !seen.has(key)) {
-      seen.add(key);
-      out.push(clean);
-    }
-  }
-  return out;
+  return placeEntries(address).map((e) => e.name);
 }
 
 /* ---------------------------------------------------------------- English */

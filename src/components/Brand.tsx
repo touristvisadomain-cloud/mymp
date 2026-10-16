@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/i18n/Link';
 
 /*
  * The mymp logo, redrawn as vectors from the owner's artwork (Downloads/MY MP,
@@ -63,9 +63,10 @@ export function Lockup({ height = 28, tone = 'dark', className = '' }: { height?
   );
 }
 
-export default function Brand({ tone = 'dark', href = '/' }: { tone?: Tone; href?: string }) {
+/** The logo as the link home. `label` is its accessible name, in the page's language. */
+export default function Brand({ tone = 'dark', href = '/', label = 'আমার এমপি (mymp), হোম' }: { tone?: Tone; href?: string; label?: string }) {
   return (
-    <Link href={href} className="flex items-center shrink-0" aria-label="আমার এমপি (mymp), হোম">
+    <Link href={href} className="flex items-center shrink-0" aria-label={label}>
       <Lockup tone={tone} className="h-[25px] w-auto sm:h-[28px] lg:h-[30px]" />
     </Link>
   );

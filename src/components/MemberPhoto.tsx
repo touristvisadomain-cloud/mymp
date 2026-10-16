@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useT } from '@/i18n/client';
 
 /**
  * Portraits are served from parliament.gov.bd, a host we do not control, so every
@@ -23,7 +24,10 @@ export default function MemberPhoto({
   /** Responsive size classes (e.g. "w-20 h-20 sm:w-[120px] sm:h-[120px]"); `size` then only sets the image's own dimensions. */
   sizeClass?: string;
 }) {
+  const t = useT();
   const [failed, setFailed] = useState(false);
+  // On an English page a Bangla letter is not shown: the English name's first letter (from alt) takes its place, or none.
+  const letter = t.en && /[ঀ-৿]/.test(initial) ? (alt.match(/[A-Za-z]/)?.[0]?.toUpperCase() ?? '') : initial;
   const style = sizeClass ? {} : { width: size, height: size };
   const cls = `${sizeClass ?? ''} ${className}`.trim();
 
@@ -34,7 +38,7 @@ export default function MemberPhoto({
         aria-hidden="true"
         className={`display shrink-0 rounded-full bg-brandsoft text-brand font-bold grid place-items-center ${cls}`}
       >
-        {initial}
+        {letter}
       </span>
     );
   }

@@ -1,4 +1,5 @@
 import { LOCKUP_PARTS as L } from './Brand';
+import { getT } from '@/i18n/server';
 
 /*
  * The logo intro (owner, 2026-09-11): the mark rises, the green drop falls in,
@@ -12,7 +13,8 @@ import { LOCKUP_PARTS as L } from './Brand';
  */
 const SCRIPT = `(function(){try{var d=document.documentElement;if(sessionStorage.getItem('mymp-intro')||matchMedia('(prefers-reduced-motion: reduce)').matches)return;sessionStorage.setItem('mymp-intro','1');d.classList.add('intro-play');setTimeout(function(){d.classList.remove('intro-play')},1900)}catch(e){}})();`;
 
-export default function Intro() {
+export default async function Intro() {
+  const t = await getT();
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: SCRIPT }} />
@@ -24,7 +26,7 @@ export default function Intro() {
           <path className="intro-word" fill="var(--color-ink)" fillRule="evenodd" d={L.word} />
           <rect className="intro-bar" x={L.bar.x} y={L.bar.y} width={L.bar.w} height={L.bar.h} fill="var(--color-logo)" />
         </svg>
-        <p className="intro-tag">আমার এমপি</p>
+        <p className="intro-tag">{t('আমার এমপি', 'My MP')}</p>
       </div>
     </>
   );
