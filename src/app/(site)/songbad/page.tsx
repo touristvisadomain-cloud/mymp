@@ -7,6 +7,7 @@ import { NEWS_SOURCES } from '../../../../config/news-sources';
 import { Page, PageHead, Card, Empty, Stat } from '@/components/ui';
 import NewsBrowser from '@/components/NewsBrowser';
 import VideoStrip from '@/components/VideoStrip';
+import MonthCards from '@/components/MonthCards';
 import MemberPhoto from '@/components/MemberPhoto';
 
 export const metadata: Metadata = {
@@ -85,39 +86,33 @@ export default async function NewsPage() {
             <h2 id="by-month" className="display text-[22px] font-bold">মাস অনুযায়ী সংবাদ ও ভিডিও</h2>
             <p className="text-[13px] text-muted">ডিসেম্বর ২০২৫ থেকে, বর্তমান সংসদ সদস্যদের। মাসে চাপ দিলে সেই মাসের খবর।</p>
           </div>
-          <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
-            {figures.months.map((m) => {
-              const total = m.news + m.video;
-              const most = Math.max(...figures.months.map((x) => x.news + x.video));
-              const current = m.month === today.slice(0, 7);
-              return (
-                <li key={m.month}>
-                  <a
-                    href={`?d=${monthSpan(m.month, today)}`}
-                    className={`h-full bg-surface border rounded-card shadow-card p-4 flex flex-col gap-1.5 hover:border-brand hover:shadow-lift transition-all ${current ? 'border-brand' : 'border-rule'}`}
-                  >
-                    <span className="text-[13px] font-semibold text-muted">
-                      {monthName(m.month)}
-                      {current && <span className="ms-1.5 text-brand">· চলতি</span>}
-                    </span>
-                    <span className="display text-[26px] font-bold leading-none tnum">{bnCount(total)}</span>
-                    <span className="h-1.5 rounded-full bg-rulesoft overflow-hidden" aria-hidden="true">
-                      <span className="block h-full rounded-full bg-brand" style={{ width: `${Math.max(3, Math.round((total / most) * 100))}%` }} />
-                    </span>
-                    <span className="text-[12.5px] text-inksoft tnum">
-                      {bnCount(m.news)} সংবাদ · {bnCount(m.video)} ভিডিও
-                    </span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
+          <MonthCards
+            listId="news-list"
+            months={(() => {
+              const most = Math.max(...figures.months.map((x) => x.news + x.video), 1);
+              return figures.months.map((m) => {
+                const total = m.news + m.video;
+                return {
+                  month: m.month,
+                  label: monthName(m.month),
+                  span: monthSpan(m.month, today),
+                  current: m.month === today.slice(0, 7),
+                  total: bnCount(total),
+                  news: bnCount(m.news),
+                  video: bnCount(m.video),
+                  pct: Math.max(3, Math.round((total / most) * 100)),
+                };
+              });
+            })()}
+          />
         </section>
       )}
 
       <div className="pt-8 pb-14 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
         <div className="min-w-0 flex flex-col gap-8">
           {videos.length > 0 && <VideoStrip videos={videos} moreHref="?type=video" />}
+          {/* A month card above scrolls here. */}
+          <span id="news-list" className="block -mb-8 scroll-mt-24" aria-hidden="true" />
           {stories.length ? (
             <NewsBrowser stories={stories} members={members} outlets={outlets} today={today} />
           ) : (
