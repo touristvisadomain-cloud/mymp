@@ -287,3 +287,18 @@ test('a name written with initials keeps them', () => {
   assert.deepEqual(ids('লক্ষ্যহীন মানুষ মাঝি ছাড়া নৌকার মত: জিলানী'), []);
 });
 
+
+test('an office inside a quoted nickname is not the office holder', () => {
+  const members = [
+    { id: 'hafiz', nameBn: 'হাফিজ উদ্দিন আহমদ বীর বিক্রম', nameEn: 'Hafiz Uddin Ahmad', seatBn: 'ভোলা-৩', seatEn: 'Bhola-3', districtBn: 'ভোলা', districtEn: 'Bhola', partyBn: 'বাংলাদেশ জাতীয়তাবাদী দল', partyAbbr: 'BNP', posts: ['স্পিকার'], ministries: [], variants: [] },
+    { id: 'salahuddin', nameBn: 'সালাহউদ্দিন আহমদ', nameEn: 'Salahuddin Ahmed', seatBn: 'কক্সবাজার-১', seatEn: "Cox'sBazar-1", districtBn: 'কক্সবাজার', districtEn: "Cox's Bazar", partyBn: 'বাংলাদেশ জাতীয়তাবাদী দল', partyAbbr: 'BNP', posts: ['মন্ত্রী'], ministries: ['স্বরাষ্ট্র মন্ত্রণালয়'], variants: [] },
+  ];
+  const index = buildFeedIndex(members);
+  const ids = (title: string) => matchItem(index, { title }).map((m) => m.mpId);
+  // A Khulna crime story whose suspect is nicknamed "the Speaker" (2026-10-16).
+  assert.deepEqual(ids('খুলনায় পুলিশ পরিদর্শককে কোপানোর মামলায় ‘স্পিকার মিরাজ’ গ্রেপ্তার'), []);
+  assert.deepEqual(ids("খুলনায় পুলিশ পরিদর্শকের ওপর হামলা, ‘স্পিকার মিরাজ’সহ গ্রেপ্তার ২"), []);
+  // The Speaker himself, quoted or not, is still the Speaker.
+  assert.deepEqual(ids('সংসদ অধিবেশন সোমবার পর্যন্ত মুলতবি করলেন স্পিকার'), ['hafiz']);
+  assert.deepEqual(ids('‘সংসদ সবার’, বললেন স্পিকার'), ['hafiz']);
+});
