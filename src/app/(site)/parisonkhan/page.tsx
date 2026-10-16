@@ -72,8 +72,8 @@ function Split({ a, b, label }: { a: { label: string; n: number; tone: string };
 const SECTIONS: [string, string][] = [
   ['ason', 'দলভিত্তিক আসন'],
   ['boyos', 'বয়স'],
-  ['nari', 'নারী প্রতিনিধিত্ব'],
   ['pesha', 'পেশা'],
+  ['nari', 'নারী প্রতিনিধিত্ব'],
   ['obhiggota', 'অভিজ্ঞতা'],
   ['votar', 'ভোটার'],
 ];
@@ -116,7 +116,7 @@ export default function StatisticsPage() {
         <Stat label="সংসদীয় কমিটি" value={bn(committees.length)} note={`${bn(currentCommittees)}টির সদস্য তালিকা হালনাগাদ`} />
       </div>
 
-      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
         <Card id="ason" className="lg:col-span-2 p-6 flex flex-col gap-5 scroll-mt-24">
           <div className="flex flex-col gap-1">
             <h2 className="display text-[21px] font-bold">দলভিত্তিক আসন</h2>
@@ -168,7 +168,7 @@ export default function StatisticsPage() {
           </div>
           <Bars rows={s.ageBands} total={s.total} />
           {s.youngest && s.oldest && (
-            <div className="border-t border-rule pt-3 flex flex-col gap-1.5 text-[13.5px]">
+            <div className="mt-auto border-t border-rule pt-3 flex flex-col gap-1.5 text-[13.5px]">
               <div className="flex justify-between gap-3">
                 <span className="text-muted">সর্বকনিষ্ঠ</span>
                 <span className="text-end">
@@ -191,41 +191,6 @@ export default function StatisticsPage() {
           )}
         </Card>
 
-        <Card id="nari" className="p-6 flex flex-col gap-4 scroll-mt-24">
-          <div className="flex flex-col gap-1">
-            <h2 className="display text-[21px] font-bold">নারী প্রতিনিধিত্ব</h2>
-            <p className="text-[13px] text-muted">{bn(s.women)} জন নারী, {bn(s.total)} জনের মধ্যে</p>
-          </div>
-          <div
-            className="flex gap-0.5 h-[30px] rounded-md overflow-hidden"
-            role="img"
-            aria-label={`পুরুষ ${s.total - s.women}, নারী ${s.women}`}
-          >
-            <div className="flex items-center ps-2.5 text-[13px] font-bold tnum bg-[#b9b4a6] text-ink" style={{ flex: `${s.total - s.women} 1 0` }}>
-              পুরুষ {bn(s.total - s.women)}
-            </div>
-            <div className="flex items-center ps-2 text-[13px] font-bold tnum bg-brand text-white" style={{ flex: `${s.women} 1 0` }}>
-              {bn(s.women)}
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <div className="grow p-4 bg-paper rounded-lg flex flex-col gap-1">
-              <span className="display tnum text-[26px] font-extrabold text-brand leading-none">{bn(s.womenTerritorial)}</span>
-              <span className="text-[13px] text-inksoft leading-snug">সাধারণ আসনে নির্বাচিত<br />{bn(s.territorial)} জনের মধ্যে</span>
-            </div>
-            <div className="grow p-4 bg-paper rounded-lg flex flex-col gap-1">
-              <span className="display tnum text-[26px] font-extrabold text-brand leading-none">{bn(s.womenReserved)}</span>
-              <span className="text-[13px] text-inksoft leading-snug">সংরক্ষিত আসনে<br />{bn(s.reserved)} জনের মধ্যে</span>
-            </div>
-          </div>
-          <p className="text-[13px] text-muted border-t border-rule pt-3">
-            সংরক্ষিত আসন বাদ দিলে সাধারণ আসনে নারীর হার {bn(womenGeneralPct)}%।{' '}
-            <Link href="/sangrakkhito-ason" className="font-semibold text-brand hover:underline">
-              সংরক্ষিত আসনের সদস্যরা
-            </Link>
-          </p>
-        </Card>
-
         <Card id="pesha" className="p-6 flex flex-col gap-4 scroll-mt-24">
           <div className="flex flex-col gap-1">
             <h2 className="display text-[21px] font-bold">পেশা</h2>
@@ -234,10 +199,47 @@ export default function StatisticsPage() {
             </p>
           </div>
           <Bars rows={s.professions.slice(0, 8).map((p) => ({ label: p.label, count: p.count }))} total={s.withProfession} labelWidth="w-[96px]" />
-          <p className="text-[13px] text-muted border-t border-rule pt-3 leading-relaxed">
+          <p className="mt-auto text-[13px] text-muted border-t border-rule pt-3 leading-relaxed">
             {bn(s.total - s.withProfession)} জনের পেশা সংসদের তথ্যভান্ডারে নেই, তাই এই হিসাবে তাঁরা ধরা হয়নি।
             একই পেশার ভিন্ন বানান এক করে গোনা হয়েছে।
           </p>
+        </Card>
+
+        <Card id="nari" className="lg:col-span-2 p-6 grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-x-8 gap-y-4 items-center scroll-mt-24">
+          <div className="flex flex-col gap-4 min-w-0">
+            <div className="flex flex-col gap-1">
+              <h2 className="display text-[21px] font-bold">নারী প্রতিনিধিত্ব</h2>
+              <p className="text-[13px] text-muted">{bn(s.women)} জন নারী, {bn(s.total)} জনের মধ্যে</p>
+            </div>
+            <div
+              className="flex gap-0.5 h-[30px] rounded-md overflow-hidden"
+              role="img"
+              aria-label={`পুরুষ ${s.total - s.women}, নারী ${s.women}`}
+            >
+              <div className="flex items-center ps-2.5 text-[13px] font-bold tnum bg-[#b9b4a6] text-ink" style={{ flex: `${s.total - s.women} 1 0` }}>
+                পুরুষ {bn(s.total - s.women)}
+              </div>
+              <div className="flex items-center ps-2 text-[13px] font-bold tnum bg-brand text-white" style={{ flex: `${s.women} 1 0` }}>
+                {bn(s.women)}
+              </div>
+            </div>
+            <p className="text-[13px] text-muted">
+              সংরক্ষিত আসন বাদ দিলে সাধারণ আসনে নারীর হার {bn(womenGeneralPct)}%।{' '}
+              <Link href="/sangrakkhito-ason" className="font-semibold text-brand hover:underline">
+                সংরক্ষিত আসনের সদস্যরা
+              </Link>
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-paper rounded-lg flex flex-col gap-1">
+              <span className="display tnum text-[26px] font-extrabold text-brand leading-none">{bn(s.womenTerritorial)}</span>
+              <span className="text-[13px] text-inksoft leading-snug">সাধারণ আসনে নির্বাচিত<br />{bn(s.territorial)} জনের মধ্যে</span>
+            </div>
+            <div className="p-4 bg-paper rounded-lg flex flex-col gap-1">
+              <span className="display tnum text-[26px] font-extrabold text-brand leading-none">{bn(s.womenReserved)}</span>
+              <span className="text-[13px] text-inksoft leading-snug">সংরক্ষিত আসনে<br />{bn(s.reserved)} জনের মধ্যে</span>
+            </div>
+          </div>
         </Card>
       </div>
 
@@ -246,18 +248,18 @@ export default function StatisticsPage() {
         const max = Math.max(...x.bands.map((b) => b.count), 1);
         return (
           <section id="obhiggota" className="mt-10 flex flex-col gap-4 scroll-mt-24">
-            <div className="flex items-baseline justify-between gap-4">
-              <h2 className="display text-[24px]">সংসদে অভিজ্ঞতা</h2>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule pb-2.5">
+              <h2 className="display text-[24px] font-bold">সংসদে অভিজ্ঞতা</h2>
               <span className="text-[13px] text-muted">সংসদের তথ্যভান্ডার, ৪র্থ সংসদ থেকে</span>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-              <Card className="p-5 sm:p-6 flex flex-col gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+              <Card className="p-5 sm:p-6 flex flex-col gap-5">
                 <Split
                   label={`এবারই প্রথম ${x.firstTime}, আগেও সদস্য ${x.returning}`}
                   a={{ label: 'এবারই প্রথম', n: x.firstTime, tone: 'bg-brand' }}
                   b={{ label: 'আগেও সদস্য ছিলেন', n: x.returning, tone: 'bg-pjamaat' }}
                 />
-                <div className="flex flex-col gap-2.5">
+                <div className="grow flex flex-col justify-evenly gap-3">
                   {x.bands.map((b) => (
                     <div key={b.label} className="grid grid-cols-[130px_1fr_40px] items-center gap-3 text-[14px]">
                       <span className="text-muted">{b.label}</span>
@@ -286,7 +288,7 @@ export default function StatisticsPage() {
                 ) : (
                   <p className="text-[14px] text-muted">সংসদের তথ্যভান্ডারে কারও আগের মেয়াদ পাওয়া যায়নি।</p>
                 )}
-                <p className="text-[12px] text-muted leading-relaxed">১ম থেকে ৩য় ও ৬ষ্ঠ সংসদের রেকর্ড সেখানে নেই, তাই তার আগের মেয়াদ গোনা যায়নি।</p>
+                <p className="mt-auto text-[12px] text-muted leading-relaxed">১ম থেকে ৩য় ও ৬ষ্ঠ সংসদের রেকর্ড সেখানে নেই, তাই তার আগের মেয়াদ গোনা যায়নি।</p>
               </Card>
             </div>
           </section>
@@ -294,7 +296,7 @@ export default function StatisticsPage() {
       })()}
 
       <section id="votar" className="mt-10 flex flex-col gap-4 scroll-mt-24">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 border-b border-rule pb-2.5">
           <h2 className="display text-[24px] font-bold">ভোটার ও ভোটকেন্দ্র</h2>
           <p className="text-[13.5px] text-muted">
             সারা দেশের হিসাব, নির্বাচন কমিশনের প্রকাশিত তথ্য অনুযায়ী। আসনভিত্তিক ভোটার সংখ্যা এখনো যোগ করা হয়নি।
