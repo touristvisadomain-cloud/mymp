@@ -25,6 +25,8 @@ const CACHE = 'public, s-maxage=300, stale-while-revalidate=1800';
 // The mobile app reads this route too, and reads it from a web preview during
 // development; the data is the same public feed the site's own pages show.
 const HEADERS = { 'cache-control': CACHE, 'access-control-allow-origin': '*' };
+/** Errors and the empty feed are readable from the app too, but not cached. */
+const OPEN = { 'access-control-allow-origin': '*' };
 
 /** The current month in Dhaka, where the feed's days are counted. */
 const dhakaMonth = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' }).slice(0, 7);
@@ -32,7 +34,7 @@ const dhakaMonth = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asi
 async function handle(req: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
   const member = getMember(slug);
-  if (!member) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  if (!member) return NextResponse.json({ error: 'not found' }, { status: 404, headers: OPEN });
 
   const url = new URL(req.url);
   const month = url.searchParams.get('m');
@@ -53,13 +55,13 @@ async function handle(req: Request, ctx: { params: Promise<{ slug: string }> }) 
     if (fromDay || toDay) {
       const day = /^\d{4}-\d{2}-\d{2}$/;
       if (!fromDay || !toDay || !day.test(fromDay) || !day.test(toDay) || fromDay > toDay) {
-        return NextResponse.json({ error: 'bad range' }, { status: 400 });
+        return NextResponse.json({ error: 'bad range' }, { status: 400, headers: OPEN });
       }
       const items = await rangeItems(member.id, fromDay, toDay, typeFilter);
       return NextResponse.json({ from: fromDay, to: toDay, items, more: items.length >= RANGE_LIMIT }, { headers: HEADERS });
     }
     if (month) {
-      if (!/^\d{4}-\d{2}$/.test(month)) return NextResponse.json({ error: 'bad month' }, { status: 400 });
+      if (!/^\d{4}-\d{2}$/.test(month)) return NextResponse.json({ error: 'bad month' }, { status: 400, headers: OPEN });
       const items = await monthItems(member.id, month, typeFilter);
       return NextResponse.json({ month, items }, { headers: HEADERS });
     }
@@ -89,7 +91,7 @@ async function handle(req: Request, ctx: { params: Promise<{ slug: string }> }) 
     );
   } catch (e) {
     // Before the migration is run there is no feed; the section says so rather than breaking.
-    if (isMissingTable(e)) return NextResponse.json({ month: dhakaMonth(), pinned: [], items: [], months: [], total: 0, news: 0, video: 0, outlets: [], startsAt: null, unavailable: true });
+    if (isMissingTable(e)) return NextResponse.json({ month: dhakaMonth(), pinned: [], items: [], months: [], total: 0, news: 0, video: 0, outlets: [], startsAt: null, unavailable: true }, { headers: OPEN });
     throw e;
   }
 }
