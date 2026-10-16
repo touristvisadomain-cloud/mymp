@@ -86,6 +86,16 @@ export default function ElectionPage() {
         }
       />
 
+      <section id="manchitro" className="mt-8 flex flex-col gap-4 scroll-mt-24">
+        <div className="flex flex-col gap-1.5">
+          <h2 className="display text-[26px] font-bold">কোন জেলায় কে জিতল</h2>
+          <p className="text-[14.5px] text-inksoft text-pretty">
+            দেশের মানচিত্রে {bn(GENERAL_SEATS)}টি আসন, প্রত্যেকটি তার জায়গায় দলের প্রতীকে; প্রতীকে চাপ দিলে আসনের এলাকা আর সংসদ সদস্য। “জেলার রং”-এ প্রতিটি জেলা সেখানে বেশিরভাগ আসন যে দলের, সেই রঙে।
+          </p>
+        </div>
+        <ElectionMap seats={pinSeats()} />
+      </section>
+
       <Card className="mt-8 px-5 sm:px-6 py-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
         {([
           ['নির্বাচন', parliament.electionDate],
@@ -224,16 +234,6 @@ export default function ElectionPage() {
           সাধারণ (আসনভিত্তিক) আসনে সংসদের তথ্যভান্ডারে নথিভুক্ত সদস্য অনুযায়ী; সংরক্ষিত নারী আসন বাদ। উপনির্বাচন ও অসম্পূর্ণ রেকর্ডের কারণে
           কোনো কোনো সংসদে সংখ্যা সরকারি ফলের সঙ্গে সামান্য ভিন্ন হতে পারে; “নথিভুক্ত” কলামে সেটি দেখা যায়। ১ম থেকে ৩য় ও ৬ষ্ঠ সংসদের রেকর্ড সেখানে নেই।
         </p>
-      </section>
-
-      <section id="manchitro" className="mt-10 flex flex-col gap-4 scroll-mt-24">
-        <div className="flex flex-col gap-1.5">
-          <h2 className="display text-[26px] font-bold">কোন জেলায় কে জিতল</h2>
-          <p className="text-[14.5px] text-inksoft text-pretty">
-            দেশের মানচিত্রে {bn(GENERAL_SEATS)}টি আসন, প্রত্যেকটি তার জায়গায় দলের প্রতীকে; প্রতীকে চাপ দিলে আসনের এলাকা আর সংসদ সদস্য। “জেলার রং”-এ প্রতিটি জেলা সেখানে বেশিরভাগ আসন যে দলের, সেই রঙে।
-          </p>
-        </div>
-        <ElectionMap seats={pinSeats()} />
       </section>
 
       <section id="jela" className="mt-10 pb-14 flex flex-col gap-5">
