@@ -72,12 +72,15 @@ export function SectionHead({
 export function Card({
   children,
   className = '',
+  id,
 }: {
   children: React.ReactNode;
   className?: string;
+  /** An anchor, for a link to this card. */
+  id?: string;
 }) {
   return (
-    <div className={`reveal bg-surface border border-rule rounded-card shadow-card ${className}`}>{children}</div>
+    <div id={id} className={`reveal bg-surface border border-rule rounded-card shadow-card ${className}`}>{children}</div>
   );
 }
 
