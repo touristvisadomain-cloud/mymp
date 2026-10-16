@@ -1,5 +1,7 @@
 import { publishedNews, getMemberById, partyColor, dateBn, bnText } from './data';
 import { groupStories } from './newsStories';
+import { makeT, type Lang } from '@/i18n/core';
+import { personName } from '@/i18n/names';
 
 /**
  * Published news as stories, shaped for the pages: plain values only, so the
@@ -12,13 +14,14 @@ export interface StoryLink {
   url: string;
 }
 
-export interface StoryMember { slug: string; name: string; party: string | null; color: string }
+/** `name` is the Bangla name; `nameEn`, when the producer filled it, the English one for English pages. */
+export interface StoryMember { slug: string; name: string; nameEn?: string; party: string | null; color: string }
 
 export interface StoryView {
   id: string;
   /** yyyy-mm-dd of the lead headline. */
   date: string;
-  /** "শুক্রবার, ১২ সেপ্টেম্বর ২০২৬" */
+  /** "শুক্রবার, ১২ সেপ্টেম্বর ২০২৬", always in Bangla (stories are shared by both languages); English pages use dayLabel(date, 'en'). */
   dateLabel: string;
   /** When the lead headline was published, ISO; a bare date when the source gave no clock. */
   publishedAt?: string;
@@ -36,9 +39,15 @@ export interface StoryView {
 
 const WEEKDAYS = ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'];
 
-export const dayLabel = (iso: string) => {
+/** "শুক্রবার, ১২ সেপ্টেম্বর ২০২৬" / "Friday, 12 September 2026". */
+export const dayLabel = (iso: string, lang: Lang = 'bn') => {
   const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
-  return Number.isNaN(d.getTime()) ? iso : `${WEEKDAYS[d.getUTCDay()]}, ${dateBn(iso.slice(0, 10))}`;
+  if (Number.isNaN(d.getTime())) return iso;
+  if (lang === 'en') {
+    const t = makeT('en');
+    return `${t.weekday(d.getUTCDay())}, ${t.date(iso.slice(0, 10))}`;
+  }
+  return `${WEEKDAYS[d.getUTCDay()]}, ${dateBn(iso.slice(0, 10))}`;
 };
 
 const nameWords = (id: string) => {
@@ -62,7 +71,7 @@ export function allStories(): StoryView[] {
       lead: link(lead),
       also: also.map(link),
       member: m
-        ? { slug: m.slug, name: m.nameBn ?? m.nameEn ?? '', party: m.party?.abbr ?? null, color: partyColor(m.party?.abbr) }
+        ? { slug: m.slug, name: m.nameBn ?? m.nameEn ?? '', nameEn: personName(m, 'en'), party: m.party?.abbr ?? null, color: partyColor(m.party?.abbr) }
         : null,
     };
   });

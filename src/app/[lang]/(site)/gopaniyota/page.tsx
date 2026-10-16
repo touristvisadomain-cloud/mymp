@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { shareGraph } from '@/lib/seo';
+import { shareGraph, langAlternates } from '@/lib/seo';
 import { Page, PageHead, Card } from '@/components/ui';
 import { dateBn } from '@/lib/data';
 import { SITE_EMAIL, SITE_FACEBOOK } from '@/lib/site';
+import { getT } from '@/i18n/server';
 
 /*
  * The owner's text (2026-09-12). Three sentences are adjusted to match how the
@@ -10,15 +11,24 @@ import { SITE_EMAIL, SITE_FACEBOOK } from '@/lib/site';
  * some facts come from news outlets and Wikipedia, cited on each page; and the
  * correction form keeps only the correction it is sent. Home addresses were
  * taken off the member pages so that "we do not publish them" is true.
+ *
+ * The English is a translation of the Bangla, sentence for sentence: it says
+ * no more and no less. Change both together.
  */
 const UPDATED = '2026-09-12';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/gopaniyota' },
-  openGraph: shareGraph('/gopaniyota'),
-  title: 'গোপনীয়তা নীতি ও ব্যবহারের শর্ত',
-  description: 'আমার এমপি সাইট আপনার সম্পর্কে কোনো ব্যক্তিগত তথ্য সংগ্রহ করে না। সদস্যদের কোন তথ্য প্রকাশ হয় আর কোনটি হয় না, এবং সাইটের তথ্য কোন শর্তে ব্যবহার করা যায়, এই পাতায়।',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    alternates: langAlternates(t.lang, '/gopaniyota'),
+    openGraph: shareGraph('/gopaniyota', undefined, t.lang),
+    title: t('গোপনীয়তা নীতি ও ব্যবহারের শর্ত', 'Privacy policy and terms of use'),
+    description: t(
+      'আমার এমপি সাইট আপনার সম্পর্কে কোনো ব্যক্তিগত তথ্য সংগ্রহ করে না। সদস্যদের কোন তথ্য প্রকাশ হয় আর কোনটি হয় না, এবং সাইটের তথ্য কোন শর্তে ব্যবহার করা যায়, এই পাতায়।',
+      'The My MP site collects no personal information about you. Which information about members is published and which is not, and on what terms the site’s information may be used, are set out on this page.',
+    ),
+  };
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -41,15 +51,119 @@ function Contact() {
   );
 }
 
-export default function PrivacyPage() {
+/** <Contact /> in English: "by messaging our Facebook page or by emailing …". */
+function ContactEn() {
+  return (
+    <>
+      by messaging our{' '}
+      <a href={SITE_FACEBOOK} target="_blank" rel="noopener noreferrer" className={link}>Facebook page</a> or by emailing{' '}
+      <a href={`mailto:${SITE_EMAIL}`} className={link}>{SITE_EMAIL}</a>
+    </>
+  );
+}
+
+export default async function PrivacyPage() {
+  const t = await getT();
   return (
     <Page>
       <PageHead
-        eyebrow="আমার এমপি"
-        title="গোপনীয়তা নীতি ও ব্যবহারের শর্ত"
-        lede={`সংক্ষেপে: এই সাইট আপনার সম্পর্কে কোনো ব্যক্তিগত তথ্য সংগ্রহ করে না। সর্বশেষ হালনাগাদ: ${dateBn(UPDATED)}।`}
+        eyebrow={t('আমার এমপি', 'My MP')}
+        title={t('গোপনীয়তা নীতি ও ব্যবহারের শর্ত', 'Privacy policy and terms of use')}
+        lede={
+          t.en
+            ? `In short: this site collects no personal information about you. Last updated: ${t.date(UPDATED)}.`
+            : `সংক্ষেপে: এই সাইট আপনার সম্পর্কে কোনো ব্যক্তিগত তথ্য সংগ্রহ করে না। সর্বশেষ হালনাগাদ: ${dateBn(UPDATED)}।`
+        }
       />
 
+      {t.en ? (
+        <div className="pt-8 pb-14 flex flex-col gap-6 max-w-[760px]">
+          <Section title="What we keep about you">
+            <p>
+              Nothing. This site has no way to open an account or to log in, and no form asks for your name, email or phone number.
+              What you type in the search box stays in your browser; it is not sent to or stored on any server.
+            </p>
+            <p>
+              If you send something through &ldquo;Report a correction&rdquo; on a member&rsquo;s page, only the correction you write and
+              the link to your source are kept, for checking; there too, no name or email is asked for.
+            </p>
+            <p>
+              At present this site has no advertising, no cookies and no third-party tracking scripts. If, in future, an analytics service
+              is added to understand how many people are visiting the site, this page will say so, and no personal identity will be
+              collected through it either.
+            </p>
+            <p>
+              The site is hosted on our own server. Like any web server, it keeps ordinary server logs for a limited time (such as IP
+              addresses and the times of requests), which help with security and with keeping the service running. We do not look at these logs
+              or use them for any purpose.
+            </p>
+            <p>
+              The photos of members of parliament are copies of the photos on the Parliament&rsquo;s website, loaded from our image storage
+              (Supabase). When you view a photo, your browser sends a request to that storage; as with any web server, ordinary logs are
+              kept there too, which we do not use for any purpose.
+            </p>
+          </Section>
+
+          <Section title="Android app">
+            <p>
+              The &ldquo;My MP&rdquo; app shows this same site&rsquo;s information and works on the same policy: no account is needed, no
+              personal information is collected, and there is no advertising or third-party tracking. Our answer on Google Play&rsquo;s
+              Data safety form is therefore &ldquo;No data collected&rdquo;.
+            </p>
+            <p>
+              The app asks only for permission to use the internet, to fetch information from mymp.bd. The list of members of parliament
+              is stored on your phone itself, so that the app opens even when there is no network; this copy stays only on your phone,
+              is not sent anywhere, and is deleted when you delete the app.
+            </p>
+            <p>
+              Tapping a news headline opens the news outlet&rsquo;s own page in your browser; what happens from there on is governed by
+              that outlet&rsquo;s own policy. The news pictures, too, are shown from the outlets&rsquo; own servers and are not copied
+              anywhere on our side.
+            </p>
+          </Section>
+
+          <Section title="Information about members of parliament">
+            <p>
+              The people whose information is on this site are elected representatives of the people. The core information is taken
+              from the public databases of the Parliament of Bangladesh and the Election Commission; some information, such as election
+              results, education or party history, comes from public sources such as news outlets and Wikipedia, and the source of each
+              item is given on the page concerned. We add no information of our own, and we do not guess.
+            </p>
+            <p>
+              Even where members&rsquo; personal mobile numbers or home addresses are in Parliament&rsquo;s database, we do not publish
+              them. Only official contact details are shown.
+            </p>
+            <p>
+              If a member or their office believes that any information is wrong, out of date or inappropriate, let us know, with a
+              source, <ContactEn />, and it is checked and acted on within 24 hours.
+            </p>
+          </Section>
+
+          <Section title="Terms of use">
+            <p>
+              All the information on the site is taken from public sources, most of them government sources. Anyone may use, quote or
+              share this information, citing &ldquo;My MP, mymp.bd&rdquo; as the source. The site&rsquo;s design, text and organised
+              database are the site&rsquo;s own; the whole site or its code may not be copied without permission.
+            </p>
+            <p>
+              Every effort is made to keep the information accurate and up to date, but the definitive source is always the Parliament
+              and the Election Commission. Before using it for any legal, official or journalistic purpose, check it against the
+              original source. The site accepts no liability for any loss caused by an error in the information.
+            </p>
+            <p>
+              My MP is an independent, private initiative. It is not a website of the Government of Bangladesh or of the Parliament, and
+              it has no connection with any member of parliament, political party or the Election Commission.
+            </p>
+          </Section>
+
+          <Section title="Changes to this policy, and contact">
+            <p>
+              If the policy changes, this will be announced on this page by changing the date it was last updated. For any question or
+              correction, let us know <ContactEn />.
+            </p>
+          </Section>
+        </div>
+      ) : (
       <div className="pt-8 pb-14 flex flex-col gap-6 max-w-[760px]">
         <Section title="আপনার সম্পর্কে আমরা কী রাখি">
           <p>
@@ -132,6 +246,7 @@ export default function PrivacyPage() {
           </p>
         </Section>
       </div>
+      )}
     </Page>
   );
 }
