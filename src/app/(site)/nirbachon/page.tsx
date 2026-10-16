@@ -6,9 +6,7 @@ import { Page, PageHead, Card, Stat, CompositionBar, Empty, PartyDot } from '@/c
 import { parliament } from '@/lib/activity';
 import { parliamentsWithRecords, partySeatsOf, parliamentLabel, resultForSeat } from '@/lib/history';
 import { partyColor } from '@/lib/data';
-import DistrictMap, { type MapDistrict } from '@/components/DistrictMap';
 import ElectionMap, { type PinSeat } from '@/components/ElectionMap';
-import { DISTRICT_TILES, TILE_COLUMNS } from '@/lib/districtTiles';
 import { initial } from '@/lib/data';
 
 // Seats of this parliament with a published result, and each seat's winner.
@@ -19,14 +17,6 @@ const winnerOf = (seatNo: number) => {
   return top ? { votes: top.votes } : null;
 };
 const publishedSeats = seats.filter((s) => !s.reserved && winnerOf(s.no)).length;
-
-/** The winner's votes and lead over the runner-up, where the result is published. */
-const marginOf = (seatNo: number) => {
-  const r = resultForSeat(seatNo, 13);
-  if (!r) return null;
-  const [a, b] = [...r.candidates].sort((x, y) => y.votes - x.votes);
-  return a ? { votes: a.votes, margin: b ? a.votes - b.votes : null } : null;
-};
 
 /** Every seat for the map of the country: where it is comes from public/geo (ElectionMap), the rest from here. */
 function pinSeats(): PinSeat[] {
@@ -58,51 +48,6 @@ function pinSeats(): PinSeat[] {
   return out;
 }
 
-/** Each district for the tile map: its seats, who holds them, and the parties by seats held. */
-function mapDistricts(): { districts: MapDistrict[]; legend: { abbr: string; name: string; color: string; districts: number }[] } {
-  const bySlug = new Map<string, MapDistrict>();
-  for (const seat of seats) {
-    if (seat.reserved) continue;
-    const d = districtOf(seat);
-    const tile = d ? DISTRICT_TILES[d.slug] : undefined;
-    if (!d || !tile) continue;
-    const e = bySlug.get(d.slug) ?? { slug: d.slug, name: d.bn, tile, seats: [], parties: [] };
-    const m = seat.memberId ? getMemberById(seat.memberId) : undefined;
-    const sitting = m && !m.resignedOn ? m : undefined;
-    const r = marginOf(seat.no);
-    e.seats.push({
-      no: seat.no,
-      seat: seat.nameBn ?? seat.nameEn ?? '',
-      slug: seat.slug,
-      member: sitting ? { name: sitting.nameBn ?? sitting.nameEn ?? '', slug: sitting.slug } : null,
-      party: sitting?.party?.abbr ?? null,
-      partyBn: sitting ? partyShortBn(sitting.party) : null,
-      color: sitting ? partyColor(sitting.party?.abbr) : 'var(--color-rule)',
-      votes: r?.votes ?? null,
-      margin: r?.margin ?? null,
-    });
-    bySlug.set(d.slug, e);
-  }
-  const lead = new Map<string, { abbr: string; name: string; color: string; districts: number }>();
-  for (const d of bySlug.values()) {
-    d.seats.sort((a, b) => a.no - b.no);
-    const count = new Map<string, MapDistrict['parties'][number]>();
-    for (const s of d.seats) {
-      if (!s.party) continue;
-      const p = count.get(s.party) ?? { abbr: s.party, name: s.partyBn ?? s.party, color: s.color, seats: 0 };
-      p.seats++;
-      count.set(s.party, p);
-    }
-    d.parties = [...count.values()].sort((a, b) => b.seats - a.seats);
-    const [a, b] = d.parties;
-    if (a && !(b && b.seats === a.seats)) {
-      const l = lead.get(a.abbr) ?? { abbr: a.abbr, name: a.name, color: a.color, districts: 0 };
-      l.districts++;
-      lead.set(a.abbr, l);
-    }
-  }
-  return { districts: [...bySlug.values()], legend: [...lead.values()].sort((a, b) => b.districts - a.districts) };
-}
 export const metadata: Metadata = {
   alternates: { canonical: '/nirbachon' },
   openGraph: shareGraph('/nirbachon'),
@@ -125,7 +70,6 @@ export default function ElectionPage() {
     byDistrict.set(d.en, e);
   }
   const districts = [...byDistrict.values()].sort((a, b) => a.bn.localeCompare(b.bn, 'bn'));
-  const map = mapDistricts();
 
   return (
     <Page>
@@ -289,7 +233,7 @@ export default function ElectionPage() {
             দেশের মানচিত্রে {bn(GENERAL_SEATS)}টি আসন, প্রত্যেকটি তার জায়গায় দলের প্রতীকে; প্রতীকে চাপ দিলে আসনের এলাকা আর সংসদ সদস্য। “জেলার রং”-এ প্রতিটি জেলা সেখানে বেশিরভাগ আসন যে দলের, সেই রঙে।
           </p>
         </div>
-        <ElectionMap seats={pinSeats()} tiles={<DistrictMap districts={map.districts} columns={TILE_COLUMNS} legend={map.legend} />} />
+        <ElectionMap seats={pinSeats()} />
       </section>
 
       <section id="jela" className="mt-10 pb-14 flex flex-col gap-5">
