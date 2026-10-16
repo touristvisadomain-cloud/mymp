@@ -361,13 +361,17 @@ export default function SeatMap({
       if (seat) {
         const color = resolve(seat.color);
         const mine = fc.features.filter((f) => f.properties.seats[seat.slug]);
+        const whole = mine.filter((f) => f.properties.seats[seat.slug] === 'whole');
         setSummary({
-          whole: placeList(mine.filter((f) => f.properties.seats[seat.slug] === 'whole')),
+          whole: placeList(whole),
           part: placeList(mine.filter((f) => f.properties.seats[seat.slug] === 'part')),
         });
         drawing = {
           features: fc.features,
-          focus: mine.length ? mine : fc.features,
+          // The map opens on what the seat holds whole: Dhaka-14's six wards,
+          // not the whole of Savar for the two unions it holds there, which
+          // would leave the wards a speck. A seat of parts alone opens on them.
+          focus: whole.length ? whole : mine.length ? mine : fc.features,
           look: (f) => {
             const p = f.properties.seats[seat.slug];
             if (p === 'whole') return { fill: color, fillOpacity: 0.16, stroke: color, weight: 3.5, dashed: false };
