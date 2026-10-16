@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,8 +21,8 @@ export default function GlobalNotFound() {
           <h1 className="text-[28px] font-bold">পাতাটি পাওয়া যায়নি</h1>
           <p className="text-[17px] text-inksoft" lang="en">Page not found</p>
           <div className="flex flex-wrap justify-center gap-3 pt-2">
-            <a href="/" className="h-11 px-5 inline-flex items-center rounded-lg bg-brand text-white font-semibold">হোম</a>
-            <a href="/en" lang="en" className="h-11 px-5 inline-flex items-center rounded-lg border border-rule font-semibold">Home (English)</a>
+            <Link href="/" className="h-11 px-5 inline-flex items-center rounded-lg bg-brand text-white font-semibold">হোম</Link>
+            <Link href="/en" lang="en" className="h-11 px-5 inline-flex items-center rounded-lg border border-rule font-semibold">Home (English)</Link>
           </div>
         </main>
       </body>
