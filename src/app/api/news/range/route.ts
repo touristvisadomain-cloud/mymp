@@ -10,13 +10,14 @@ import { NextResponse } from 'next/server';
 import { rangeCounts, rangeLatest } from '@/lib/feed/store';
 import { toStory } from '@/lib/feed/storyView';
 import { isMissingTable } from '@/lib/posts/db';
+import { gzipJson } from '@/lib/gzipJson';
 
 export const dynamic = 'force-dynamic';
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const HEADERS = { 'cache-control': 'public, s-maxage=300, stale-while-revalidate=1800' };
 
-export async function GET(req: Request) {
+async function handle(req: Request) {
   const url = new URL(req.url);
   const from = url.searchParams.get('from') ?? '';
   const to = url.searchParams.get('to') ?? '';
@@ -32,4 +33,9 @@ export async function GET(req: Request) {
     if (isMissingTable(e)) return NextResponse.json({ from, to, stories: [], next: null, unavailable: true });
     throw e;
   }
+}
+
+/** The JSON, gzipped for a browser that accepts it (lib/gzipJson). */
+export async function GET(req: Request) {
+  return gzipJson(req, await handle(req));
 }

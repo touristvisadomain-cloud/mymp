@@ -15,6 +15,7 @@ import { NextResponse } from 'next/server';
 import { getMember } from '@/lib/data';
 import { monthCounts, monthItems, pinnedItems, recentItems, rangeItems, feedSettings, RANGE_LIMIT, type FeedType } from '@/lib/feed/store';
 import { isMissingTable } from '@/lib/posts/db';
+import { gzipJson } from '@/lib/gzipJson';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -28,7 +29,7 @@ const HEADERS = { 'cache-control': CACHE, 'access-control-allow-origin': '*' };
 /** The current month in Dhaka, where the feed's days are counted. */
 const dhakaMonth = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' }).slice(0, 7);
 
-export async function GET(req: Request, ctx: { params: Promise<{ slug: string }> }) {
+async function handle(req: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
   const member = getMember(slug);
   if (!member) return NextResponse.json({ error: 'not found' }, { status: 404 });
@@ -91,4 +92,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ slug: string }>
     if (isMissingTable(e)) return NextResponse.json({ month: dhakaMonth(), pinned: [], items: [], months: [], total: 0, news: 0, video: 0, outlets: [], startsAt: null, unavailable: true });
     throw e;
   }
+}
+
+/** The JSON, gzipped for a browser that accepts it (lib/gzipJson). */
+export async function GET(req: Request, ctx: { params: Promise<{ slug: string }> }) {
+  return gzipJson(req, await handle(req, ctx));
 }
