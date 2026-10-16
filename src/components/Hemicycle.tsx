@@ -4,7 +4,7 @@
  * majority mark runs from the centre to the seat that makes it. Plain SVG,
  * drawn on the server.
  */
-import { bn } from '@/lib/data';
+import { getT } from '@/i18n/server';
 
 interface Bloc {
   key: string;
@@ -31,7 +31,8 @@ function rowsFor(total: number, rows: number): { r: number; n: number }[] {
   return radii.map((r, i) => ({ r, n: counts[i]! }));
 }
 
-export default function Hemicycle({ blocs, total, majority }: { blocs: Bloc[]; total: number; majority: number }) {
+export default async function Hemicycle({ blocs, total, majority }: { blocs: Bloc[]; total: number; majority: number }) {
+  const t = await getT();
   const rows = rowsFor(total, 11);
   const gap = (R_OUT - R_IN) / 10;
   const dot = gap * 0.4;
@@ -60,10 +61,10 @@ export default function Hemicycle({ blocs, total, majority }: { blocs: Bloc[]; t
         style={{ stroke: 'var(--color-ink)' }}
       />
       <text x={CX} y={CY - 34} textAnchor="middle" className="display" style={{ fill: 'var(--color-ink)', fontSize: 40, fontWeight: 800 }}>
-        {bn(total)}
+        {t.n(total)}
       </text>
       <text x={CX} y={CY - 12} textAnchor="middle" style={{ fill: 'var(--color-muted)', fontSize: 12.5 }}>
-        আসন · সংখ্যাগরিষ্ঠতা {bn(majority)}
+        {t('আসন · সংখ্যাগরিষ্ঠতা ', 'seats · majority ')}{t.n(majority)}
       </text>
     </svg>
   );
