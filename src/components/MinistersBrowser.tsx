@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQueryParam } from '@/lib/useQueryParam';
 import Link from 'next/link';
 import MemberPhoto from './MemberPhoto';
@@ -211,10 +212,16 @@ export default function MinistersBrowser({
   ministries: { key: string; label: string; count: number }[];
 }) {
   const [ministry, setMinistry] = useQueryParam('ministry');
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  /** A name or a ministry, as typed: any part of either matches. */
+  const matches = (p: MinisterPerson) =>
+    !q || p.name.toLowerCase().includes(q) || p.ministries.some((m) => m.name.toLowerCase().includes(q)) || (p.seat ?? '').includes(q);
   const shown = groups.map((g) => ({
     ...g,
-    people: ministry ? g.people.filter((p) => p.ministries.some((m) => m.key === ministry)) : g.people,
+    people: g.people.filter((p) => (!ministry || p.ministries.some((m) => m.key === ministry)) && matches(p)),
   }));
+  const filtering = !!ministry || !!q;
   const total = shown.reduce((n, g) => n + g.people.length, 0);
   const label = ministries.find((m) => m.key === ministry)?.label;
   const everyone = groups.flatMap((g) => g.people);
@@ -226,28 +233,46 @@ export default function MinistersBrowser({
   return (
     <div className="flex flex-col gap-9">
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-card border border-rule bg-surface px-4 py-3">
-          <label className="flex items-center gap-2.5 grow min-w-0">
-            <Icon name="search" size={17} className="text-muted shrink-0" />
+        <div className="rounded-card border border-rule bg-surface shadow-card p-3 sm:p-4 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 items-center">
+          <label className="relative flex items-center min-w-0">
+            <Icon name="search" size={17} className="absolute start-3 text-muted pointer-events-none" />
+            <span className="sr-only">নাম, মন্ত্রণালয় বা আসন খুঁজুন</span>
+            <input
+              id="cabinet-q"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="নাম, মন্ত্রণালয় বা আসন…"
+              autoComplete="off"
+              className="h-11 w-full rounded-lg border border-rule bg-paper ps-9 pe-3 text-[14.5px] outline-none focus:border-brand focus:ring-4 focus:ring-brandring"
+            />
+          </label>
+          <label className="flex items-center min-w-0">
             <span className="sr-only">মন্ত্রণালয় বা বিভাগ</span>
             <select
+              id="cabinet-ministry"
               aria-label="মন্ত্রণালয় বা বিভাগ"
               value={ministry}
               onChange={(e) => setMinistry(e.target.value)}
-              className="h-10 grow min-w-0 rounded-lg border border-rule bg-paper px-3 text-[14.5px] outline-none focus:border-brand focus:ring-4 focus:ring-brandring"
+              className="h-11 w-full min-w-0 rounded-lg border border-rule bg-paper px-3 text-[14.5px] outline-none focus:border-brand focus:ring-4 focus:ring-brandring"
             >
               <option value="">সব মন্ত্রণালয় ও বিভাগ</option>
               {ministries.map((m) => <option key={m.key} value={m.key}>{m.label} ({bn(m.count)})</option>)}
             </select>
           </label>
-          <p className="text-[14px] text-muted shrink-0" aria-live="polite">
-            {ministry ? <>{label}: {bn(total)} জন</> : <>{bn(total)} জন</>}
-            {ministry && (
-              <button type="button" onClick={() => setMinistry('')} className="ms-3 font-semibold text-brand hover:underline">সবাইকে দেখুন</button>
+          <p className="flex items-center gap-3 justify-between md:justify-end text-[14px] text-muted whitespace-nowrap" aria-live="polite">
+            <span>
+              {ministry && label ? <>{label}: </> : null}
+              <b className="text-ink tnum">{bn(total)}</b> জন
+            </span>
+            {filtering && (
+              <button type="button" onClick={() => { setMinistry(''); setQuery(''); }} className="h-9 px-3 rounded-lg border border-rule font-semibold text-brand hover:border-brand">
+                সবাইকে দেখুন
+              </button>
             )}
           </p>
         </div>
-        {!ministry && <Composition people={everyone} />}
+        {!filtering && <Composition people={everyone} />}
       </div>
 
       {pm && pm.people.length > 0 && (
@@ -256,8 +281,14 @@ export default function MinistersBrowser({
         </section>
       )}
 
+      {filtering && total === 0 && (
+        <p className="text-[14.5px] text-muted rounded-card border border-dashed border-rule bg-surface/60 px-4 py-6 text-center">
+          “{query.trim() || label}” দিয়ে কাউকে পাওয়া যায়নি। অন্য বানানে বা মন্ত্রণালয়ের নামে খুঁজে দেখুন।
+        </p>
+      )}
+
       {rest.map((g) =>
-        !ministry || g.people.length ? (
+        !filtering || g.people.length ? (
           <section key={g.title} id={rankId(g.title)} className="flex flex-col gap-3.5 scroll-mt-24">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-rule pb-2.5">
               <h2 className="display text-[22px] flex items-baseline gap-2.5">
