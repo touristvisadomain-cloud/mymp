@@ -203,7 +203,7 @@ export async function MemberRow({ m }: { m: Member }) {
       <span className="grow min-w-0 flex flex-col gap-0.5">
         <span className="display text-[15.5px] truncate">{personName(m, t.lang)}</span>
         <span className="text-[13px] text-muted truncate">
-          {[m.seat ? seatName(m.seat, t.lang) : null, m.party ? partyShort(m.party, t.lang) : null].filter(Boolean).join(', ')}
+          {[m.seat ? seatName(m.seat, t.lang) : null, m.party ? (t.en ? partyShort(m.party, 'en') : m.party.abbr) : null].filter(Boolean).join(', ')}
         </span>
       </span>
       <Icon name="arrow" size={16} className="text-muted" />
