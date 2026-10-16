@@ -13,9 +13,10 @@ const BANGLA = /[ঀ-৿]/;
 /**
  * Bangla allowed on an English answer: a story's headline (its lead or the
  * same story elsewhere), and the bootstrap's upazila table, whose second
- * column is the Bangla an English name is matched to. Addresses are not text.
+ * column is the Bangla an English name is matched to; and the fields kept in
+ * Bangla for search: a brief's `areaBn` and the `…Alt` names. Addresses are not text.
  */
-const ALLOWED = [/\.stories\[\d+\]\.(lead|also\[\d+\])\.title$/, /^\.(items|pinned)\[\d+\]\.(title|summary)$/, /^\.upazilaEn\[\d+\]\[1\]$/];
+const ALLOWED = [/\.stories\[\d+\]\.(lead|also\[\d+\])\.title$/, /^\.(items|pinned)\[\d+\]\.(title|summary)$/, /^\.upazilaEn\[\d+\]\[1\]$/, /\.areaBn$/, /\.(name|seat|district)Alt$/];
 const isUrl = (s) => /^https?:\/\//.test(s);
 
 const get = async (path) => {

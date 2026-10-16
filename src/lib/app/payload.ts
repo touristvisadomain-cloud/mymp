@@ -68,11 +68,15 @@ export interface AppMemberBrief {
   districtEn: string | null;
   /** The district's page (/jela/<slug>) and the app's district screen. */
   districtSlug: string | null;
-  /** The upazilas and wards the seat covers, so a search for one finds its member. */
+  /** The upazilas and wards the seat covers, so a search for one finds its member. Bangla in both languages: never shown. */
   areaBn: string | null;
   /** "প্রধানমন্ত্রী", "স্পিকার", a ministry — whatever the site shows beside the name. */
   officeBn: string | null;
   reserved: boolean;
+  /** English answers only: the Bangla name, seat and district beside the English ones, so a search in either script finds the member. */
+  nameAlt?: string | null;
+  seatAlt?: string | null;
+  districtAlt?: string | null;
 }
 
 /** "a, b and c" / "ক, খ এবং গ" */
@@ -194,10 +198,12 @@ export const brief = (m: Member, lang: Lang = 'bn'): AppMemberBrief => {
     districtBn: en ? (d ? districtName(d, 'en') : null) : d?.bn ?? null,
     districtEn: d?.en ?? null,
     districtSlug: d?.slug ?? null,
-    areaBn: inLang(m.seat?.boundaryBn, lang),
+    // For search only, so it stays in Bangla, which is what a reader types for a place.
+    areaBn: m.seat?.boundaryBn ?? null,
     officeBn: office(m, lang),
     // A member for one of the fifty seats reserved for women (or, as before, one the source lists with no seat).
     reserved: !m.seat || m.seat.reserved,
+    ...(en ? { nameAlt: m.nameBn ?? null, seatAlt: m.seat?.nameBn ?? null, districtAlt: d?.bn ?? null } : {}),
   };
 };
 

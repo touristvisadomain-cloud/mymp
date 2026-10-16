@@ -40,6 +40,8 @@ function seatRow(s: SeatRow, lang: Lang) {
     vacantSince: s.vacantSince ?? null,
     boundaryBn: area?.text ?? null,
     boundaryTranslated: !!area?.translated,
+    // English answers: the Bangla names beside, so a search in either script finds the seat.
+    ...(lang === 'en' ? { nameAlt: s.nameBn, districtAlt: d?.bn ?? null } : {}),
   };
 }
 
