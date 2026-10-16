@@ -84,6 +84,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The public site has a root layout per language (app/[lang]) and the admin its own, so an
+  // address no route answers gets app/global-not-found.tsx.
+  experimental: { globalNotFound: true },
   ...(staticExport
     ? {
         output: "export",

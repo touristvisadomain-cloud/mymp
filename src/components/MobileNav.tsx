@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/Link';
 import { usePathname } from 'next/navigation';
+import { useT } from '@/i18n/client';
+import { stripLang } from '@/i18n/core';
 import Icon from './Icon';
 
 /**
@@ -17,7 +19,9 @@ export default function MobileNav({
   more: { href: string; label: string }[];
 }) {
   const [open, setOpen] = useState(false);
-  const pathname = usePathname();
+  const t = useT();
+  // The page's own path without /en, to compare with the menu's plain paths.
+  const pathname = stripLang(usePathname() || '/');
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -44,12 +48,12 @@ export default function MobileNav({
         className="h-10 w-10 grid place-items-center rounded-lg border border-rule bg-surface text-ink hover:border-brand"
       >
         <Icon name={open ? 'x' : 'menu'} size={20} />
-        <span className="sr-only">মেনু</span>
+        <span className="sr-only">{t('মেনু', 'Menu')}</span>
       </button>
 
       {open && (
         <div id="mobile-nav" className="fixed inset-x-0 top-[60px] bottom-0 z-40 bg-surface overflow-y-auto border-t border-rule">
-          <nav aria-label="প্রধান" className="px-5 py-3 flex flex-col">
+          <nav aria-label={t('প্রধান', 'Main')} className="px-5 py-3 flex flex-col">
             {items.map((it) => (
               <Link
                 key={it.href}

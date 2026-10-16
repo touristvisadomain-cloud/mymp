@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { hrefIn, type Lang } from '@/i18n/core';
 
 /*
  * Site-wide SEO and share metadata. Every page inherits BASE_OPEN_GRAPH and
@@ -11,6 +12,16 @@ export const SITE_NAME = 'আমার এমপি';
 export const SITE_TITLE = 'আমার এমপি | বাংলাদেশের সংসদ সদস্যদের তথ্য';
 export const SITE_DESCRIPTION =
   'ত্রয়োদশ জাতীয় সংসদের সব সংসদ সদস্যের তথ্য এক জায়গায়। আসন, দল, সংরক্ষিত আসন, সংসদীয় কমিটি ও অধিবেশনের তথ্য। সূত্র: বাংলাদেশ জাতীয় সংসদ ও নির্বাচন কমিশন।';
+
+/* The same three in English, for the pages under /en. "Amar MP" is the name's own sound; "My MP" is what it says. */
+export const SITE_NAME_EN = 'My MP';
+export const SITE_TITLE_EN = 'My MP | Members of the Parliament of Bangladesh';
+export const SITE_DESCRIPTION_EN =
+  'Every member of the 13th Jatiya Sangsad (the Parliament of Bangladesh) in one place: seats, parties, reserved seats for women, parliamentary committees and sessions. Sources: the Parliament of Bangladesh and the Election Commission.';
+
+export const siteName = (lang: Lang) => (lang === 'en' ? SITE_NAME_EN : SITE_NAME);
+export const siteTitle = (lang: Lang) => (lang === 'en' ? SITE_TITLE_EN : SITE_TITLE);
+export const siteDescription = (lang: Lang) => (lang === 'en' ? SITE_DESCRIPTION_EN : SITE_DESCRIPTION);
 
 /**
  * The version stamped on the drawn preview cards, /api/og/mp/[slug] and
@@ -51,6 +62,24 @@ export const BASE_OPEN_GRAPH: NonNullable<Metadata['openGraph']> = {
   images: [SHARE_IMAGE],
 };
 
+/** The Open Graph defaults for a language: its site name and locale, the other language as the alternate. */
+export function baseOpenGraph(lang: Lang): NonNullable<Metadata['openGraph']> {
+  return lang === 'en'
+    ? { ...BASE_OPEN_GRAPH, siteName: SITE_NAME_EN, locale: 'en_GB', alternateLocale: ['bn_BD'], images: [{ ...SHARE_IMAGE, alt: 'My MP: the members of the Parliament of Bangladesh' }] }
+    : { ...BASE_OPEN_GRAPH, alternateLocale: ['en_GB'] };
+}
+
+/**
+ * A page's canonical address in its own language and its address in the
+ * other, so search engines show each reader their language's page and do not
+ * take the two for duplicates. Bangla is the default (x-default).
+ */
+export function langAlternates(lang: Lang, path: string): NonNullable<Metadata['alternates']> {
+  const bn = hrefIn('bn', path);
+  const en = hrefIn('en', path);
+  return { canonical: lang === 'en' ? en : bn, languages: { 'bn-BD': bn, en, 'x-default': bn } };
+}
+
 export const BASE_TWITTER: NonNullable<Metadata['twitter']> = {
   card: 'summary_large_image',
   images: [SHARE_IMAGE],
@@ -70,6 +99,7 @@ export function shareTwitter(image?: { url: string; width: number; height: numbe
 export function shareGraph(
   path: string,
   image?: { url: string; width: number; height: number; alt?: string } | null,
+  lang: Lang = 'bn',
 ): NonNullable<Metadata['openGraph']> {
-  return { ...BASE_OPEN_GRAPH, url: path, ...(image ? { images: [image] } : {}) };
+  return { ...baseOpenGraph(lang), url: hrefIn(lang, path), ...(image ? { images: [image] } : {}) };
 }

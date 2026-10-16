@@ -1,6 +1,8 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { useLang } from '@/i18n/client';
+import { MONTHS_EN, WEEKDAYS_EN } from '@/i18n/core';
 
 /*
  * Today's date and time in Bangladesh, in Bangla, as the owner asked
@@ -57,10 +59,21 @@ const now = () => {
   return `${weekday}, ${bn(parts.day ?? '')} ${month} ${bn(parts.year ?? '')}, ${partOfDay(hour24)} ${bn(hour12)}:${bn(parts.minute ?? '')}`;
 };
 
+/** The same in English: "Saturday, 12 September 2026, 2:47 pm". */
+const nowEn = () => {
+  const parts = Object.fromEntries(PARTS.formatToParts(new Date()).map((p) => [p.type, p.value]));
+  const weekday = WEEKDAYS_EN[WEEKDAY_INDEX[parts.weekday ?? 'Sun'] ?? 0]!;
+  const month = MONTHS_EN[Number(parts.month) - 1] ?? '';
+  const hour24 = Number(parts.hour) % 24;
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${weekday}, ${parts.day ?? ''} ${month} ${parts.year ?? ''}, ${hour12}:${parts.minute ?? ''} ${hour24 < 12 ? 'am' : 'pm'}`;
+};
+
 export default function HeaderClock() {
-  const text = useSyncExternalStore(subscribe, now, () => '');
+  const en = useLang() === 'en';
+  const text = useSyncExternalStore(subscribe, en ? nowEn : now, () => '');
   return (
-    <span className="tnum" aria-label={text ? `বাংলাদেশে এখন ${text}` : undefined}>
+    <span className="tnum" aria-label={text ? (en ? `Now in Bangladesh: ${text}` : `বাংলাদেশে এখন ${text}`) : undefined}>
       {text}
     </span>
   );
