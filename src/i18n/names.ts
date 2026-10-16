@@ -20,6 +20,8 @@ const toBn = (s: string) => s.replace(/\d/g, (d) => BN_DIGITS[Number(d)]!);
 /** parliament.gov.bd writes 81 members' English names in capitals ("MD. NURUL HAQUE"); pages show them in title case. */
 export function titleCaseName(s: string | null | undefined): string | null {
   if (!s) return null;
+  // Stray spaces the source leaves around hyphens and before full stops: "Md Anwar - ul - Islam", "A . E. Sultan".
+  s = s.replace(/\s*-\s*/g, '-').replace(/\s+\./g, '.').replace(/\s{2,}/g, ' ').trim();
   if (s !== s.toUpperCase() || !/[A-Z]{2}/.test(s)) return s;
   return s.toLowerCase().replace(/(^|[\s.\-('])([a-z])/g, (_, p: string, c: string) => p + c.toUpperCase());
 }
