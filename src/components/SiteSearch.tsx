@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { buildIndex, search, type Entry, type IndexRow } from '@/lib/search';
 import { findSeats, toBangla, type FinderSeat, type SeatMatch } from '@/lib/findSeat';
 import { locatePlace } from '@/lib/locatePlace';
+import { useT } from '@/i18n/client';
+import type { T } from '@/i18n/core';
+import { partyShort, seatName } from '@/i18n/names';
 
 const TYPE_LABEL: Record<string, string> = {
   seat: 'আসন',
@@ -12,6 +15,13 @@ const TYPE_LABEL: Record<string, string> = {
   party: 'দল',
   district: 'জেলা',
   division: 'বিভাগ',
+};
+const TYPE_LABEL_EN: Record<string, string> = {
+  seat: 'Seat',
+  member: 'MP',
+  party: 'Party',
+  district: 'District',
+  division: 'Division',
 };
 
 const PLACE_LABEL: Record<SeatMatch['kind'], string> = {
@@ -22,6 +32,16 @@ const PLACE_LABEL: Record<SeatMatch['kind'], string> = {
   ward: 'সিটি ওয়ার্ড',
   place: 'এলাকা',
 };
+const PLACE_LABEL_EN: Record<SeatMatch['kind'], string> = {
+  seat: 'Seat',
+  district: 'District',
+  upazila: 'Upazila',
+  union: 'Union',
+  ward: 'City ward',
+  place: 'Area',
+};
+
+const BANGLA = /[ঀ-৿]/;
 
 /** The index is fetched once per visit and shared by every search box on the page. */
 let cached: Promise<Entry[]> | null = null;
@@ -47,11 +67,27 @@ interface Item {
   label: string;
   /** The party colour of a place's member, a dot before the name. */
   color?: string;
+  /** The title is in Bangla on an English page (an entry the index has no English for). */
+  bnTitle?: boolean;
   group: 'place' | 'index';
 }
 
-function placeItem(m: SeatMatch): Item {
+function placeItem(m: SeatMatch, t: T): Item {
   const who = m.seat.member;
+  if (t.en) {
+    const seat = seatName({ nameBn: m.seat.seat, nameEn: m.seat.seatEn }, 'en');
+    const name = who?.nameEn || null;
+    return {
+      key: `place-${m.seat.no}`,
+      url: who ? `/mp/${who.slug}` : `/ason/${m.seat.slug}`,
+      // A member without an English name (none today) is shown by the seat's name rather than in Bangla.
+      title: who ? name ?? seat : `${seat}: the seat is now vacant`,
+      sub: [name ? seat : null, who?.party ? partyShort({ abbr: who.party }, 'en') : null, m.partial ? `Part of the ${m.kind === 'ward' ? 'city' : 'upazila'} is in this seat` : null].filter(Boolean).join(' · '),
+      label: PLACE_LABEL_EN[m.kind],
+      color: who?.color,
+      group: 'place',
+    };
+  }
   return {
     key: `place-${m.seat.no}`,
     url: who ? `/mp/${who.slug}` : `/ason/${m.seat.slug}`,
@@ -67,7 +103,7 @@ export default function SiteSearch({
   compact = false,
   autoFocus = false,
   withButton = false,
-  placeholder = 'আসন, জেলা, এমপি বা দলের নাম লিখুন',
+  placeholder,
   places,
 }: {
   compact?: boolean;
@@ -81,6 +117,8 @@ export default function SiteSearch({
    */
   places?: { seats: FinderSeat[]; upazilaEn: [string, string][] };
 }) {
+  const t = useT();
+  placeholder ??= t('আসন, জেলা, এমপি বা দলের নাম লিখুন', 'Type the name of a seat, district, MP or party');
   const router = useRouter();
   const listId = useId();
   const [index, setIndex] = useState<Entry[] | null>(null);
@@ -108,9 +146,13 @@ export default function SiteSearch({
 
   const items = useMemo<Item[]>(() => {
     const query = q.trim();
-    if (!query) return located ? located.hits.map(placeItem) : [];
+    if (!query) return located ? located.hits.map((m) => placeItem(m, t)) : [];
     const fromIndex: Item[] = index
-      ? search(index, query, 8).map((h) => ({ key: h.url, url: h.url, title: h.bn || h.en, sub: h.sub ?? null, label: TYPE_LABEL[h.type] ?? '', group: 'index' as const }))
+      ? search(index, query, 8).map((h): Item =>
+          t.en
+            ? { key: h.url, url: h.url, title: h.en || h.bn, bnTitle: !h.en, sub: h.subEn, label: TYPE_LABEL_EN[h.type] ?? '', group: 'index' }
+            : { key: h.url, url: h.url, title: h.bn || h.en, sub: h.sub ?? null, label: TYPE_LABEL[h.type] ?? '', group: 'index' },
+        )
       : [];
     if (!places || query.length < 2) return fromIndex;
     // A place the index does not know: an upazila, a union, a city ward. Seats
@@ -118,15 +160,15 @@ export default function SiteSearch({
     const asBangla = toBangla(query, places.upazilaEn);
     const found = findSeats(asBangla, places.seats, 6).filter((m) => m.kind !== 'seat' && m.kind !== 'district');
     const seen = new Set(found.map((m) => (m.seat.member ? `/mp/${m.seat.member.slug}` : `/ason/${m.seat.slug}`)));
-    return [...found.map(placeItem), ...fromIndex.filter((i) => !seen.has(i.url))].slice(0, 12);
-  }, [index, q, places, located]);
+    return [...found.map((m) => placeItem(m, t)), ...fromIndex.filter((i) => !seen.has(i.url))].slice(0, 12);
+  }, [index, q, places, located, t]);
 
   function go(item: Item | undefined) {
     if (!item) return;
     setOpen(false);
     setQ('');
     setLocated(null);
-    router.push(item.url);
+    router.push(t.href(item.url));
   }
 
   /** The button: an empty box gets the cursor, no match shows the "nothing found" line. */
@@ -141,14 +183,18 @@ export default function SiteSearch({
     setLocating(true);
     setQ('');
     setActive(0);
-    const r = await locatePlace(places.seats);
+    const r = await locatePlace(places.seats, t.lang);
     setLocating(false);
     setLocated(
       r.ok
         ? {
-            note: r.used
-              ? `আপনার অবস্থান: ${r.names.join(', ')}। "${r.used}" অনুযায়ী আপনার আসন (অবস্থান শুধু জায়গার নাম জানতে OpenStreetMap-এ গেছে, এই সাইট রাখেনি):`
-              : `আপনার অবস্থান: ${r.names.join(', ') || 'নাম পাওয়া যায়নি'}। এই নামে কোনো আসনের সীমানা মেলেনি, নাম লিখে খুঁজুন।`,
+            note: t.en
+              ? r.hits.length
+                ? `Your location: ${r.names.join(', ') || 'no name in English'}. Your seat${r.used ? `, going by "${r.used}"` : ''} (your location went to OpenStreetMap only to find the place's name; this site has not kept it):`
+                : `Your location: ${r.names.join(', ') || 'no name found'}. No seat's boundary matched this name; type a name to search.`
+              : r.used
+                ? `আপনার অবস্থান: ${r.names.join(', ')}। "${r.used}" অনুযায়ী আপনার আসন (অবস্থান শুধু জায়গার নাম জানতে OpenStreetMap-এ গেছে, এই সাইট রাখেনি):`
+                : `আপনার অবস্থান: ${r.names.join(', ') || 'নাম পাওয়া যায়নি'}। এই নামে কোনো আসনের সীমানা মেলেনি, নাম লিখে খুঁজুন।`,
             hits: r.hits,
           }
         : { note: r.message, hits: [] },
@@ -169,7 +215,7 @@ export default function SiteSearch({
 
   return (
     <div ref={boxRef} className="relative">
-      <label htmlFor={`${listId}-input`} className="sr-only">খুঁজুন</label>
+      <label htmlFor={`${listId}-input`} className="sr-only">{t('খুঁজুন', 'Search')}</label>
       <div
         className={
           compact
@@ -196,7 +242,7 @@ export default function SiteSearch({
           aria-expanded={showResults}
           aria-controls={listId}
           aria-autocomplete="list"
-          placeholder={compact ? 'খুঁজুন…' : placeholder}
+          placeholder={compact ? t('খুঁজুন…', 'Search…') : placeholder}
           className={`grow min-w-0 w-full bg-transparent outline-none text-ellipsis placeholder:text-muted ${compact ? 'text-[14px]' : 'text-[16px] sm:text-[18px]'}`}
         />
         {places && !compact && (
@@ -204,14 +250,14 @@ export default function SiteSearch({
             type="button"
             onClick={useLocation}
             disabled={locating}
-            aria-label="আমার অবস্থান থেকে আমার এমপি খুঁজুন"
-            title="আমার অবস্থান"
+            aria-label={t('আমার অবস্থান থেকে আমার এমপি খুঁজুন', 'Find my MP from my location')}
+            title={t('আমার অবস্থান', 'My location')}
             className="shrink-0 h-10 sm:h-11 px-2.5 sm:px-3.5 rounded-[10px] border border-rule bg-surface text-ink inline-flex items-center gap-1.5 text-[14px] font-semibold hover:border-brand hover:text-brand disabled:opacity-60"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" />
             </svg>
-            <span className="hidden sm:inline">{locating ? 'খোঁজা হচ্ছে…' : 'আমার অবস্থান'}</span>
+            <span className="hidden sm:inline">{locating ? t('খোঁজা হচ্ছে…', 'Searching…') : t('আমার অবস্থান', 'My location')}</span>
           </button>
         )}
         {withButton && !compact && (
@@ -220,7 +266,7 @@ export default function SiteSearch({
             onClick={submit}
             className="shrink-0 h-10 sm:h-11 px-4 sm:px-5 rounded-[10px] bg-brand text-white text-[15px] sm:text-[16px] font-bold hover:bg-branddark transition-colors"
           >
-            খুঁজুন
+            {t('খুঁজুন', 'Search')}
           </button>
         )}
       </div>
@@ -236,16 +282,16 @@ export default function SiteSearch({
           )}
           {items.length === 0 && !located && (
             <li className="px-4 py-3 text-[14px] text-muted">
-              {index === null ? 'খোঁজা হচ্ছে…' : 'কিছু পাওয়া যায়নি। বাংলা বা ইংরেজি, দুইভাবেই লেখা যায়।'}
+              {index === null ? t('খোঁজা হচ্ছে…', 'Searching…') : t('কিছু পাওয়া যায়নি। বাংলা বা ইংরেজি, দুইভাবেই লেখা যায়।', 'Nothing found. You can type in Bangla or English.')}
             </li>
           )}
           {items.map((h, i) => (
             <li key={h.key} role="option" aria-selected={i === active}>
               {i === 0 && hasPlaces && (
-                <span className="block px-4 pt-2 pb-1 text-[11.5px] font-bold tracking-[0.5px] text-brand">আপনার এলাকার এমপি</span>
+                <span className="block px-4 pt-2 pb-1 text-[11.5px] font-bold tracking-[0.5px] text-brand">{t('আপনার এলাকার এমপি', 'The MP for your area')}</span>
               )}
               {i === firstIndex && hasPlaces && i > 0 && (
-                <span className="block px-4 pt-2.5 pb-1 text-[11.5px] font-bold tracking-[0.5px] text-muted border-t border-rulesoft">আরও ফল</span>
+                <span className="block px-4 pt-2.5 pb-1 text-[11.5px] font-bold tracking-[0.5px] text-muted border-t border-rulesoft">{t('আরও ফল', 'More results')}</span>
               )}
               <button
                 type="button"
@@ -256,7 +302,7 @@ export default function SiteSearch({
                 <span className="grow min-w-0">
                   <span className="display flex items-center gap-2 text-[15px] font-bold">
                     {h.color && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: h.color }} aria-hidden="true" />}
-                    <span className="truncate">{h.title}</span>
+                    <span className="truncate" lang={h.bnTitle || (t.en && BANGLA.test(h.title)) ? 'bn' : undefined}>{h.title}</span>
                   </span>
                   {h.sub && <span className="block text-[12.5px] text-muted truncate">{h.sub}</span>}
                 </span>
