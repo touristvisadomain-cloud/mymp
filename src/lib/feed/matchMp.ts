@@ -305,6 +305,19 @@ function ownOfficeIn(tokens: string[], office: string[]): boolean {
   return true;
 }
 
+/**
+ * The text with short quoted phrases, two or three words, blanked out:
+ * ‘স্পিকার মিরাজ’ (a man's nickname), ‘প্রধানমন্ত্রী আম্বানি’, ‘আগামীর
+ * প্রধানমন্ত্রী’. A longer quote is somebody's words and stays, as does a
+ * single quoted word; a quote mark inside a word (আইএমএফ’র) opens nothing.
+ */
+export function withoutQuotedPhrases(text: string): string {
+  return text.replace(/(^|[\s(\[,;:।—–-])[‘“"'«]([^‘’“”"'«»\n]{1,40})[’”"'»]/gu, (whole, before: string, inner: string) => {
+    const words = inner.trim().split(/\s+/).filter(Boolean).length;
+    return words >= 2 && words <= 3 ? `${before} । ` : whole;
+  });
+}
+
 /** Countries whose prime minister, speaker or president a headline may name by office. */
 const FOREIGN_OWNERS = ['ভারত', 'পাকিস্তান', 'যুক্তরাজ্য', 'ব্রিটিশ', 'ব্রিটেন', 'যুক্তরাষ্ট্র', 'মার্কিন', 'চীন', 'জাপান', 'মালয়েশিয়া', 'সিঙ্গাপুর', 'শ্রীলঙ্কা', 'নেপাল', 'ভুটান', 'মিয়ানমার', 'থাইল্যান্ড', 'কানাডা', 'অস্ট্রেলিয়া', 'ইসরায়েল', 'ইসরাইল', 'ইতালি', 'ফ্রান্স', 'জার্মান', 'রাশিয়া', 'তুরস্ক', 'সৌদি', 'ইরান', 'ইরাক', 'কাতার', 'ভিয়েতনাম', 'কোরিয়া', 'নিউজিল্যান্ড', 'স্পেন', 'পর্তুগাল', 'গ্রিস', 'ইউক্রেন', 'লেবানন', 'মিসর', 'মিশর', 'কম্বোডিয়া', 'লাওস', 'ফিলিস্তিন', 'বিদেশি', 'সাবেক', 'তৎকালীন', 'প্রয়াত'].map((w) => foldBangla(w));
 
@@ -350,6 +363,11 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
   const lead = (item.summary ?? '').split(/[।!?]|\.\s+(?=[A-Z])/u)[0] ?? '';
   const leadLength = textTokensWithBreaks(lead).tokens.length;
   const headTokens = [...titleTokens, ...summaryTokens.slice(0, leadLength)];
+  // Offices are looked for with quoted phrases of two words or more taken out:
+  // ‘স্পিকার মিরাজ’ is a man's nickname in a Khulna crime story, not the
+  // Speaker (2026-10-16). Names are still matched in the whole text.
+  const officeTitleTokens = textTokensWithBreaks(withoutQuotedPhrases(item.title)).tokens;
+  const officeHeadTokens = [...officeTitleTokens, ...textTokensWithBreaks(withoutQuotedPhrases(lead)).tokens];
   const negative = NEGATIVE_TOKENS.filter((w) => hasTokens(allTokens, w.tokens)).map((w) => w.word);
 
   // Only members whose name, seat, district, party or office actually appears
@@ -411,10 +429,10 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
     // ("…ডেকেছেন প্রধানমন্ত্রী", "…: স্বরাষ্ট্রমন্ত্রী", "ব্রাহ্মণবাড়িয়ায় এমপির…")
     // is about them even when the summary names them only further down.
     const { phrases } = entry;
-    const inHeadline = (p: { tokens: string[] }) => (longerNames ? personalOffice(titleTokens, p.tokens) : hasTokens(titleTokens, p.tokens));
+    const inHeadline = (p: { tokens: string[] }) => (longerNames ? personalOffice(officeTitleTokens, p.tokens) : hasTokens(titleTokens, p.tokens));
     const officeInHeadline = phrases.posts.some(inHeadline) || phrases.ministries.some(inHeadline);
     // Called by an office only they hold, and not another country's ("ভারতের প্রধানমন্ত্রী").
-    const soleOffice = [...phrases.posts, ...phrases.ministries].find((p) => index.soleOffices.has(p.word) && ownOfficeIn(titleTokens, p.tokens));
+    const soleOffice = [...phrases.posts, ...phrases.ministries].find((p) => index.soleOffices.has(p.word) && ownOfficeIn(longerNames ? officeTitleTokens : titleTokens, p.tokens));
     const soleOfficeInHeadline = !!soleOffice;
     const headlinePointsAtThem =
       officeInHeadline || phrases.seat.some((p) => hasTokens(titleTokens, p)) || phrases.district.some((p) => hasTokens(titleTokens, p));
@@ -473,7 +491,7 @@ export function matchItem(index: FeedIndex, item: FeedItemText, opts: MatchOptio
     }
 
     // An office counts where the subject is: the headline or the first sentence.
-    const officeHere = (w: { tokens: string[] }) => longerNames ? personalOffice(headTokens, w.tokens) : hasTokens(headTokens, w.tokens);
+    const officeHere = (w: { tokens: string[] }) => longerNames ? personalOffice(officeHeadTokens, w.tokens) : hasTokens(headTokens, w.tokens);
     const office = phrases.posts.find(officeHere) ?? phrases.ministries.find(officeHere);
     if (office) {
       score += POINTS.post;
