@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { shareGraph } from '@/lib/seo';
 import Link from 'next/link';
-import { statistics, parties, committees, bn, bnGroup, dateBn, meta, ecs } from '@/lib/data';
-import { Page, PageHead, Card, Stat, CompositionBar, Empty } from '@/components/ui';
+import { statistics, parties, committees, bn, bnGroup, dateBn, meta, ecs, partyColor } from '@/lib/data';
+import { Page, PageHead, Card, Stat, Empty } from '@/components/ui';
 import { experienceStats } from '@/lib/history';
+import Hemicycle from '@/components/Hemicycle';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/parisonkhan' },
@@ -15,9 +16,12 @@ export const metadata: Metadata = {
 /** A labelled horizontal bar. One series, so the heading names it and no legend is needed. */
 function Bars({
   rows,
+  total,
   labelWidth = 'w-[86px]',
 }: {
   rows: { label: string; count: number }[];
+  /** What the shares are of; each row then shows its share beside its count. */
+  total?: number;
   labelWidth?: string;
 }) {
   const max = Math.max(...rows.map((r) => r.count), 1);
@@ -28,22 +32,58 @@ function Bars({
           <span className={`${labelWidth} shrink-0 text-[13px] text-inksoft`}>{r.label}</span>
           <span className="grow h-4 bg-sunk rounded-[3px] overflow-hidden">
             <span
-              className="block h-full bg-brand rounded-[3px]"
+              className={`block h-full rounded-[3px] ${r.count === max ? 'bg-brand' : 'bg-brand/60'}`}
               style={{ width: `${(r.count / max) * 100}%` }}
             />
           </span>
           <span className="w-9 shrink-0 text-end text-[13px] font-bold tnum">{bn(r.count)}</span>
+          {total ? <span className="w-10 shrink-0 text-end text-[12px] text-muted tnum">{bn(Math.round((r.count / total) * 100))}%</span> : null}
         </div>
       ))}
     </div>
   );
 }
 
+/** Two parts of one whole, side by side, each with its count and share. */
+function Split({ a, b, label }: { a: { label: string; n: number; tone: string }; b: { label: string; n: number; tone: string }; label: string }) {
+  const sum = a.n + b.n || 1;
+  const pct = (n: number) => bn(Math.round((n / sum) * 100));
+  const part = (x: { label: string; n: number; tone: string }) => (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`w-2.5 h-2.5 rounded-full ${x.tone}`} aria-hidden="true" />
+      {x.label} <b className="tnum">{bnGroup(x.n)}</b> <span className="text-muted tnum">({pct(x.n)}%)</span>
+    </span>
+  );
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-0.5 h-3 rounded-full overflow-hidden" role="img" aria-label={label}>
+        <span className={a.tone} style={{ flex: `${a.n} 1 0` }} />
+        <span className={b.tone} style={{ flex: `${b.n} 1 0` }} />
+      </div>
+      <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[13px]">
+        {part(a)}
+        {part(b)}
+      </div>
+    </div>
+  );
+}
+
+/** The page's sections, for the shortcuts under the heading. */
+const SECTIONS: [string, string][] = [
+  ['ason', 'দলভিত্তিক আসন'],
+  ['boyos', 'বয়স'],
+  ['nari', 'নারী প্রতিনিধিত্ব'],
+  ['pesha', 'পেশা'],
+  ['obhiggota', 'অভিজ্ঞতা'],
+  ['votar', 'ভোটার'],
+];
+
 export default function StatisticsPage() {
   const s = statistics();
   const currentCommittees = committees.filter((c) => c.rosterCurrent).length;
   const womenPct = ((s.women / s.total) * 100).toFixed(1);
   const womenGeneralPct = ((s.womenTerritorial / s.territorial) * 100).toFixed(1);
+  const seated = parties.filter((p) => p.seats > 0);
 
   return (
     <Page>
@@ -53,7 +93,19 @@ export default function StatisticsPage() {
         lede={`বর্তমান ${bn(s.total)} জন সংসদ সদস্যের তথ্য থেকে হিসাব করা। প্রতিটি সংখ্যা জাতীয় সংসদের নিজস্ব তথ্যভান্ডার থেকে, কোনো অনুমান নয়।`}
       />
 
-      <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <nav aria-label="এই পাতায়" className="mt-6 flex flex-wrap gap-2">
+        {SECTIONS.map(([id, label]) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className="h-8 px-3 inline-flex items-center rounded-full border border-rule bg-surface text-[13px] font-semibold text-inksoft hover:border-brand hover:text-brand transition-colors"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="মোট সদস্য" value={bn(s.total)} note={`${bn(s.territorial)} আসনভিত্তিক, ${bn(s.reserved)} সংরক্ষিত`} />
         <Stat label="নারী সদস্য" value={bn(s.women)} note={`${bn(womenPct)}%, এর ${bn(s.womenReserved)} জন সংরক্ষিত আসনে`} />
         <Stat
@@ -65,24 +117,56 @@ export default function StatisticsPage() {
       </div>
 
       <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-        <Card className="p-6 flex flex-col gap-4">
+        <Card id="ason" className="lg:col-span-2 p-6 flex flex-col gap-5 scroll-mt-24">
           <div className="flex flex-col gap-1">
             <h2 className="display text-[21px] font-bold">দলভিত্তিক আসন</h2>
-            <p className="text-[13px] text-muted">{bn(s.total)}টি আসনের সবগুলো, সংরক্ষিত আসনসহ</p>
+            <p className="text-[13px] text-muted">{bn(s.total)}টি আসনের সবগুলো, সংরক্ষিত আসনসহ; প্রতিটি বিন্দু একটি আসন</p>
           </div>
-          <CompositionBar parties={parties} total={s.total} majority={s.majority} />
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-6 items-center">
+            <Hemicycle
+              blocs={seated.map((p) => ({ key: p.abbr, label: p.nameBn ?? p.abbr, seats: p.seats, color: partyColor(p.abbr) }))}
+              total={s.total}
+              majority={s.majority}
+            />
+            <div className="overflow-x-auto">
+              <table className="w-full text-[13.5px]">
+                <thead>
+                  <tr className="text-[12px] text-muted border-b border-rule">
+                    <th className="text-start font-semibold py-2">দল</th>
+                    <th className="text-end font-semibold py-2 px-2">আসনভিত্তিক</th>
+                    <th className="text-end font-semibold py-2 px-2">সংরক্ষিত</th>
+                    <th className="text-end font-semibold py-2 ps-2">মোট</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-rulesoft">
+                  {seated.map((p) => (
+                    <tr key={p.abbr}>
+                      <td className="py-2 pe-2">
+                        <Link href={`/dol/${p.slug}`} className="inline-flex items-center gap-2 hover:text-brand">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: partyColor(p.abbr) }} aria-hidden="true" />
+                          <span className="font-medium">{p.nameBn ?? p.abbr}</span>
+                        </Link>
+                      </td>
+                      <td className="py-2 px-2 text-end tnum">{bn(p.seatsTerritorial)}</td>
+                      <td className="py-2 px-2 text-end tnum text-muted">{bn(p.seatsReserved)}</td>
+                      <td className="py-2 ps-2 text-end tnum font-bold">{bn(p.seats)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
           <p className="text-[13px] text-muted border-t border-rule pt-3 leading-relaxed">
-            শুধু আসনভিত্তিক ফল আলাদা: {parties.slice(0, 4).map((p) => `${p.nameBn ?? p.abbr} ${bn(p.seatsTerritorial)}`).join(', ')}।
-            সংরক্ষিত {bn(s.reserved)}টি আসন ফলের পর দলগুলোর মধ্যে ভাগ হয়।
+            সরকার গঠনে দরকার {bn(s.majority)}টি আসন। সংরক্ষিত {bn(s.reserved)}টি নারী আসন সাধারণ আসনের ফলের অনুপাতে দলগুলোর মধ্যে ভাগ হয়।
           </p>
         </Card>
 
-        <Card className="p-6 flex flex-col gap-4">
+        <Card id="boyos" className="p-6 flex flex-col gap-4 scroll-mt-24">
           <div className="flex flex-col gap-1">
             <h2 className="display text-[21px] font-bold">বয়স</h2>
             <p className="text-[13px] text-muted">{bn(s.total)} জনেরই জন্মতারিখ পাওয়া গেছে</p>
           </div>
-          <Bars rows={s.ageBands} />
+          <Bars rows={s.ageBands} total={s.total} />
           {s.youngest && s.oldest && (
             <div className="border-t border-rule pt-3 flex flex-col gap-1.5 text-[13.5px]">
               <div className="flex justify-between gap-3">
@@ -107,7 +191,7 @@ export default function StatisticsPage() {
           )}
         </Card>
 
-        <Card className="p-6 flex flex-col gap-4">
+        <Card id="nari" className="p-6 flex flex-col gap-4 scroll-mt-24">
           <div className="flex flex-col gap-1">
             <h2 className="display text-[21px] font-bold">নারী প্রতিনিধিত্ব</h2>
             <p className="text-[13px] text-muted">{bn(s.women)} জন নারী, {bn(s.total)} জনের মধ্যে</p>
@@ -142,14 +226,14 @@ export default function StatisticsPage() {
           </p>
         </Card>
 
-        <Card className="p-6 flex flex-col gap-4">
+        <Card id="pesha" className="p-6 flex flex-col gap-4 scroll-mt-24">
           <div className="flex flex-col gap-1">
             <h2 className="display text-[21px] font-bold">পেশা</h2>
             <p className="text-[13px] text-muted">
               {bn(s.total)} জনের মধ্যে {bn(s.withProfession)} জনের পেশা লিপিবদ্ধ
             </p>
           </div>
-          <Bars rows={s.professions.slice(0, 6).map((p) => ({ label: p.label, count: p.count }))} labelWidth="w-[96px]" />
+          <Bars rows={s.professions.slice(0, 8).map((p) => ({ label: p.label, count: p.count }))} total={s.withProfession} labelWidth="w-[96px]" />
           <p className="text-[13px] text-muted border-t border-rule pt-3 leading-relaxed">
             {bn(s.total - s.withProfession)} জনের পেশা সংসদের তথ্যভান্ডারে নেই, তাই এই হিসাবে তাঁরা ধরা হয়নি।
             একই পেশার ভিন্ন বানান এক করে গোনা হয়েছে।
@@ -161,16 +245,18 @@ export default function StatisticsPage() {
         const x = experienceStats();
         const max = Math.max(...x.bands.map((b) => b.count), 1);
         return (
-          <section className="mt-10 flex flex-col gap-4">
+          <section id="obhiggota" className="mt-10 flex flex-col gap-4 scroll-mt-24">
             <div className="flex items-baseline justify-between gap-4">
               <h2 className="display text-[24px]">সংসদে অভিজ্ঞতা</h2>
               <span className="text-[13px] text-muted">সংসদের তথ্যভান্ডার, ৪র্থ সংসদ থেকে</span>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <Card className="p-5 sm:p-6 flex flex-col gap-4">
-                <p className="text-[14px] text-muted -mb-1">
-                  {bn(x.firstTime)} জন এবারই প্রথম সংসদে, {bn(x.returning)} জন আগেও সদস্য ছিলেন।
-                </p>
+                <Split
+                  label={`এবারই প্রথম ${x.firstTime}, আগেও সদস্য ${x.returning}`}
+                  a={{ label: 'এবারই প্রথম', n: x.firstTime, tone: 'bg-brand' }}
+                  b={{ label: 'আগেও সদস্য ছিলেন', n: x.returning, tone: 'bg-pjamaat' }}
+                />
                 <div className="flex flex-col gap-2.5">
                   {x.bands.map((b) => (
                     <div key={b.label} className="grid grid-cols-[130px_1fr_40px] items-center gap-3 text-[14px]">
@@ -207,7 +293,7 @@ export default function StatisticsPage() {
         );
       })()}
 
-      <section className="mt-10 flex flex-col gap-4">
+      <section id="votar" className="mt-10 flex flex-col gap-4 scroll-mt-24">
         <div className="flex flex-col gap-1">
           <h2 className="display text-[24px] font-bold">ভোটার ও ভোটকেন্দ্র</h2>
           <p className="text-[13.5px] text-muted">
@@ -224,6 +310,13 @@ export default function StatisticsPage() {
             note={`নিবন্ধিত রাজনৈতিক দল ${bn(ecs.national.registeredParties)}টি`}
           />
         </div>
+        <Card className="p-5">
+          <Split
+            label={`পুরুষ ভোটার ${ecs.national.maleVoters}, নারী ভোটার ${ecs.national.femaleVoters}`}
+            a={{ label: 'পুরুষ', n: ecs.national.maleVoters, tone: 'bg-[#b9b4a6]' }}
+            b={{ label: 'নারী', n: ecs.national.femaleVoters, tone: 'bg-brand' }}
+          />
+        </Card>
         <p className="text-[13px] text-muted">
           তথ্যসূত্র: {ecs.source} | পড়া হয়েছে {dateBn(ecs.readOn)}
         </p>
