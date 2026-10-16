@@ -7,6 +7,7 @@
 import { getMember } from '@/lib/data';
 import { dayLabel, type StoryView, type StoryMember, type StoryLink } from '@/lib/newsView';
 import { siteCounts } from '@/lib/feed/store';
+import { isMissingTable } from '@/lib/posts/db';
 import { personName, outletName } from '@/i18n/names';
 import type { Lang } from '@/i18n/core';
 import { enOnly } from '@/lib/app/respond';
@@ -36,6 +37,11 @@ export function storyIn(s: StoryView, lang: Lang) {
 
 /** The news page's figures: today's, everything's and each month's, and how many outlets the site reads. */
 export async function newsCounts() {
-  const counts = await siteCounts();
-  return { ...counts, outletCount: NEWS_SOURCES.length };
+  try {
+    return { ...(await siteCounts()), outletCount: NEWS_SOURCES.length };
+  } catch (e) {
+    // Before the feed's tables exist there is nothing to count; the screen says so rather than breaking.
+    if (!isMissingTable(e)) throw e;
+    return { today: { news: 0, video: 0, outlets: 0 }, total: { news: 0, video: 0 }, months: [], outletCount: NEWS_SOURCES.length, unavailable: true as const };
+  }
 }
