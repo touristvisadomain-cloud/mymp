@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { shareGraph } from '@/lib/seo';
-import { bn, getMemberById } from '@/lib/data';
+import Link from '@/i18n/Link';
+import { langAlternates, shareGraph } from '@/lib/seo';
+import { getMemberById } from '@/lib/data';
 import { districtList } from '@/lib/districts';
 import { Page, PageHead, Stat, PartyDot } from '@/components/ui';
+import { getT } from '@/i18n/server';
+import { districtName } from '@/i18n/names';
 
 /**
  * The district index. Each district already had a page and the seat pages link
@@ -14,24 +16,34 @@ import { Page, PageHead, Stat, PartyDot } from '@/components/ui';
 const districts = districtList();
 const seatTotal = districts.reduce((n, d) => n + d.seats.length, 0);
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/jela' },
-  openGraph: shareGraph('/jela'),
-  title: 'জেলা অনুযায়ী আসন ও সংসদ সদস্য',
-  description: `বাংলাদেশের ${bn(districts.length)}টি জেলার ${bn(seatTotal)}টি সংসদীয় আসন। নিজের জেলা বেছে সেখানকার প্রতিটি আসন ও বর্তমান সংসদ সদস্য দেখুন; তথ্যসূত্র বাংলাদেশ জাতীয় সংসদ।`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    alternates: langAlternates(t.lang, '/jela'),
+    openGraph: shareGraph('/jela', undefined, t.lang),
+    title: t('জেলা অনুযায়ী আসন ও সংসদ সদস্য', 'Seats and Members of Parliament by district'),
+    description: t(
+      `বাংলাদেশের ${t.n(districts.length)}টি জেলার ${t.n(seatTotal)}টি সংসদীয় আসন। নিজের জেলা বেছে সেখানকার প্রতিটি আসন ও বর্তমান সংসদ সদস্য দেখুন; তথ্যসূত্র বাংলাদেশ জাতীয় সংসদ।`,
+      `The ${seatTotal} parliamentary seats in Bangladesh's ${districts.length} districts. Choose your district to see each of its seats and its current Member of Parliament; source: Parliament of Bangladesh.`,
+    ),
+  };
+}
 
-export default function DistrictIndex() {
+export default async function DistrictIndex() {
+  const t = await getT();
   return (
     <Page>
       <PageHead
-        eyebrow="ত্রয়োদশ জাতীয় সংসদ"
-        title="জেলা অনুযায়ী"
-        lede={`${bn(districts.length)}টি জেলায় ${bn(seatTotal)}টি সংসদীয় আসন। জেলার পাতায় সেখানকার প্রতিটি আসন, বর্তমান সংসদ সদস্য ও দলভিত্তিক হিসাব আছে।`}
+        eyebrow={t('ত্রয়োদশ জাতীয় সংসদ', '13th Parliament')}
+        title={t('জেলা অনুযায়ী', 'By district')}
+        lede={t(
+          `${t.n(districts.length)}টি জেলায় ${t.n(seatTotal)}টি সংসদীয় আসন। জেলার পাতায় সেখানকার প্রতিটি আসন, বর্তমান সংসদ সদস্য ও দলভিত্তিক হিসাব আছে।`,
+          `${seatTotal} parliamentary seats in ${districts.length} districts. Each district's page lists its seats, their current Members of Parliament and a count by party.`,
+        )}
         aside={
           <div className="grid grid-cols-2 gap-3 w-full md:w-auto">
-            <Stat label="জেলা" value={bn(districts.length)} />
-            <Stat label="আসন" value={bn(seatTotal)} />
+            <Stat label={t('জেলা', 'Districts')} value={t.n(districts.length)} />
+            <Stat label={t('আসন', 'Seats')} value={t.n(seatTotal)} />
           </div>
         }
       />
@@ -50,11 +62,12 @@ export default function DistrictIndex() {
                 className="reveal group h-full bg-surface border border-rule rounded-card shadow-card p-4 flex items-center gap-3 hover:border-brand hover:shadow-lift hover:-translate-y-0.5 transition-all"
               >
                 <span className="grow min-w-0 flex flex-col gap-0.5">
-                  <span className="display text-[16.5px] group-hover:text-brand transition-colors">{d.bn}</span>
-                  <span className="text-[12.5px] text-muted">{d.en}</span>
+                  <span className="display text-[16.5px] group-hover:text-brand transition-colors">{t.en ? districtName(d, 'en') : d.bn}</span>
+                  {/* The Bangla page gives the English name underneath; the English page, the Bangla. */}
+                  {t.en ? <span lang="bn" className="text-[12.5px] text-muted">{d.bn}</span> : <span className="text-[12.5px] text-muted">{d.en}</span>}
                 </span>
                 <span className="shrink-0 flex flex-col items-end gap-1.5">
-                  <span className="tnum text-[13px] text-inksoft font-semibold">{bn(d.seats.length)}টি আসন</span>
+                  <span className="tnum text-[13px] text-inksoft font-semibold">{t.count(d.seats.length, 'টি আসন', 'seat', 'seats')}</span>
                   <span aria-hidden="true" className="flex gap-1">
                     {abbrs.slice(0, 8).map((a, i) => (
                       <PartyDot key={`${a}-${i}`} abbr={a} size={9} />

@@ -1,7 +1,11 @@
 import { bn, bnGroup, getMemberById, meta, partyShortBn } from './data';
 import { genitiveBn } from './seo/mpDescription';
 import { seatHolders, resultForSeat, electionYear, parliamentOrdinal } from './history';
-import type { DistrictGroup } from './districts';
+import { districtGroups, type DistrictGroup } from './districts';
+import upazilaEn from '../../data/upazila-en.json';
+import { makeT, type Lang } from '@/i18n/core';
+import { districtName, partyShort, seatName } from '@/i18n/names';
+import { english } from '@/i18n/content';
 
 /**
  * A paragraph about a district, written from the data the site already holds:
@@ -71,7 +75,8 @@ export interface DistrictIntro {
   short: string;
 }
 
-export function districtIntro(d: DistrictGroup): DistrictIntro {
+export function districtIntro(d: DistrictGroup, lang: Lang = 'bn'): DistrictIntro {
+  if (lang === 'en') return districtIntroEn(d);
   const division = DIVISION[d.slug];
   const seats = d.seats;
   const n = seats.length;
@@ -129,5 +134,157 @@ export function districtIntro(d: DistrictGroup): DistrictIntro {
   return {
     text: parts.join(' '),
     short: `${d.bn} জেলার ${bn(n)}টি সংসদীয় আসন${nowCounts.length ? `, ${parliamentOrdinal(meta.parliamentNo)}ে ${holdingsBn(nowCounts, n - vacant, n === 1)}` : ''}। প্রতিটি আসনের বর্তমান সংসদ সদস্য, দল ও এলাকা।`,
+  };
+}
+
+/* ---------------- English ---------------- */
+
+/*
+ * The same paragraph in English, stating the same facts. Names come from the
+ * data: seats and districts from the source's English names, upazilas from
+ * OpenStreetMap's (data/upazila-en.json), a division from the district it is
+ * named after.
+ */
+
+const placeKey = (s: string) => s.normalize('NFC').replace(/[\u200c\u200d]/g, '').trim();
+/** Bangla upazila name → English; where OpenStreetMap spells one two ways, the first listed. */
+const UPAZILA_EN = new Map((upazilaEn as [string, string][]).map(([en, bnName]) => [placeKey(bnName), en] as const).reverse());
+
+/** "রংপুর" → "Rangpur": each division is named after a district, whose English name the seats carry. */
+function divisionEn(bnName: string | undefined): string | null {
+  if (!bnName) return null;
+  const g = [...districtGroups().values()].find((x) => placeKey(x.bn) === placeKey(bnName));
+  return g ? districtName(g, 'en') : null;
+}
+
+/** "A, B and C" */
+const listEn = (xs: string[]) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+
+/**
+ * The English of what areaOf gives in Bangla: the upazilas by their English
+ * names ("Panchagarh Sadar, Tetulia and Atwari upazilas"), a hill district by
+ * its name, else the boundary's own translation when it is as short; null
+ * when neither is known.
+ */
+function areaEn(boundary: string | null, d: DistrictGroup): string | null {
+  const bnArea = areaOf(boundary);
+  if (!bnArea) return null;
+  if (/পার্বত্য জেলা$/.test(bnArea)) return `${districtName(d, 'en')} Hill District`;
+  const hasUpazila = /উপজেলা/.test(bnArea);
+  const names = bnArea.split(/\s*,\s*|\s+ও\s+/).map((x) => placeKey(x.replace(/\s*উপজেলা$/, '')));
+  const en = names.map((x) => UPAZILA_EN.get(x));
+  if (en.length && en.every(Boolean)) {
+    return `${listEn(en as string[])}${hasUpazila ? (en.length === 1 ? ' upazila' : ' upazilas') : ''}`;
+  }
+  const tr = english(boundary)?.replace(/\((?:[a-z]|[ivx]+)\)\s*/gi, '').replace(/\s+/g, ' ').trim();
+  return tr && tr.length <= 90 ? tr.replace(/[.;]$/, '') : null;
+}
+
+const INDEPENDENT_EN = 'Independent';
+
+/** A party as the subject of a sentence: "the BNP", "Jamaat-e-Islami", "independents". */
+function whoEn(label: string, many: boolean): string {
+  if (label === INDEPENDENT_EN) return many ? 'independents' : 'an independent';
+  return /^[A-Z]{2,}$/.test(label) || /(League|Party|Front|Federation|Opposition)$/.test(label) ? `the ${label}` : label;
+}
+
+/**
+ * The English of holdingsBn: "the BNP holds 13, Jamaat-e-Islami 6 and the NCP 1";
+ * with one seat, "held by the BNP"; with every seat one party's, "all held by the BNP".
+ */
+function holdingsEn(counts: [string, number][], total: number, single: boolean, past: boolean): string {
+  if (single) return `held by ${whoEn(counts[0][0], false)}`;
+  if (counts.length === 1 && counts[0][1] === total) return `all held by ${whoEn(counts[0][0], true)}`;
+  return listEn(
+    counts.map(([p, k], i) => {
+      const who = whoEn(p, k > 1);
+      if (i > 0) return `${who} ${k}`;
+      const verb = past ? 'held' : p === INDEPENDENT_EN && k > 1 ? 'hold' : 'holds';
+      return `${who} ${verb} ${k}`;
+    }),
+  );
+}
+
+function districtIntroEn(d: DistrictGroup): DistrictIntro {
+  const t = makeT('en');
+  const division = divisionEn(DIVISION[d.slug]);
+  const name = districtName(d, 'en');
+  const seats = d.seats;
+  const n = seats.length;
+  const parts: string[] = [];
+  const thisHouse = parliamentOrdinal(meta.parliamentNo, 'en');
+
+  // 1. Where it is and what it sends.
+  parts.push(
+    `${name} is a district${division ? ` in ${division} division` : ''} with ${t.count(n, '', 'seat', 'seats')} in Parliament: ` +
+      (n <= 6
+        ? listEn(seats.map((s) => {
+          const area = areaEn(s.boundaryBn, d);
+          return `${seatName(s, 'en')}${area ? ` (${area})` : ''}`;
+        }))
+        : `${seatName(seats[0], 'en')} to ${seatName(seats[n - 1], 'en')}`) +
+      '.',
+  );
+
+  // 2. Who holds them now. Parties are counted by their English names, so the
+  // two ways the source writes "independent" count as one.
+  const now = seats.map((s) => {
+    const m = s.memberId && !s.vacantSince ? getMemberById(s.memberId) : undefined;
+    return { party: m?.party ? partyShort(m.party, 'en') : null, vacant: !m };
+  });
+  const vacant = now.filter((x) => x.vacant).length;
+  const nowCounts = partyCounts(now);
+  const rest = n - vacant;
+  if (nowCounts.length) {
+    if (vacant) {
+      parts.push(
+        `In the ${thisHouse}, ${t.count(vacant, '', 'seat', 'seats')} ${vacant === 1 ? 'is' : 'are'} now vacant; ` +
+          (nowCounts.length === 1
+            ? `the remaining ${rest} ${rest === 1 ? 'is' : 'are all'} held by ${whoEn(nowCounts[0][0], rest > 1)}.`
+            : `of the remaining ${rest}, ${holdingsEn(nowCounts, rest, false, false)}.`),
+      );
+    } else if (n === 1) {
+      parts.push(`In the ${thisHouse} the seat is ${holdingsEn(nowCounts, n, true, false)}.`);
+    } else if (nowCounts.length === 1 && nowCounts[0][1] === n) {
+      parts.push(`In the ${thisHouse} the seats are ${holdingsEn(nowCounts, n, false, false)}.`);
+    } else {
+      parts.push(`In the ${thisHouse}, of these seats ${holdingsEn(nowCounts, n, false, false)}.`);
+    }
+  }
+
+  // 3. Who held them last time, when the record has it.
+  const prevNo = meta.parliamentNo - 1;
+  const prev = seats
+    .map((s) => seatHolders(s.no).find((h) => h.parliamentNo === prevNo))
+    .filter((h): h is NonNullable<typeof h> => !!h)
+    .map((h) => ({ party: h.partyAbbr ? partyShort({ abbr: h.partyAbbr, nameBn: h.partyNameBn }, 'en') : null }));
+  const prevCounts = partyCounts(prev);
+  if (prev.length === n && prevCounts.length) {
+    const year = electionYear(prevNo);
+    const when = `In the ${parliamentOrdinal(prevNo, 'en')}${year ? ` (${year})` : ''}`;
+    if (n === 1) parts.push(`${when} the seat was ${holdingsEn(prevCounts, n, true, true)}.`);
+    else if (prevCounts.length === 1 && prevCounts[0][1] === n) parts.push(`${when} the seats were ${holdingsEn(prevCounts, n, false, true)}.`);
+    else parts.push(`${when}, of these seats ${holdingsEn(prevCounts, n, false, true)}.`);
+  }
+
+  // 4. The vote, where every seat's result is on record.
+  const results = seats.map((s) => resultForSeat(s.no, meta.parliamentNo));
+  if (results.every((r) => r && r.totalVotes)) {
+    const total = results.reduce((sum, r) => sum + (r!.totalVotes ?? 0), 0);
+    const year = electionYear(meta.parliamentNo);
+    parts.push(
+      `In the ${year ? `${year}` : 'same'} election, a total of ${t.group(total)} votes were counted in the district's ${n === 1 ? 'seat' : `${n} seats`}, according to the published results.`,
+    );
+  }
+
+  let held = '';
+  if (nowCounts.length) {
+    if (n === 1) held = `, ${holdingsEn(nowCounts, rest, true, false)} in the ${thisHouse}`;
+    else if (nowCounts.length === 1 && nowCounts[0][1] === rest) held = `; in the ${thisHouse} they are ${holdingsEn(nowCounts, rest, false, false)}`;
+    else held = `; in the ${thisHouse} ${holdingsEn(nowCounts, rest, false, false)}`;
+  }
+  return {
+    text: parts.join(' '),
+    short: `${name} district has ${t.count(n, '', 'parliamentary seat', 'parliamentary seats')}${held}. The current Member of Parliament, party and area of each seat.`,
   };
 }
