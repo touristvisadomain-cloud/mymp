@@ -277,7 +277,7 @@ export default async function SeatPage({ params }: PageProps<'/[lang]/ason/[slug
                       // A sitting member is shown under the name the site uses for them; the
                       // source's own spelling for that year stays underneath.
                       const name = t.en
-                        ? (cur ? personName(cur, 'en') : titleCaseName(h.nameEn)) || 'Name not recorded'
+                        ? (cur ? personName(cur, 'en') : personName(h, 'en')) || 'Name not recorded'
                         : cur?.nameBn ?? h.nameBn ?? h.nameEn ?? 'নাম নেই';
                       const sub = t.en
                         ? cur ? titleCaseName(h.nameEn) : null

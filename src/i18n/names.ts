@@ -44,12 +44,24 @@ const NAME_EN_FIX: Record<string, string> = {
   '013016301': 'Advocate Md. Jalal Uddin', // source: "ADVOCAT MD. JALAL UDDIN"
 };
 
+/**
+ * People of earlier parliaments whose English name the source wrote in
+ * Bangla script, by their Bangla name (data/history.json has no ids for them).
+ */
+// Keys in NFC: the data writes য় both as one code point and as য plus nukta.
+const NAME_EN_BY_BN: Record<string, string> = Object.fromEntries(Object.entries({
+  'আনোয়ারুল আবেদীন খান': 'Anwarul Abedin Khan', // Mymensingh-9, 11th Parliament
+}).map(([bn, en]) => [bn.normalize('NFC'), en]));
+
 type Named = { id?: string; nameBn?: string | null; nameEn?: string | null };
 
 /** A member's (or any person's) name in the page's language; the other language's name only when there is no other. */
 export function personName(p: Named | null | undefined, lang: Lang): string {
   if (!p) return '';
-  if (lang === 'en') return (p.id && NAME_EN_FIX[p.id]) || titleCaseName(p.nameEn) || p.nameBn || '';
+  if (lang === 'en') {
+    const en = /[A-Za-z]/.test(p.nameEn ?? '') ? p.nameEn : (p.nameBn && NAME_EN_BY_BN[p.nameBn.normalize('NFC').trim()]) || null;
+    return (p.id && NAME_EN_FIX[p.id]) || titleCaseName(en) || p.nameBn || '';
+  }
   return p.nameBn || titleCaseName(p.nameEn) || '';
 }
 
