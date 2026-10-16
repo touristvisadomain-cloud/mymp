@@ -74,6 +74,9 @@ function showCountry(map: google.maps.Map, box: HTMLElement) {
   map.setZoom(box.clientHeight >= 600 && box.clientWidth >= 520 ? 7 : 6);
 }
 
+/** Whether the MP card sits over the map (from sm up) or below it (a phone). */
+const cardBesideMap = () => typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches;
+
 /** The symbols in public/party, by party. A party without one wears its colour. */
 const SYMBOL: Record<string, string> = {
   BNP: '/party/bnp.webp', BJEI: '/party/bjei.svg', NCP: '/party/ncp.svg', BKM: '/party/bkm.webp', IMB: '/party/imb.webp',
@@ -168,6 +171,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
   /** Counts up when the Google map is made, so the effects that dress it run. */
   const [gmReady, setGmReady] = useState(0);
   const svgRef = useRef<SVGSVGElement>(null);
+  const cardRef = useRef<HTMLElement>(null);
   const gmBox = useRef<HTMLDivElement>(null);
   const gm = useRef<{ map: google.maps.Map; districts: google.maps.Data; areas: google.maps.Data; markers: Map<string, google.maps.Marker>; icons: Map<string, string> } | null>(null);
   const drag = useRef<{ x: number; y: number; vb: Box } | null>(null);
@@ -376,8 +380,15 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
       : { fillColor: color, fillOpacity: 0.1, strokeColor: color, strokeWeight: 2, strokeOpacity: 0.7, clickable: false }));
     const b = new google.maps.LatLngBounds();
     for (const [lon, lat] of framePoints(areas)) b.extend({ lat: lat!, lng: lon! });
-    m.map.fitBounds(b, { top: 40, bottom: 40, left: 380, right: 40 });
+    // On a wide screen the card covers the map's left edge, so the area sits to its right;
+    // on a phone the card is below the map and the area takes the whole box. A padding wider
+    // than the box makes Google zoom out to the whole world.
+    m.map.fitBounds(b, cardBesideMap() ? { top: 40, bottom: 40, left: 380, right: 40 } : 28);
   }, [gmReady, current, areas]);
+
+  useEffect(() => {
+    if ((current || pickedDistrict) && !cardBesideMap()) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [current, pickedDistrict]);
 
   const districtSeats = pickedDistrict ? seats.filter((s) => s.district === pickedDistrict).sort((a, b) => a.no - b.no) : [];
   const districtName = districtPaths.find((d) => d.slug === pickedDistrict)?.name ?? pickedDistrict;
@@ -461,6 +472,7 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
         </div>
       )}
 
+      <div className="relative">
       <div className="relative bg-surface border border-rule rounded-card shadow-card overflow-hidden h-[520px] sm:h-[640px]" style={{ touchAction: useGoogle === false ? 'none' : undefined }}>
         {useGoogle !== false ? (
           <div ref={gmBox} className="w-full h-full" role="region" aria-label={mode === 'seats' ? 'বাংলাদেশের ৩০০ সংসদীয় আসন, দলের প্রতীকে' : 'বাংলাদেশের ৬৪ জেলা, দলের রঙে'} />
@@ -575,8 +587,9 @@ export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
         {!overview && <p className="absolute inset-0 grid place-items-center text-[14px] text-muted">মানচিত্র আসছে…</p>}
         {useGoogle === false && <p className="absolute left-3 bottom-3 text-[12px] text-muted bg-surface border border-rule rounded-full px-2.5 py-1">স্ক্রল বা দুই আঙুলে zoom, টেনে সরান</p>}
 
+      </div>
         {(current || (mode === 'districts' && pickedDistrict)) && (
-          <aside className="absolute left-3 top-3 w-[min(340px,calc(100%-24px))] max-h-[calc(100%-24px)] overflow-y-auto bg-surface border border-rule rounded-card shadow-lift p-4 z-10" aria-live="polite">
+          <aside ref={cardRef} className="relative mt-3 sm:mt-0 sm:absolute sm:left-3 sm:top-3 sm:w-[min(340px,calc(100%-24px))] sm:max-h-[calc(100%-24px)] sm:overflow-y-auto bg-surface border border-rule rounded-card shadow-lift p-4 z-10 scroll-mt-24" aria-live="polite">
             <button type="button" onClick={close} aria-label="বন্ধ করুন" className="absolute right-2.5 top-1.5 text-[22px] leading-none text-muted hover:text-ink">×</button>
             {current ? (
               <>
