@@ -109,6 +109,9 @@ const nextConfig: NextConfig = {
               source,
               headers: [{ key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" }],
             })),
+            // The app draws seat and election maps from these; its web build needs them readable cross-origin,
+            // like the /api/app routes. Public, read-only data.
+            { source: "/geo/:path*", headers: [{ key: "Access-Control-Allow-Origin", value: "*" }] },
           ];
         },
       }),
