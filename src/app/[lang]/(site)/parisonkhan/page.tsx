@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { shareGraph, langAlternates } from '@/lib/seo';
 import Link from '@/i18n/Link';
-import { statistics, parties, committees, bn, bnGroup, dateBn, meta, ecs, partyColor } from '@/lib/data';
+import { statistics, parties, committees, bn, bnGroup, dateBn, meta, ecs, partyColor, AGE_BAND_EN } from '@/lib/data';
 import { Page, PageHead, Card, Stat, Empty } from '@/components/ui';
 import { experienceStats } from '@/lib/history';
 import Hemicycle from '@/components/Hemicycle';
@@ -21,16 +21,6 @@ export async function generateMetadata(): Promise<Metadata> {
     ),
   };
 }
-
-/** statistics() names its age bands in Bangla; their English. */
-const AGE_BAND_EN: Record<string, string> = {
-  '৩০-এর নিচে': 'Under 30',
-  '৩০-৩৯': '30–39',
-  '৪০-৪৯': '40–49',
-  '৫০-৫৯': '50–59',
-  '৬০-৬৯': '60–69',
-  '৭০+': '70+',
-};
 
 /** A labelled horizontal bar. One series, so the heading names it and no legend is needed. */
 async function Bars({

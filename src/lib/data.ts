@@ -386,6 +386,16 @@ export const GENERAL_SEATS = 300;
 export const RESERVED_SEATS = 50;
 export const HOUSE_SEATS = GENERAL_SEATS + RESERVED_SEATS;
 
+/** statistics() names its age bands in Bangla; their English. */
+export const AGE_BAND_EN: Record<string, string> = {
+  '৩০-এর নিচে': 'Under 30',
+  '৩০-৩৯': '30–39',
+  '৪০-৪৯': '40–49',
+  '৫০-৫৯': '50–59',
+  '৬০-৬৯': '60–69',
+  '৭০+': '70+',
+};
+
 /** Variant spellings of an occupation, each mapped to the key of the one shown. */
 const PROFESSION_CANON: Record<string, string> = {
   'ব্যবসায়ী': 'ব্যবসা',
