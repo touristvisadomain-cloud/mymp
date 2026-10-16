@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useT } from '@/i18n/client';
 import { stripLang } from '@/i18n/core';
 import Icon from './Icon';
+import LangSwitch from './LangSwitch';
 
 /**
  * The menu button and full-height sheet used below the lg breakpoint.
@@ -72,6 +73,9 @@ export default function MobileNav({
                 {it.label}
               </Link>
             ))}
+          </div>
+          <div className="px-5 pb-6">
+            <LangSwitch variant="menu" onPick={() => setOpen(false)} />
           </div>
         </div>
       )}

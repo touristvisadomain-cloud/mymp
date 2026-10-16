@@ -85,12 +85,16 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         {t('মূল বিষয়ে যান', 'Skip to content')}
       </a>
 
-      {/* Today's date and time (Bangladesh), above the bar; it scrolls away and the bar stays.
-          Centred on a phone, where a lone line at one edge looked lost. */}
+      {/* Today's date and time (Bangladesh), above the bar, with the switch to the other
+          language; it scrolls away and the bar stays. */}
       <div className="bg-[#10281f] text-[#cfdad3] text-[12.5px]">
-        <div className="mx-auto max-w-[1200px] px-4 sm:px-5 h-7 flex items-center justify-center sm:justify-end gap-2">
-          <span className="live-dot text-logo" aria-hidden="true" />
-          <HeaderClock />
+        <div className="mx-auto max-w-[1200px] px-4 sm:px-5 h-7 flex items-center justify-between sm:justify-end gap-4">
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="live-dot text-logo" aria-hidden="true" />
+            <HeaderClock />
+          </span>
+          <span aria-hidden="true" className="hidden sm:block w-px h-3.5 bg-white/25" />
+          <LangSwitch />
         </div>
       </div>
 
@@ -114,8 +118,6 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
             <div className="ms-auto lg:ms-0 w-[128px] sm:w-auto sm:grow lg:grow-0 min-w-0 sm:max-w-[300px] flex justify-end">
               <SiteSearch compact />
             </div>
-
-            <LangSwitch />
 
             <MobileNav items={nav} more={navMore} />
           </div>
