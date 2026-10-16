@@ -102,6 +102,13 @@ const nextConfig: NextConfig = {
             { source: "/:path*", headers: securityHeaders },
             // The admin is never cached by a browser or a proxy.
             { source: "/admin/:path*", headers: [{ key: "Cache-Control", value: "no-store" }, { key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+            // Files in public/ came with max-age=0, so every visit asked for them again. They
+            // change with a build at most: a browser keeps them an hour and may use a copy up
+            // to a day old while it checks for a new one.
+            ...["/geo/:path*", "/search-index.json", "/party/:path*", "/icon-:size.png", "/logo.svg"].map((source) => ({
+              source,
+              headers: [{ key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" }],
+            })),
           ];
         },
       }),

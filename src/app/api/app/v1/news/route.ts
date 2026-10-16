@@ -6,11 +6,12 @@
  */
 import { NextResponse } from 'next/server';
 import { newsPageStories, latestVideos } from '@/lib/feed/storyView';
+import { gzipJson } from '@/lib/gzipJson';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET(req: Request) {
+async function handle(req: Request) {
   const url = new URL(req.url);
   const limit = Math.min(Number(url.searchParams.get('limit') ?? 200) || 200, 400);
   const type = url.searchParams.get('type');
@@ -29,4 +30,9 @@ export async function GET(req: Request) {
     { stories: filtered.slice(0, limit) },
     { headers: { 'cache-control': 'public, s-maxage=300, stale-while-revalidate=1800', 'access-control-allow-origin': '*' } },
   );
+}
+
+/** The JSON, gzipped for a browser that accepts it (lib/gzipJson). */
+export async function GET(req: Request) {
+  return gzipJson(req, await handle(req));
 }

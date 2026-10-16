@@ -11,6 +11,9 @@ import RangePicker, { parseRange, rangeLabel } from './RangePicker';
 import { useT } from '@/i18n/client';
 import { plural, type T } from '@/i18n/core';
 
+/** Stories drawn at first, and added by each "আরও দেখুন". */
+const STEP = 30;
+
 /**
  * সংবাদ ও ভিডিও on a member's profile.
  *
@@ -130,6 +133,8 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
   const [outlet, setOutlet] = useState('');
   const [monthData, setMonthData] = useState<Record<string, FeedEntry[]>>({});
   const [playing, setPlaying] = useState<FeedEntry | null>(null);
+  /** How many of the month's stories are drawn: a busy member's month is hundreds. */
+  const [shownCount, setShownCount] = useState({ key: '', n: STEP });
 
   const typeParam = type === 'news' || type === 'video' ? `&type=${type}` : '';
 
@@ -212,6 +217,9 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
   const current = data.months.find((m) => m.month === data.month);
   const earlier = data.months.filter((m) => m.month !== data.month);
   const items = byOutlet(data.items);
+  // A new member, type or outlet starts again from the first few.
+  const listKey = `${key}|${outlet ?? ''}`;
+  const shown = shownCount.key === listKey ? shownCount.n : STEP;
   const rangeItems = range && rangeData?.key === rangeKey ? byOutlet(rangeData.items) : null;
 
   return (
@@ -294,7 +302,18 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
           {current && <span className="text-[13px] font-normal text-muted">{countLabel(current)}</span>}
         </h3>
         {items.length ? (
-          <div>{items.map((i) => <Row key={i.id} item={i} onPlay={setPlaying} />)}</div>
+          <div>
+            {items.slice(0, shown).map((i) => <Row key={i.id} item={i} onPlay={setPlaying} />)}
+            {items.length > shown && (
+              <button
+                type="button"
+                onClick={() => setShownCount({ key: listKey, n: shown + STEP })}
+                className="mt-3 w-full h-10 rounded-lg border border-rule text-[14px] font-semibold text-brand hover:border-brand"
+              >
+                {t.en ? `See more (${items.length - shown} left)` : <>আরও দেখুন ({bn(items.length - shown)}টি বাকি)</>}
+              </button>
+            )}
+          </div>
         ) : (
           <p className="py-3 text-[14px] text-muted">
             {data.total === 0
