@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { findSeats, placeNames, type FinderSeat } from '../findSeat';
+import { findSeats, placeNames, wardNumbers, type FinderSeat } from '../findSeat';
 
 // Boundary text as the Election Commission writes it (data/seats.json, 2026).
 const seat = (no: number, name: string, district: string, boundary: string): FinderSeat => ({
@@ -10,6 +10,7 @@ const SEATS = [
   seat(175, 'ঢাকা-২', 'ঢাকা', '(ক)নিম্নলিখিত ইউনিয়ন সমূহ ব্যতীত কেরানিগঞ্জ উপজেলাঃ(১) জিনজিরা, (২)আগানগর,(৩) তেঘরিয়া,(৪) কোন্ডা ও(৫) শুভাট্যা, (খ)ঢাকা দক্ষিন সিটি কর্পোরেশনের ওয়ার্ড ৫৫,৫৬, ও ৫৭ এবং (গ)সাভার উপজেলার নিম্নলিখিত ইউনিয়ন সমূহঃ(১) আমিনবাজার,(২) তেতুলঝড়া ও(৩) ভাকুর্তা'),
   seat(176, 'ঢাকা-৩', 'ঢাকা', 'কেরানিগঞ্জ উপজেলার নিম্নলিখিত ইউনিয়ন সমূহঃ (১) জিনজিরা, (২) আগানগর, (৩) তেঘরিয়া, (৪) কোন্ডা ও (৫) শুভাট্যা'),
   seat(183, 'ঢাকা-১০', 'ঢাকা', 'ঢাকা দক্ষিন সিটি কর্পোরেশনের ওয়ার্ড- ১৪,১৫,১৬,১৭,১৮ ও ২২'),
+  seat(187, 'ঢাকা-১৪', 'ঢাকা', '(ক)ঢাকা উত্তর সিটি কর্পোরেশনের ওয়ার্ড ৭ থেকে ১২ পর্যন্ত এবং (খ)সাভার উপজেলার কাউন্দিয়া ইউনিয়ন'),
   seat(116, 'ভোলা-২', 'ভোলা', '(ক) দৌলতখান এবং (খ) বোরহানউদ্দিন উপজেলা'),
   seat(45, 'চাঁপাইনবাবগঞ্জ-২', 'চাঁপাইনবাবগঞ্জ', '(ক) নাচোল, (খ) গোমস্তাপুর এবং (গ) ভোলাহাট উপজেলা'),
 ];
@@ -55,4 +56,17 @@ test('a place typed in English is looked up in Bangla', async () => {
   assert.equal(toBangla('দৌলতখান', table), 'দৌলতখান'); // Bangla stays as it is
   assert.deepEqual(where(toBangla('ward 15 dhaka south', table)), ['ঢাকা-১০:ward']);
   assert.deepEqual(where(toBangla('Doulatkhan', table)), ['ভোলা-২:upazila']);
+});
+
+test('ward numbers: lists, ranges, zero-padded', () => {
+  assert.deepEqual(wardNumbers('ঢাকা উত্তর সিটি কর্পোরেশনের ওয়ার্ড- ০৪,১৩,১৪, ও ১৬'), [4, 13, 14, 16]);
+  assert.deepEqual(wardNumbers('ঢাকা উত্তর সিটি কর্পোরেশনের ওয়ার্ড ৭ থেকে ১২ পর্যন্ত'), [7, 8, 9, 10, 11, 12]);
+  assert.deepEqual(wardNumbers('গাজীপুর সিটি কর্পোরেশনের ১ হতে ৫ নং ওয়ার্ড'), [1, 2, 3, 4, 5]);
+  assert.deepEqual(wardNumbers('ঢাকা দক্ষিণ সিটি কর্পোরেশনের ওয়ার্ড- ২৩ থেকে ২৫, ৩৫ ও ৫৭'), [23, 24, 25, 35, 57]);
+});
+
+test('a ward inside a "থেকে" range finds its seat', () => {
+  assert.deepEqual(where('ঢাকা উত্তর ওয়ার্ড ৯'), ['ঢাকা-১৪:ward']);
+  assert.deepEqual(where('ঢাকা উত্তর ওয়ার্ড ১৩'), []);
+  assert.deepEqual(where('ঢাকা দক্ষিণ ওয়ার্ড ১৫'), ['ঢাকা-১০:ward']);
 });
