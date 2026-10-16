@@ -12,13 +12,12 @@
  *   hides the others.
  * - জেলার রং: each district in the colour of the party holding most of its
  *   seats, two colours where it is a tie; a tap lists the district's seats.
- * - টাইল: the tile map (DistrictMap), passed in as `tiles`.
  *
  * Without a Google key, or when Google refuses it, the same map is drawn as
  * plain SVG with the districts named by us. Outlines and seat points come
  * from public/geo/overview.json (scripts/build-district-geo.ts).
  */
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import MemberPhoto from './MemberPhoto';
 import { BUILT_KEY, googleKey, loadGoogle, onAuthFailure, resolve } from '@/lib/googleMaps';
@@ -50,7 +49,7 @@ interface AreaFeature {
 }
 interface Area { f: AreaFeature; name: string; part: 'whole' | 'part' }
 interface Box { x: number; y: number; w: number; h: number }
-type Mode = 'seats' | 'districts' | 'tiles';
+type Mode = 'seats' | 'districts';
 
 /** The SVG drawing: an equirectangular sheet of the country, 620 by 860 units. */
 const W0 = 620;
@@ -144,7 +143,7 @@ function symbolIcon(party: string, color: string, size: number): Promise<string>
   return p;
 }
 
-export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles: ReactNode }) {
+export default function ElectionMap({ seats }: { seats: PinSeat[] }) {
   const [mode, setMode] = useState<Mode>('seats');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [vb, setVb] = useState<Box>(HOME);
@@ -214,7 +213,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
   };
   useEffect(() => {
     const svg = svgRef.current;
-    if (!svg || mode === 'tiles' || useGoogle !== false) return;
+    if (!svg || useGoogle !== false) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const [x, y] = svgPoint(e.clientX, e.clientY);
@@ -222,7 +221,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
     };
     svg.addEventListener('wheel', onWheel, { passive: false });
     return () => svg.removeEventListener('wheel', onWheel);
-  }, [mode, useGoogle]);
+  }, [useGoogle]);
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -284,8 +283,6 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
     gm.current = null;
   };
   useEffect(() => {
-    // The tile view takes the box away; the map goes with it and is made afresh later.
-    if (mode === 'tiles') { disposeGm(); return; }
     if (useGoogle !== true || !overview || !gmBox.current || gm.current) return;
     let cancelled = false;
     googleKey().then(loadGoogle).then((g) => {
@@ -314,7 +311,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
       setGmReady((n) => n + 1);
     }).catch(() => setUseGoogle(false));
     return () => { cancelled = true; };
-  }, [useGoogle, overview, mode]);
+  }, [useGoogle, overview]);
   useEffect(() => disposeGm, []);
 
   // Markers: one per seat, its party's symbol; hidden by a dimmed chip or in the district view.
@@ -391,33 +388,30 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
       <div className="flex flex-wrap items-center gap-2">
         {tab('seats', 'আসন ও প্রতীক')}
         {tab('districts', 'জেলার রং')}
-        {tab('tiles', 'টাইল')}
-        {mode !== 'tiles' && (
-          <div className="relative ms-auto w-full sm:w-[300px]">
-            <label htmlFor="election-map-q" className="sr-only">এমপি, আসন বা জেলা খুঁজুন</label>
-            <input
-              id="election-map-q"
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="এমপি, আসন বা জেলার নাম…"
-              autoComplete="off"
-              className="w-full h-10 px-3 rounded-[10px] border-[1.5px] border-rule bg-surface text-[14px] outline-none focus:border-brand"
-            />
-            {hits.length > 0 && (
-              <ul className="absolute z-30 mt-1 w-full rounded-xl border border-rule bg-surface shadow-lg py-1 max-h-[260px] overflow-y-auto" role="listbox">
-                {hits.map((s) => (
-                  <li key={s.slug} role="option" aria-selected={false}>
-                    <button type="button" onClick={() => { setMode('seats'); open(s); }} className="w-full text-start px-3 py-2 flex justify-between gap-3 hover:bg-brandsoft">
-                      <span className="font-semibold text-[14px] truncate">{s.member?.name ?? 'আসনটি শূন্য'}</span>
-                      <span className="text-[12.5px] text-muted shrink-0">{s.seat}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+        <div className="relative ms-auto w-full sm:w-[300px]">
+          <label htmlFor="election-map-q" className="sr-only">এমপি, আসন বা জেলা খুঁজুন</label>
+          <input
+            id="election-map-q"
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="এমপি, আসন বা জেলার নাম…"
+            autoComplete="off"
+            className="w-full h-10 px-3 rounded-[10px] border-[1.5px] border-rule bg-surface text-[14px] outline-none focus:border-brand"
+          />
+          {hits.length > 0 && (
+            <ul className="absolute z-30 mt-1 w-full rounded-xl border border-rule bg-surface shadow-lg py-1 max-h-[260px] overflow-y-auto" role="listbox">
+              {hits.map((s) => (
+                <li key={s.slug} role="option" aria-selected={false}>
+                  <button type="button" onClick={() => { setMode('seats'); open(s); }} className="w-full text-start px-3 py-2 flex justify-between gap-3 hover:bg-brandsoft">
+                    <span className="font-semibold text-[14px] truncate">{s.member?.name ?? 'আসনটি শূন্য'}</span>
+                    <span className="text-[12.5px] text-muted shrink-0">{s.seat}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
       {mode === 'seats' && (
         <div className="flex flex-wrap gap-1.5">
@@ -436,188 +430,182 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
         </div>
       )}
 
-      {mode === 'tiles' ? (
-        tiles
-      ) : (
-        <div className="relative bg-surface border border-rule rounded-card shadow-card overflow-hidden h-[520px] sm:h-[640px]" style={{ touchAction: useGoogle === false ? 'none' : undefined }}>
-          {useGoogle !== false ? (
-            <div ref={gmBox} className="w-full h-full" role="region" aria-label={mode === 'seats' ? 'বাংলাদেশের ৩০০ সংসদীয় আসন, দলের প্রতীকে' : 'বাংলাদেশের ৬৪ জেলা, দলের রঙে'} />
-          ) : (
-          <svg
-            ref={svgRef}
-            viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
-            className="w-full h-full cursor-grab active:cursor-grabbing"
-            role="img"
-            aria-label={mode === 'seats' ? 'বাংলাদেশের ৩০০ সংসদীয় আসন, দলের প্রতীকে' : 'বাংলাদেশের ৬৪ জেলা, দলের রঙে'}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            onClick={(e) => { if ((e.target as Element).closest('[data-district]') || e.target === e.currentTarget) { if (mode === 'seats') close(); } }}
-          >
-            <defs>
-              {parties.filter((p) => SYMBOL[p.abbr]).map((p) => (
-                <pattern key={p.abbr} id={`party-${p.abbr}`} patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" width="1" height="1">
-                  <rect width="1" height="1" fill="#ffffff" />
-                  <image href={SYMBOL[p.abbr]} width="1" height="1" preserveAspectRatio="xMidYMid slice" />
-                </pattern>
-              ))}
-            </defs>
+      <div className="relative bg-surface border border-rule rounded-card shadow-card overflow-hidden h-[520px] sm:h-[640px]" style={{ touchAction: useGoogle === false ? 'none' : undefined }}>
+        {useGoogle !== false ? (
+          <div ref={gmBox} className="w-full h-full" role="region" aria-label={mode === 'seats' ? 'বাংলাদেশের ৩০০ সংসদীয় আসন, দলের প্রতীকে' : 'বাংলাদেশের ৬৪ জেলা, দলের রঙে'} />
+        ) : (
+        <svg
+          ref={svgRef}
+          viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
+          className="w-full h-full cursor-grab active:cursor-grabbing"
+          role="img"
+          aria-label={mode === 'seats' ? 'বাংলাদেশের ৩০০ সংসদীয় আসন, দলের প্রতীকে' : 'বাংলাদেশের ৬৪ জেলা, দলের রঙে'}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onClick={(e) => { if ((e.target as Element).closest('[data-district]') || e.target === e.currentTarget) { if (mode === 'seats') close(); } }}
+        >
+          <defs>
+            {parties.filter((p) => SYMBOL[p.abbr]).map((p) => (
+              <pattern key={p.abbr} id={`party-${p.abbr}`} patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" width="1" height="1">
+                <rect width="1" height="1" fill="#ffffff" />
+                <image href={SYMBOL[p.abbr]} width="1" height="1" preserveAspectRatio="xMidYMid slice" />
+              </pattern>
+            ))}
+          </defs>
+          <g>
+            {districtPaths.map((d, i) => {
+              const [a, b] = lead.get(d.slug) ?? [];
+              const tie = a && b && a.seats === b.seats;
+              const fill = mode === 'districts' ? (tie ? `url(#tie-${d.slug})` : a ? a.color : 'var(--color-rulesoft)') : i % 2 ? 'var(--color-rulesoft)' : 'var(--color-surface)';
+              return (
+                <g key={d.slug}>
+                  {tie && mode === 'districts' && (
+                    <linearGradient id={`tie-${d.slug}`} x1="0" y1="0" x2="1" y2="1"><stop offset="50%" stopColor={a.color} /><stop offset="50%" stopColor={b.color} /></linearGradient>
+                  )}
+                  <path
+                    data-district={d.slug}
+                    d={d.path}
+                    fill={fill}
+                    fillOpacity={mode === 'districts' ? (pickedDistrict && pickedDistrict !== d.slug ? 0.45 : 0.9) : 1}
+                    stroke={pickedDistrict === d.slug ? 'var(--color-ink)' : 'var(--color-rule)'}
+                    strokeWidth={pickedDistrict === d.slug ? 2 : 1.2}
+                    vectorEffect="non-scaling-stroke"
+                    style={{ cursor: mode === 'districts' ? 'pointer' : undefined }}
+                    onClick={(e) => { if (mode === 'districts') { e.stopPropagation(); pickDistrict(d.slug); } }}
+                  >
+                    <title>{mode === 'districts' && a ? `${d.name}: ${(lead.get(d.slug) ?? []).map((p) => `${p.name} ${BN(p.seats)}`).join(', ')}` : d.name}</title>
+                  </path>
+                </g>
+              );
+            })}
+          </g>
+          <g>
+            {areaPaths.map((a, i) => (
+              <path key={i} d={a.d} fill={current?.color} fillOpacity={a.part === 'whole' ? 0.3 : 0.12} stroke={current?.color} strokeWidth={2.5} strokeDasharray={a.part === 'part' ? '6 4' : undefined} strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none">
+                <title>{`${a.name} · ${a.part === 'whole' ? 'পুরোটা এই আসনে' : 'একাংশ এই আসনে'}`}</title>
+              </path>
+            ))}
+          </g>
+          <g style={{ pointerEvents: 'none' }}>
+            {districtPaths.map((d) => (
+              <text
+                key={d.slug}
+                transform={`translate(${d.at[0]},${d.at[1] + (mode === 'seats' ? 14 * k : 0)}) scale(${k})`}
+                textAnchor="middle"
+                fontSize={11}
+                fontWeight={600}
+                fill={mode === 'districts' ? '#ffffff' : 'var(--color-muted)'}
+                stroke={mode === 'districts' ? 'rgba(0,0,0,.35)' : 'var(--color-surface)'}
+                strokeWidth={3}
+                strokeLinejoin="round"
+                paintOrder="stroke"
+                className="seatmap-label"
+              >
+                {SHORT[d.slug] ?? d.name}
+              </text>
+            ))}
+          </g>
+          {mode === 'seats' && (
             <g>
-              {districtPaths.map((d, i) => {
-                const [a, b] = lead.get(d.slug) ?? [];
-                const tie = a && b && a.seats === b.seats;
-                const fill = mode === 'districts' ? (tie ? `url(#tie-${d.slug})` : a ? a.color : 'var(--color-rulesoft)') : i % 2 ? 'var(--color-rulesoft)' : 'var(--color-surface)';
+              {placed.map(({ s, xy }) => {
+                const dim = off.has(s.party ?? '');
+                const on = picked === s.slug;
                 return (
-                  <g key={d.slug}>
-                    {tie && mode === 'districts' && (
-                      <linearGradient id={`tie-${d.slug}`} x1="0" y1="0" x2="1" y2="1"><stop offset="50%" stopColor={a.color} /><stop offset="50%" stopColor={b.color} /></linearGradient>
-                    )}
-                    <path
-                      data-district={d.slug}
-                      d={d.path}
-                      fill={fill}
-                      fillOpacity={mode === 'districts' ? (pickedDistrict && pickedDistrict !== d.slug ? 0.45 : 0.9) : 1}
-                      stroke={pickedDistrict === d.slug ? 'var(--color-ink)' : 'var(--color-rule)'}
-                      strokeWidth={pickedDistrict === d.slug ? 2 : 1.2}
-                      vectorEffect="non-scaling-stroke"
-                      style={{ cursor: mode === 'districts' ? 'pointer' : undefined }}
-                      onClick={(e) => { if (mode === 'districts') { e.stopPropagation(); pickDistrict(d.slug); } }}
+                  <g key={s.slug} transform={`translate(${xy[0]},${xy[1]}) scale(${k})`} opacity={dim ? 0.15 : 1} style={{ pointerEvents: dim ? 'none' : undefined }}>
+                    <circle
+                      r={R}
+                      fill={SYMBOL[s.party ?? ''] ? `url(#party-${s.party})` : s.color}
+                      stroke={on ? 'var(--color-ink)' : '#ffffff'}
+                      strokeWidth={on ? 3 : 2}
+                      style={{ cursor: 'pointer' }}
+                      onClick={(e) => { e.stopPropagation(); open(s); }}
                     >
-                      <title>{mode === 'districts' && a ? `${d.name}: ${(lead.get(d.slug) ?? []).map((p) => `${p.name} ${BN(p.seats)}`).join(', ')}` : d.name}</title>
-                    </path>
+                      <title>{`${s.seat} · ${s.member?.name ?? 'শূন্য'}${s.partyBn ? ` (${s.partyBn})` : ''}`}</title>
+                    </circle>
                   </g>
                 );
               })}
             </g>
-            <g>
-              {areaPaths.map((a, i) => (
-                <path key={i} d={a.d} fill={current?.color} fillOpacity={a.part === 'whole' ? 0.3 : 0.12} stroke={current?.color} strokeWidth={2.5} strokeDasharray={a.part === 'part' ? '6 4' : undefined} strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none">
-                  <title>{`${a.name} · ${a.part === 'whole' ? 'পুরোটা এই আসনে' : 'একাংশ এই আসনে'}`}</title>
-                </path>
-              ))}
-            </g>
-            <g style={{ pointerEvents: 'none' }}>
-              {districtPaths.map((d) => (
-                <text
-                  key={d.slug}
-                  transform={`translate(${d.at[0]},${d.at[1] + (mode === 'seats' ? 14 * k : 0)}) scale(${k})`}
-                  textAnchor="middle"
-                  fontSize={11}
-                  fontWeight={600}
-                  fill={mode === 'districts' ? '#ffffff' : 'var(--color-muted)'}
-                  stroke={mode === 'districts' ? 'rgba(0,0,0,.35)' : 'var(--color-surface)'}
-                  strokeWidth={3}
-                  strokeLinejoin="round"
-                  paintOrder="stroke"
-                  className="seatmap-label"
-                >
-                  {SHORT[d.slug] ?? d.name}
-                </text>
-              ))}
-            </g>
-            {mode === 'seats' && (
-              <g>
-                {placed.map(({ s, xy }) => {
-                  const dim = off.has(s.party ?? '');
-                  const on = picked === s.slug;
-                  return (
-                    <g key={s.slug} transform={`translate(${xy[0]},${xy[1]}) scale(${k})`} opacity={dim ? 0.15 : 1} style={{ pointerEvents: dim ? 'none' : undefined }}>
-                      <circle
-                        r={R}
-                        fill={SYMBOL[s.party ?? ''] ? `url(#party-${s.party})` : s.color}
-                        stroke={on ? 'var(--color-ink)' : '#ffffff'}
-                        strokeWidth={on ? 3 : 2}
-                        style={{ cursor: 'pointer' }}
-                        onClick={(e) => { e.stopPropagation(); open(s); }}
-                      >
-                        <title>{`${s.seat} · ${s.member?.name ?? 'শূন্য'}${s.partyBn ? ` (${s.partyBn})` : ''}`}</title>
-                      </circle>
-                    </g>
-                  );
-                })}
-              </g>
-            )}
-          </svg>
           )}
-          {useGoogle === false && (
-            <div className="absolute right-3 top-3 flex flex-col gap-1.5">
-              <button type="button" onClick={() => zoomAt(1.5, vb.x + vb.w / 2, vb.y + vb.h / 2)} aria-label="বড় করুন" title="বড় করুন" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">+</button>
-              <button type="button" onClick={() => zoomAt(1 / 1.5, vb.x + vb.w / 2, vb.y + vb.h / 2)} aria-label="ছোট করুন" title="ছোট করুন" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">−</button>
-              <button type="button" onClick={home} aria-label="পুরো দেশ" title="পুরো দেশ" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">⌂</button>
-            </div>
-          )}
-          {useGoogle !== false && (
-            <button type="button" onClick={home} aria-label="পুরো দেশ" title="পুরো দেশ" className="absolute right-3 bottom-24 w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">⌂</button>
-          )}
-          {!overview && <p className="absolute inset-0 grid place-items-center text-[14px] text-muted">মানচিত্র আসছে…</p>}
-          {useGoogle === false && <p className="absolute left-3 bottom-3 text-[12px] text-muted bg-surface border border-rule rounded-full px-2.5 py-1">স্ক্রল বা দুই আঙুলে zoom, টেনে সরান</p>}
+        </svg>
+        )}
+        {useGoogle === false && (
+          <div className="absolute right-3 top-3 flex flex-col gap-1.5">
+            <button type="button" onClick={() => zoomAt(1.5, vb.x + vb.w / 2, vb.y + vb.h / 2)} aria-label="বড় করুন" title="বড় করুন" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">+</button>
+            <button type="button" onClick={() => zoomAt(1 / 1.5, vb.x + vb.w / 2, vb.y + vb.h / 2)} aria-label="ছোট করুন" title="ছোট করুন" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">−</button>
+            <button type="button" onClick={home} aria-label="পুরো দেশ" title="পুরো দেশ" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">⌂</button>
+          </div>
+        )}
+        {useGoogle !== false && (
+          <button type="button" onClick={home} aria-label="পুরো দেশ" title="পুরো দেশ" className="absolute right-3 bottom-24 w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">⌂</button>
+        )}
+        {!overview && <p className="absolute inset-0 grid place-items-center text-[14px] text-muted">মানচিত্র আসছে…</p>}
+        {useGoogle === false && <p className="absolute left-3 bottom-3 text-[12px] text-muted bg-surface border border-rule rounded-full px-2.5 py-1">স্ক্রল বা দুই আঙুলে zoom, টেনে সরান</p>}
 
-          {(current || (mode === 'districts' && pickedDistrict)) && (
-            <aside className="absolute left-3 top-3 w-[min(340px,calc(100%-24px))] max-h-[calc(100%-24px)] overflow-y-auto bg-surface border border-rule rounded-card shadow-lift p-4 z-10" aria-live="polite">
-              <button type="button" onClick={close} aria-label="বন্ধ করুন" className="absolute right-2.5 top-1.5 text-[22px] leading-none text-muted hover:text-ink">×</button>
-              {current ? (
-                <>
-                  <div className="flex items-center gap-3 pe-6">
-                    {current.member ? (
-                      <MemberPhoto src={current.member.photo} alt="" initial={current.member.initial} size={56} sizeClass="w-14 h-14" />
-                    ) : (
-                      <span className="w-14 h-14 rounded-full bg-rulesoft grid place-items-center text-muted text-[20px]" aria-hidden="true">—</span>
-                    )}
-                    <div className="min-w-0">
-                      <h3 className="display text-[17px] font-bold leading-snug">{current.member?.name ?? 'আসনটি এখন শূন্য'}</h3>
-                      <p className="text-[13px] text-muted">{current.seat} · {current.districtBn} জেলা{current.member?.profession ? ` · ${current.member.profession}` : ''}</p>
-                    </div>
-                  </div>
-                  {current.party && (
-                    <span className="inline-flex items-center gap-1.5 mt-2.5 text-[13px] font-semibold rounded-full bg-brandsoft ps-1 pe-2.5 py-0.5">
-                      <span className="w-5 h-5 rounded-full bg-center bg-cover" style={{ background: current.color, backgroundImage: SYMBOL[current.party] ? `url(${SYMBOL[current.party]})` : undefined }} aria-hidden="true" />
-                      {current.partyFull ?? current.partyBn}
-                    </span>
+        {(current || (mode === 'districts' && pickedDistrict)) && (
+          <aside className="absolute left-3 top-3 w-[min(340px,calc(100%-24px))] max-h-[calc(100%-24px)] overflow-y-auto bg-surface border border-rule rounded-card shadow-lift p-4 z-10" aria-live="polite">
+            <button type="button" onClick={close} aria-label="বন্ধ করুন" className="absolute right-2.5 top-1.5 text-[22px] leading-none text-muted hover:text-ink">×</button>
+            {current ? (
+              <>
+                <div className="flex items-center gap-3 pe-6">
+                  {current.member ? (
+                    <MemberPhoto src={current.member.photo} alt="" initial={current.member.initial} size={56} sizeClass="w-14 h-14" />
+                  ) : (
+                    <span className="w-14 h-14 rounded-full bg-rulesoft grid place-items-center text-muted text-[20px]" aria-hidden="true">—</span>
                   )}
-                  <dl className="grid grid-cols-2 gap-2.5 mt-3">
-                    <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">প্রাপ্ত ভোট</dt><dd className="text-[16px] font-bold tnum">{current.votes != null ? GRP(current.votes) : '—'}</dd></div>
-                    <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">ব্যবধান</dt><dd className="text-[16px] font-bold tnum">{current.margin != null ? GRP(current.margin) : '—'}</dd></div>
-                  </dl>
-                  {current.runnerUp && (
-                    <p className="mt-2.5 text-[12.5px] text-muted">নিকটতম: {current.runnerUp.name}{current.runnerUp.party ? ` (${current.runnerUp.party})` : ''}, {GRP(current.runnerUp.votes)} ভোট</p>
-                  )}
-                  <div className="flex gap-2 mt-3">
-                    {current.member && <Link href={`/mp/${current.member.slug}`} className="flex-1 text-center h-9 leading-9 rounded-[9px] bg-brand text-white text-[13.5px] font-bold hover:bg-branddark">প্রোফাইল</Link>}
-                    <Link href={`/ason/${current.slug}`} className="flex-1 text-center h-9 leading-9 rounded-[9px] border-[1.5px] border-rule text-[13.5px] font-bold hover:border-brand">আসনের পাতা</Link>
+                  <div className="min-w-0">
+                    <h3 className="display text-[17px] font-bold leading-snug">{current.member?.name ?? 'আসনটি এখন শূন্য'}</h3>
+                    <p className="text-[13px] text-muted">{current.seat} · {current.districtBn} জেলা{current.member?.profession ? ` · ${current.member.profession}` : ''}</p>
                   </div>
-                  {areas.some((a) => a.part === 'part') && <p className="mt-2.5 text-[11.5px] text-muted">হালকা জায়গার একাংশ এই আসনে।</p>}
-                </>
-              ) : (
-                <>
-                  <div className="flex items-baseline justify-between gap-3 pe-6">
-                    <h3 className="display text-[18px] font-bold">{districtName}</h3>
-                    <Link href={`/jela/${pickedDistrict}`} className="text-[13px] font-semibold text-brand hover:underline shrink-0">জেলার পাতা →</Link>
-                  </div>
-                  <p className="text-[13px] text-muted">{BN(districtSeats.length)}টি আসন: {(lead.get(pickedDistrict!) ?? []).map((p) => `${p.name} ${BN(p.seats)}`).join(', ') || 'ফল নেই'}</p>
-                  <ul className="mt-2 flex flex-col divide-y divide-rulesoft">
-                    {districtSeats.map((s) => (
-                      <li key={s.no} className="py-2 flex items-start gap-2.5">
-                        <span className="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} aria-hidden="true" />
-                        <div className="min-w-0 flex flex-col">
-                          <button type="button" onClick={() => { setMode('seats'); open(s); }} className="text-start text-[13px] font-bold text-brand hover:underline">{s.seat}</button>
-                          <span className="text-[14px] font-semibold leading-snug">{s.member?.name ?? <span className="text-muted font-normal">আসনটি এখন শূন্য</span>}</span>
-                          <span className="text-[12.5px] text-muted tnum">{[s.partyBn, s.votes ? `${GRP(s.votes)} ভোট` : null, s.margin ? `ব্যবধান ${GRP(s.margin)}` : null].filter(Boolean).join(' · ')}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </aside>
-          )}
-        </div>
-      )}
-      {mode !== 'tiles' && (
-        <p className="text-[12.5px] text-muted leading-relaxed">
-          জেলার সীমানা OCHA-র মানচিত্রে; আসনের জায়গা তার উপজেলা ও ওয়ার্ডের সীমানা থেকে হিসাব করা, আনুমানিক। {mode === 'districts' ? 'রং সেই জেলার বেশিরভাগ আসন যে দলের বর্তমান সংসদ সদস্যদের; দুই রং মানে সমান সমান।' : 'প্রতীকে চাপ দিলে আসনের এলাকা ও সংসদ সদস্য।'}{useGoogle !== false ? ' পটভূমির মানচিত্র Google Maps-এর।' : ''}
-        </p>
-      )}
+                </div>
+                {current.party && (
+                  <span className="inline-flex items-center gap-1.5 mt-2.5 text-[13px] font-semibold rounded-full bg-brandsoft ps-1 pe-2.5 py-0.5">
+                    <span className="w-5 h-5 rounded-full bg-center bg-cover" style={{ background: current.color, backgroundImage: SYMBOL[current.party] ? `url(${SYMBOL[current.party]})` : undefined }} aria-hidden="true" />
+                    {current.partyFull ?? current.partyBn}
+                  </span>
+                )}
+                <dl className="grid grid-cols-2 gap-2.5 mt-3">
+                  <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">প্রাপ্ত ভোট</dt><dd className="text-[16px] font-bold tnum">{current.votes != null ? GRP(current.votes) : '—'}</dd></div>
+                  <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">ব্যবধান</dt><dd className="text-[16px] font-bold tnum">{current.margin != null ? GRP(current.margin) : '—'}</dd></div>
+                </dl>
+                {current.runnerUp && (
+                  <p className="mt-2.5 text-[12.5px] text-muted">নিকটতম: {current.runnerUp.name}{current.runnerUp.party ? ` (${current.runnerUp.party})` : ''}, {GRP(current.runnerUp.votes)} ভোট</p>
+                )}
+                <div className="flex gap-2 mt-3">
+                  {current.member && <Link href={`/mp/${current.member.slug}`} className="flex-1 text-center h-9 leading-9 rounded-[9px] bg-brand text-white text-[13.5px] font-bold hover:bg-branddark">প্রোফাইল</Link>}
+                  <Link href={`/ason/${current.slug}`} className="flex-1 text-center h-9 leading-9 rounded-[9px] border-[1.5px] border-rule text-[13.5px] font-bold hover:border-brand">আসনের পাতা</Link>
+                </div>
+                {areas.some((a) => a.part === 'part') && <p className="mt-2.5 text-[11.5px] text-muted">হালকা জায়গার একাংশ এই আসনে।</p>}
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline justify-between gap-3 pe-6">
+                  <h3 className="display text-[18px] font-bold">{districtName}</h3>
+                  <Link href={`/jela/${pickedDistrict}`} className="text-[13px] font-semibold text-brand hover:underline shrink-0">জেলার পাতা →</Link>
+                </div>
+                <p className="text-[13px] text-muted">{BN(districtSeats.length)}টি আসন: {(lead.get(pickedDistrict!) ?? []).map((p) => `${p.name} ${BN(p.seats)}`).join(', ') || 'ফল নেই'}</p>
+                <ul className="mt-2 flex flex-col divide-y divide-rulesoft">
+                  {districtSeats.map((s) => (
+                    <li key={s.no} className="py-2 flex items-start gap-2.5">
+                      <span className="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} aria-hidden="true" />
+                      <div className="min-w-0 flex flex-col">
+                        <button type="button" onClick={() => { setMode('seats'); open(s); }} className="text-start text-[13px] font-bold text-brand hover:underline">{s.seat}</button>
+                        <span className="text-[14px] font-semibold leading-snug">{s.member?.name ?? <span className="text-muted font-normal">আসনটি এখন শূন্য</span>}</span>
+                        <span className="text-[12.5px] text-muted tnum">{[s.partyBn, s.votes ? `${GRP(s.votes)} ভোট` : null, s.margin ? `ব্যবধান ${GRP(s.margin)}` : null].filter(Boolean).join(' · ')}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </aside>
+        )}
+      </div>
+      <p className="text-[12.5px] text-muted leading-relaxed">
+        জেলার সীমানা OCHA-র মানচিত্রে; আসনের জায়গা তার উপজেলা ও ওয়ার্ডের সীমানা থেকে হিসাব করা, আনুমানিক। {mode === 'districts' ? 'রং সেই জেলার বেশিরভাগ আসন যে দলের বর্তমান সংসদ সদস্যদের; দুই রং মানে সমান সমান।' : 'প্রতীকে চাপ দিলে আসনের এলাকা ও সংসদ সদস্য।'}{useGoogle !== false ? ' পটভূমির মানচিত্র Google Maps-এর।' : ''}
+      </p>
     </div>
   );
 }
