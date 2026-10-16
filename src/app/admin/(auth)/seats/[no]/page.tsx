@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { seats, getMemberById, bn } from '@/lib/data';
+import { withEnglish } from '@/i18n/content';
 import { requireAdmin } from '@/lib/admin/auth';
 import { overridesFor } from '@/lib/admin/store';
 import { AdminPage, Panel, Button } from '@/app/admin/ui';
@@ -40,7 +41,7 @@ export default async function EditSeat({
         <EntityEditor
           type="seat"
           id={no}
-          snapshot={seat as unknown as Record<string, string | null | undefined>}
+          snapshot={withEnglish(seat, ['boundaryBn']) as unknown as Record<string, string | null | undefined>}
           overrides={overrides}
           backHref="/admin/seats"
         />

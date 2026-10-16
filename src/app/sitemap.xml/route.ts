@@ -1,6 +1,7 @@
 import { allMembers as members, seats, parties, committees, meta, districtOf } from '@/lib/data';
 import { allAdvisers, adviserPosts } from '@/lib/advisers';
 import { siteUrl } from '@/lib/site';
+import { hrefIn } from '@/i18n/core';
 
 // Built once per deploy like the pages it lists; the data only changes with a publish.
 export const dynamic = 'force-static';
@@ -17,7 +18,9 @@ const esc = (s: string) =>
 
 /**
  * Every page on the site, so a crawler finds all 349 members and 349 seats
- * rather than only what happens to be linked from the home page.
+ * rather than only what happens to be linked from the home page. Each page is
+ * listed in both languages (Bangla at the plain address, English under /en),
+ * each naming the other as its alternate.
  *
  * Written out here rather than with app/sitemap.ts: Next puts <image:image>
  * before <lastmod>, and the sitemap schema only allows extension elements
@@ -53,21 +56,31 @@ export function GET() {
     ...committees.map((c): Entry => ({ path: `/committee/${c.slug}`, changefreq: 'monthly', priority: 0.5 })),
   ];
 
-  const urls = entries.map((e) =>
-    [
-      '<url>',
-      `<loc>${esc(siteUrl + e.path)}</loc>`,
-      `<lastmod>${lastmod}</lastmod>`,
-      `<changefreq>${e.changefreq}</changefreq>`,
-      `<priority>${e.priority}</priority>`,
-      ...(e.image ? ['<image:image>', `<image:loc>${esc(e.image)}</image:loc>`, '</image:image>'] : []),
-      '</url>',
-    ].join('\n'),
-  );
+  const urls = entries.flatMap((e) => {
+    const bn = siteUrl + hrefIn('bn', e.path);
+    const en = siteUrl + hrefIn('en', e.path);
+    const alternates = [
+      `<xhtml:link rel="alternate" hreflang="bn-BD" href="${esc(bn)}"/>`,
+      `<xhtml:link rel="alternate" hreflang="en" href="${esc(en)}"/>`,
+      `<xhtml:link rel="alternate" hreflang="x-default" href="${esc(bn)}"/>`,
+    ];
+    return [bn, en].map((loc) =>
+      [
+        '<url>',
+        `<loc>${esc(loc)}</loc>`,
+        `<lastmod>${lastmod}</lastmod>`,
+        `<changefreq>${e.changefreq}</changefreq>`,
+        `<priority>${e.priority}</priority>`,
+        ...alternates,
+        ...(e.image ? ['<image:image>', `<image:loc>${esc(e.image)}</image:loc>`, '</image:image>'] : []),
+        '</url>',
+      ].join('\n'),
+    );
+  });
 
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
     ...urls,
     '</urlset>',
     '',
