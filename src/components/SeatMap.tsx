@@ -25,6 +25,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import 'leaflet/dist/leaflet.css';
+import { BUILT_KEY, googleKey, loadGoogle, onAuthFailure, resolve } from '@/lib/googleMaps';
 
 type Part = 'whole' | 'part';
 interface Feature {
@@ -47,17 +48,6 @@ interface Engine {
   destroy(): void;
 }
 
-/** Baked in at build when the build had it; otherwise asked of the running site (api/maps-key). */
-const BUILT_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
-let keyAsked: Promise<string> | null = null;
-function googleKey(): Promise<string> {
-  if (BUILT_KEY) return Promise.resolve(BUILT_KEY);
-  keyAsked ??= fetch('/api/maps-key')
-    .then((r) => (r.ok ? (r.json() as Promise<{ key?: string }>) : { key: '' }))
-    .then((j) => j.key ?? '')
-    .catch(() => '');
-  return keyAsked;
-}
 const GREY = '#6b7570';
 const BN = (n: number) => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[Number(d)]!);
 
@@ -126,21 +116,6 @@ function labelPoint(f: Feature): [number, number] {
 /** The name written on the map: our own, in Bangla, whatever language the base map is in. */
 const shortName = (f: Feature) => cityShort(f.properties.name);
 
-/** The Maps JavaScript API, loaded once per page, in Bangla. */
-let googleLoading: Promise<typeof google> | null = null;
-function loadGoogle(key: string): Promise<typeof google> {
-  if (typeof google !== 'undefined' && google.maps) return Promise.resolve(google);
-  googleLoading ??= new Promise((resolve, reject) => {
-    const cb = '__mympMapsReady';
-    (window as unknown as Record<string, () => void>)[cb] = () => resolve(google);
-    const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&language=bn&region=BD&v=weekly&loading=async&callback=${cb}`;
-    s.async = true;
-    s.onerror = () => reject(new Error('Google Maps could not be loaded'));
-    document.head.appendChild(s);
-  });
-  return googleLoading;
-}
 
 interface Drawing {
   features: Feature[];
@@ -293,11 +268,6 @@ async function startLeaflet(el: HTMLElement, d: Drawing): Promise<Engine> {
   };
 }
 
-/** A CSS custom property's value, for map libraries that take colours as text. */
-function resolve(color: string): string {
-  const v = color.match(/^var\((--[^)]+)\)$/)?.[1];
-  return (v && getComputedStyle(document.documentElement).getPropertyValue(v).trim()) || color;
-}
 
 export default function SeatMap({
   geoUrl,
@@ -351,6 +321,7 @@ export default function SeatMap({
   useEffect(() => {
     if (!wanted) return;
     let cancelled = false;
+    let offAuth = () => {};
     (async () => {
       const res = await fetch(geoUrl);
       const fc = (await res.json()) as { features: Feature[] };
@@ -413,7 +384,7 @@ export default function SeatMap({
         setFailed(true);
         engine.current = await startLeaflet(box.current, drawing);
       };
-      (window as unknown as { gm_authFailure?: () => void }).gm_authFailure = () => void fallBack();
+      offAuth = onAuthFailure(() => void fallBack());
       try {
         const key = await googleKey();
         if (cancelled || !box.current) return;
@@ -426,6 +397,7 @@ export default function SeatMap({
     })();
     return () => {
       cancelled = true;
+      offAuth();
       engine.current?.destroy();
       engine.current = null;
     };

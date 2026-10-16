@@ -3,23 +3,25 @@
 /**
  * Who won where, on a map of the country (/nirbachon).
  *
- * - আসন: every seat is a marker at its place wearing its party's symbol, the
- *   districts outlined and named as a street map names them. A tap on a
- *   marker draws the seat's own area (public/geo/<district>.json, solid where
- *   the seat holds a place whole and dashed where only part) and opens the
- *   member: photo, votes, lead, the runner-up. Scroll or pinch to zoom, drag
- *   to move; a name in the search box jumps to its seat; a party chip dims
- *   the others.
+ * - আসন ও প্রতীক: every seat is a marker at its place wearing its party's
+ *   symbol, on Google Maps in Bangla (the base map with every town and road
+ *   named) with the districts outlined. A tap on a marker draws the seat's
+ *   own area (public/geo/<district>.json, solid where the seat holds a place
+ *   whole, dashed where only part) and opens the member: photo, votes, lead,
+ *   the runner-up. A name in the search box jumps to its seat; a party chip
+ *   hides the others.
  * - জেলার রং: each district in the colour of the party holding most of its
  *   seats, two colours where it is a tie; a tap lists the district's seats.
  * - টাইল: the tile map (DistrictMap), passed in as `tiles`.
  *
- * Outlines and seat points come from public/geo/overview.json
- * (scripts/build-district-geo.ts); the map is plain SVG, no map service.
+ * Without a Google key, or when Google refuses it, the same map is drawn as
+ * plain SVG with the districts named by us. Outlines and seat points come
+ * from public/geo/overview.json (scripts/build-district-geo.ts).
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import MemberPhoto from './MemberPhoto';
+import { BUILT_KEY, googleKey, loadGoogle, onAuthFailure, resolve } from '@/lib/googleMaps';
 
 export interface PinSeat {
   no: number;
@@ -46,10 +48,11 @@ interface AreaFeature {
   properties: { name: string; kind: 'upazila' | 'city' | 'ward'; seats: Record<string, 'whole' | 'part'> };
   geometry: { type: 'Polygon' | 'MultiPolygon'; coordinates: unknown };
 }
+interface Area { f: AreaFeature; name: string; part: 'whole' | 'part' }
 interface Box { x: number; y: number; w: number; h: number }
 type Mode = 'seats' | 'districts' | 'tiles';
 
-/** The drawing: an equirectangular sheet of the country, 620 by 860 units. */
+/** The SVG drawing: an equirectangular sheet of the country, 620 by 860 units. */
 const W0 = 620;
 const H0 = 860;
 const K = 140;
@@ -60,6 +63,8 @@ const px = (lon: number, lat: number): [number, number] => [(lon - LON0) * K * C
 const HOME: Box = { x: 0, y: 0, w: W0, h: H0 };
 /** A marker's radius on screen, whatever the zoom. */
 const R = 7;
+/** The country, for Google's first view. */
+const COUNTRY = { south: 20.6, west: 88.0, north: 26.65, east: 92.7 };
 
 /** The symbols in public/party, by party. A party without one wears its colour. */
 const SYMBOL: Record<string, string> = {
@@ -82,6 +87,11 @@ const fitBox = (pts: [number, number][]): Box => {
   const fh = fw * (H0 / W0);
   return { x: (x0 + x1) / 2 - fw / 2, y: (y0 + y1) / 2 - fh / 2, w: fw, h: fh };
 };
+/** The outer rings of what the seat holds whole (or of everything, for a seat of parts), as lon/lat. */
+const framePoints = (areas: Area[]): number[][] => {
+  const whole = areas.filter((a) => a.part === 'whole');
+  return (whole.length ? whole : areas).flatMap((a) => ringsOf(a.f.geometry).flatMap((poly) => poly[0]!));
+};
 
 let overviewOnce: Promise<Overview> | null = null;
 const loadOverview = () => (overviewOnce ??= fetch('/geo/overview.json').then((r) => r.json() as Promise<Overview>));
@@ -95,28 +105,77 @@ const loadAreas = (district: string) => {
   return p;
 };
 
+/**
+ * A marker's icon: the party's symbol in a white disc with a ring in the
+ * party's colour, drawn once per party; a plain disc for a party without a
+ * symbol, and until the symbol has loaded.
+ */
+const icons = new Map<string, Promise<string>>();
+function discIcon(color: string, size: number): string {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d')!;
+  g.beginPath(); g.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2); g.fillStyle = '#ffffff'; g.fill();
+  g.beginPath(); g.arc(size / 2, size / 2, size / 2 - 5, 0, Math.PI * 2); g.fillStyle = color; g.fill();
+  return c.toDataURL();
+}
+function symbolIcon(party: string, color: string, size: number): Promise<string> {
+  let p = icons.get(party);
+  if (!p) {
+    p = new Promise((done) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = c.height = size;
+        const g = c.getContext('2d')!;
+        g.beginPath(); g.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2); g.fillStyle = color; g.fill();
+        g.beginPath(); g.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2); g.fillStyle = '#ffffff'; g.fill();
+        g.save(); g.beginPath(); g.arc(size / 2, size / 2, size / 2 - 5, 0, Math.PI * 2); g.clip();
+        const s = Math.max(size / img.width, size / img.height) * 0.92;
+        g.drawImage(img, (size - img.width * s) / 2, (size - img.height * s) / 2, img.width * s, img.height * s);
+        g.restore();
+        done(c.toDataURL());
+      };
+      img.onerror = () => done(discIcon(color, size));
+      img.src = SYMBOL[party]!;
+    });
+    icons.set(party, p);
+  }
+  return p;
+}
+
 export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles: ReactNode }) {
   const [mode, setMode] = useState<Mode>('seats');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [vb, setVb] = useState<Box>(HOME);
   const [picked, setPicked] = useState<string | null>(null);
   const [pickedDistrict, setPickedDistrict] = useState<string | null>(null);
-  const [areas, setAreas] = useState<{ d: string; name: string; part: 'whole' | 'part' }[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [q, setQ] = useState('');
+  /** Google Maps when the site has a key and Google takes it; SVG otherwise. Null while asking. */
+  const [useGoogle, setUseGoogle] = useState<boolean | null>(BUILT_KEY ? true : null);
+  /** Counts up when the Google map is made, so the effects that dress it run. */
+  const [gmReady, setGmReady] = useState(0);
   const svgRef = useRef<SVGSVGElement>(null);
+  const gmBox = useRef<HTMLDivElement>(null);
+  const gm = useRef<{ map: google.maps.Map; districts: google.maps.Data; areas: google.maps.Data; markers: Map<string, google.maps.Marker>; icons: Map<string, string> } | null>(null);
   const drag = useRef<{ x: number; y: number; vb: Box } | null>(null);
   const pinch = useRef<{ d: number; vb: Box } | null>(null);
   const ptrs = useRef(new Map<number, { x: number; y: number }>());
+  /** The latest handlers, for Google's listeners, which are set once. */
+  const live = useRef<{ mode: Mode; open: (s: PinSeat) => void; pickDistrict: (d: string) => void; close: () => void }>({ mode, open: () => {}, pickDistrict: () => {}, close: () => {} });
 
   useEffect(() => {
     let alive = true;
     loadOverview().then((o) => alive && setOverview(o)).catch(() => {});
-    return () => { alive = false; };
+    if (!BUILT_KEY) googleKey().then((k) => alive && setUseGoogle(!!k));
+    const offAuth = onAuthFailure(() => { if (alive) setUseGoogle(false); });
+    return () => { alive = false; offAuth(); };
   }, []);
 
   const bySlug = useMemo(() => new Map(seats.map((s) => [s.slug, s])), [seats]);
-  const placed = useMemo(() => (overview ? seats.flatMap((s) => { const p = overview.seats[s.slug]; return p ? [{ s, xy: px(p[0], p[1]) }] : []; }) : []), [overview, seats]);
+  const placed = useMemo(() => (overview ? seats.flatMap((s) => { const p = overview.seats[s.slug]; return p ? [{ s, lon: p[0], lat: p[1], xy: px(p[0], p[1]) }] : []; }) : []), [overview, seats]);
   const districtPaths = useMemo(() => (overview ? overview.districts.map((d) => ({ ...d, path: pathOf(d.polys), at: px(d.center[0], d.center[1]) })) : []), [overview]);
   /** Each district's parties by seats held, most first. */
   const lead = useMemo(() => {
@@ -138,8 +197,9 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
   }, [seats]);
   const current = picked ? bySlug.get(picked) ?? null : null;
   const k = vb.w / W0;
+  const areaPaths = useMemo(() => areas.map((a) => ({ ...a, d: pathOf(ringsOf(a.f.geometry).map((poly) => poly[0]!)) })), [areas]);
 
-  // --- zoom and pan ---
+  // --- SVG zoom and pan ---
   const zoomAt = (f: number, cx: number, cy: number, from: Box = vb) => {
     const nw = Math.min(W0 * 1.2, Math.max(W0 / 40, from.w / f));
     const r = nw / from.w;
@@ -154,7 +214,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
   };
   useEffect(() => {
     const svg = svgRef.current;
-    if (!svg || mode === 'tiles') return;
+    if (!svg || mode === 'tiles' || useGoogle !== false) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const [x, y] = svgPoint(e.clientX, e.clientY);
@@ -162,7 +222,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
     };
     svg.addEventListener('wheel', onWheel, { passive: false });
     return () => svg.removeEventListener('wheel', onWheel);
-  }, [mode]);
+  }, [mode, useGoogle]);
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -199,19 +259,117 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
     setPickedDistrict(s.district);
     setQ('');
     loadAreas(s.district).then((fs) => {
-      const mine = fs.filter((f) => f.properties.seats[s.slug]);
-      setAreas(mine.map((f) => ({ d: pathOf(ringsOf(f.geometry).map((poly) => poly[0]!)), name: f.properties.name + (f.properties.kind === 'upazila' ? ' উপজেলা' : ''), part: f.properties.seats[s.slug]! })));
-      // The view fits what the seat holds whole; a seat of parts alone fits those.
-      const whole = mine.filter((f) => f.properties.seats[s.slug] === 'whole');
-      const pts = (whole.length ? whole : mine).flatMap((f) => ringsOf(f.geometry).flatMap((poly) => poly[0]!.map(([lon, lat]) => px(lon!, lat!))));
-      if (pts.length) setVb(fitBox(pts));
+      const mine: Area[] = fs.filter((f) => f.properties.seats[s.slug]).map((f) => ({ f, name: f.properties.name + (f.properties.kind === 'upazila' ? ' উপজেলা' : ''), part: f.properties.seats[s.slug]! }));
+      setAreas(mine);
+      const pts = framePoints(mine);
+      if (pts.length) setVb(fitBox(pts.map(([lon, lat]) => px(lon!, lat!))));
     }).catch(() => {});
   };
+  const pickDistrict = (slug: string) => { setPickedDistrict(slug); setPicked(null); setAreas([]); };
+  const home = () => { setVb(HOME); close(); gm.current?.map.fitBounds(COUNTRY, 12); };
+  useEffect(() => { live.current = { mode, open, pickDistrict, close }; });
   const hits = useMemo(() => {
     const v = q.trim();
     if (v.length < 2) return [];
     return seats.filter((s) => s.seat.includes(v) || s.slug.includes(v.toLowerCase()) || s.member?.name.includes(v) || s.districtBn.includes(v)).slice(0, 8);
   }, [q, seats]);
+
+  // --- Google Maps: the map once its box is there, then what each change needs ---
+  const disposeGm = () => {
+    const m = gm.current;
+    if (!m) return;
+    for (const mk of m.markers.values()) mk.setMap(null);
+    m.districts.setMap(null);
+    m.areas.setMap(null);
+    gm.current = null;
+  };
+  useEffect(() => {
+    // The tile view takes the box away; the map goes with it and is made afresh later.
+    if (mode === 'tiles') { disposeGm(); return; }
+    if (useGoogle !== true || !overview || !gmBox.current || gm.current) return;
+    let cancelled = false;
+    googleKey().then(loadGoogle).then((g) => {
+      if (cancelled || !gmBox.current) return;
+      const map = new g.maps.Map(gmBox.current, {
+        mapTypeControl: true,
+        mapTypeControlOptions: { mapTypeIds: ['roadmap', 'hybrid'] },
+        streetViewControl: false,
+        fullscreenControl: false,
+        gestureHandling: 'greedy',
+        clickableIcons: false,
+      });
+      map.fitBounds(COUNTRY, 12);
+      const districts = new g.maps.Data({ map });
+      districts.addGeoJson({
+        type: 'FeatureCollection',
+        features: overview.districts.map((d) => ({ type: 'Feature', properties: { slug: d.slug, name: d.name }, geometry: { type: 'MultiPolygon', coordinates: d.polys.map((ring) => [ring]) } })),
+      });
+      districts.addListener('click', (e: google.maps.Data.MouseEvent) => {
+        if (live.current.mode === 'districts') live.current.pickDistrict(String(e.feature.getProperty('slug')));
+        else live.current.close();
+      });
+      const areaLayer = new g.maps.Data({ map });
+      map.addListener('click', () => live.current.close());
+      gm.current = { map, districts, areas: areaLayer, markers: new Map(), icons: new Map() };
+      setGmReady((n) => n + 1);
+    }).catch(() => setUseGoogle(false));
+    return () => { cancelled = true; };
+  }, [useGoogle, overview, mode]);
+  useEffect(() => disposeGm, []);
+
+  // Markers: one per seat, its party's symbol; hidden by a dimmed chip or in the district view.
+  useEffect(() => {
+    const m = gm.current;
+    if (!m || !placed.length) return;
+    for (const { s, lon, lat } of placed) {
+      let mk = m.markers.get(s.slug);
+      if (!mk) {
+        const color = resolve(s.color);
+        mk = new google.maps.Marker({ position: { lat, lng: lon }, map: m.map, title: `${s.seat} · ${s.member?.name ?? 'শূন্য'}${s.partyBn ? ` (${s.partyBn})` : ''}`, icon: { url: discIcon(color, 52), scaledSize: new google.maps.Size(26, 26), anchor: new google.maps.Point(13, 13) }, optimized: true });
+        mk.addListener('click', () => live.current.open(s));
+        m.markers.set(s.slug, mk);
+        if (s.party && SYMBOL[s.party]) symbolIcon(s.party, color, 52).then((url) => mk!.setIcon({ url, scaledSize: new google.maps.Size(26, 26), anchor: new google.maps.Point(13, 13) }));
+      }
+      const shown = mode === 'seats' && !off.has(s.party ?? '');
+      if (mk.getVisible() !== shown) mk.setVisible(shown);
+      const on = picked === s.slug;
+      mk.setZIndex(on ? 1000 : 1);
+      const icon = mk.getIcon() as google.maps.Icon | null;
+      if (icon?.url) mk.setIcon({ ...icon, scaledSize: on ? new google.maps.Size(36, 36) : new google.maps.Size(26, 26), anchor: on ? new google.maps.Point(18, 18) : new google.maps.Point(13, 13) });
+    }
+  }, [gmReady, placed, mode, off, picked]);
+
+  // District outlines: faint under the seats; the lead party's colour in the district view.
+  useEffect(() => {
+    const m = gm.current;
+    if (!m) return;
+    m.districts.setStyle((f) => {
+      const slug = String(f.getProperty('slug'));
+      const [a, b] = lead.get(slug) ?? [];
+      const on = pickedDistrict === slug;
+      if (mode === 'districts') {
+        const tie = a && b && a.seats === b.seats;
+        return { fillColor: a ? resolve(tie ? b.color : a.color) : '#9a9a9a', fillOpacity: pickedDistrict && !on ? 0.3 : 0.55, strokeColor: on ? '#17201b' : tie ? resolve(a.color) : '#ffffff', strokeWeight: on ? 3 : tie ? 3 : 1.2, cursor: 'pointer' };
+      }
+      return { fillColor: '#1f7a4f', fillOpacity: on ? 0.08 : 0, strokeColor: on ? '#17201b' : '#5f6b64', strokeWeight: on ? 2 : 1, strokeOpacity: on ? 1 : 0.6, clickable: true };
+    });
+  }, [gmReady, mode, lead, pickedDistrict]);
+
+  // The picked seat's area, and the view to it.
+  useEffect(() => {
+    const m = gm.current;
+    if (!m) return;
+    m.areas.forEach((f) => m.areas.remove(f));
+    if (!current || !areas.length) return;
+    const color = resolve(current.color);
+    m.areas.addGeoJson({ type: 'FeatureCollection', features: areas.map((a) => ({ type: 'Feature', properties: { part: a.part, name: a.name }, geometry: a.f.geometry })) });
+    m.areas.setStyle((f) => (f.getProperty('part') === 'whole'
+      ? { fillColor: color, fillOpacity: 0.28, strokeColor: color, strokeWeight: 3, clickable: false }
+      : { fillColor: color, fillOpacity: 0.1, strokeColor: color, strokeWeight: 2, strokeOpacity: 0.7, clickable: false }));
+    const b = new google.maps.LatLngBounds();
+    for (const [lon, lat] of framePoints(areas)) b.extend({ lat: lat!, lng: lon! });
+    m.map.fitBounds(b, { top: 40, bottom: 40, left: 380, right: 40 });
+  }, [gmReady, current, areas]);
 
   const districtSeats = pickedDistrict ? seats.filter((s) => s.district === pickedDistrict).sort((a, b) => a.no - b.no) : [];
   const districtName = districtPaths.find((d) => d.slug === pickedDistrict)?.name ?? pickedDistrict;
@@ -220,7 +378,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
     <button
       key={m}
       type="button"
-      onClick={() => { setMode(m); close(); setVb(HOME); }}
+      onClick={() => { setMode(m); home(); }}
       aria-pressed={mode === m}
       className={`h-9 px-3.5 rounded-lg text-[13.5px] font-semibold transition-colors ${mode === m ? 'bg-brand text-white' : 'bg-surface border border-rule text-ink hover:border-brand'}`}
     >
@@ -281,7 +439,10 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
       {mode === 'tiles' ? (
         tiles
       ) : (
-        <div className="relative bg-surface border border-rule rounded-card shadow-card overflow-hidden h-[520px] sm:h-[640px]" style={{ touchAction: 'none' }}>
+        <div className="relative bg-surface border border-rule rounded-card shadow-card overflow-hidden h-[520px] sm:h-[640px]" style={{ touchAction: useGoogle === false ? 'none' : undefined }}>
+          {useGoogle !== false ? (
+            <div ref={gmBox} className="w-full h-full" role="region" aria-label={mode === 'seats' ? 'বাংলাদেশের ৩০০ সংসদীয় আসন, দলের প্রতীকে' : 'বাংলাদেশের ৬৪ জেলা, দলের রঙে'} />
+          ) : (
           <svg
             ref={svgRef}
             viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
@@ -321,7 +482,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
                       strokeWidth={pickedDistrict === d.slug ? 2 : 1.2}
                       vectorEffect="non-scaling-stroke"
                       style={{ cursor: mode === 'districts' ? 'pointer' : undefined }}
-                      onClick={(e) => { if (mode === 'districts') { e.stopPropagation(); setPickedDistrict(d.slug); setPicked(null); } }}
+                      onClick={(e) => { if (mode === 'districts') { e.stopPropagation(); pickDistrict(d.slug); } }}
                     >
                       <title>{mode === 'districts' && a ? `${d.name}: ${(lead.get(d.slug) ?? []).map((p) => `${p.name} ${BN(p.seats)}`).join(', ')}` : d.name}</title>
                     </path>
@@ -330,7 +491,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
               })}
             </g>
             <g>
-              {areas.map((a, i) => (
+              {areaPaths.map((a, i) => (
                 <path key={i} d={a.d} fill={current?.color} fillOpacity={a.part === 'whole' ? 0.3 : 0.12} stroke={current?.color} strokeWidth={2.5} strokeDasharray={a.part === 'part' ? '6 4' : undefined} strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none">
                   <title>{`${a.name} · ${a.part === 'whole' ? 'পুরোটা এই আসনে' : 'একাংশ এই আসনে'}`}</title>
                 </path>
@@ -378,15 +539,19 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
               </g>
             )}
           </svg>
-          <div className="absolute right-3 top-3 flex flex-col gap-1.5">
-            {[['+', () => zoomAt(1.5, vb.x + vb.w / 2, vb.y + vb.h / 2), 'বড় করুন'], ['−', () => zoomAt(1 / 1.5, vb.x + vb.w / 2, vb.y + vb.h / 2), 'ছোট করুন'], ['⌂', () => { setVb(HOME); close(); }, 'পুরো দেশ']].map(([t, f, l]) => (
-              <button key={t as string} type="button" onClick={f as () => void} aria-label={l as string} title={l as string} className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">
-                {t as string}
-              </button>
-            ))}
-          </div>
+          )}
+          {useGoogle === false && (
+            <div className="absolute right-3 top-3 flex flex-col gap-1.5">
+              <button type="button" onClick={() => zoomAt(1.5, vb.x + vb.w / 2, vb.y + vb.h / 2)} aria-label="বড় করুন" title="বড় করুন" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">+</button>
+              <button type="button" onClick={() => zoomAt(1 / 1.5, vb.x + vb.w / 2, vb.y + vb.h / 2)} aria-label="ছোট করুন" title="ছোট করুন" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">−</button>
+              <button type="button" onClick={home} aria-label="পুরো দেশ" title="পুরো দেশ" className="w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">⌂</button>
+            </div>
+          )}
+          {useGoogle !== false && (
+            <button type="button" onClick={home} aria-label="পুরো দেশ" title="পুরো দেশ" className="absolute right-3 bottom-24 w-9 h-9 rounded-[10px] border border-rule bg-surface text-ink text-[18px] shadow-card hover:border-brand">⌂</button>
+          )}
           {!overview && <p className="absolute inset-0 grid place-items-center text-[14px] text-muted">মানচিত্র আসছে…</p>}
-          <p className="absolute left-3 bottom-3 text-[12px] text-muted bg-surface border border-rule rounded-full px-2.5 py-1">স্ক্রল বা দুই আঙুলে zoom, টেনে সরান</p>
+          {useGoogle === false && <p className="absolute left-3 bottom-3 text-[12px] text-muted bg-surface border border-rule rounded-full px-2.5 py-1">স্ক্রল বা দুই আঙুলে zoom, টেনে সরান</p>}
 
           {(current || (mode === 'districts' && pickedDistrict)) && (
             <aside className="absolute left-3 top-3 w-[min(340px,calc(100%-24px))] max-h-[calc(100%-24px)] overflow-y-auto bg-surface border border-rule rounded-card shadow-lift p-4 z-10" aria-live="polite">
@@ -421,7 +586,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
                     {current.member && <Link href={`/mp/${current.member.slug}`} className="flex-1 text-center h-9 leading-9 rounded-[9px] bg-brand text-white text-[13.5px] font-bold hover:bg-branddark">প্রোফাইল</Link>}
                     <Link href={`/ason/${current.slug}`} className="flex-1 text-center h-9 leading-9 rounded-[9px] border-[1.5px] border-rule text-[13.5px] font-bold hover:border-brand">আসনের পাতা</Link>
                   </div>
-                  {areas.some((a) => a.part === 'part') && <p className="mt-2.5 text-[11.5px] text-muted">ডটেড জায়গার একাংশ এই আসনে।</p>}
+                  {areas.some((a) => a.part === 'part') && <p className="mt-2.5 text-[11.5px] text-muted">হালকা জায়গার একাংশ এই আসনে।</p>}
                 </>
               ) : (
                 <>
@@ -450,7 +615,7 @@ export default function ElectionMap({ seats, tiles }: { seats: PinSeat[]; tiles:
       )}
       {mode !== 'tiles' && (
         <p className="text-[12.5px] text-muted leading-relaxed">
-          জেলার সীমানা OCHA-র মানচিত্রে; আসনের জায়গা তার উপজেলা ও ওয়ার্ডের সীমানা থেকে হিসাব করা, আনুমানিক। {mode === 'districts' ? 'রং সেই জেলার বেশিরভাগ আসন যে দলের বর্তমান সংসদ সদস্যদের; দুই রং মানে সমান সমান।' : 'প্রতীকে চাপ দিলে আসনের এলাকা ও সংসদ সদস্য।'}
+          জেলার সীমানা OCHA-র মানচিত্রে; আসনের জায়গা তার উপজেলা ও ওয়ার্ডের সীমানা থেকে হিসাব করা, আনুমানিক। {mode === 'districts' ? 'রং সেই জেলার বেশিরভাগ আসন যে দলের বর্তমান সংসদ সদস্যদের; দুই রং মানে সমান সমান।' : 'প্রতীকে চাপ দিলে আসনের এলাকা ও সংসদ সদস্য।'}{useGoogle !== false ? ' পটভূমির মানচিত্র Google Maps-এর।' : ''}
         </p>
       )}
     </div>
