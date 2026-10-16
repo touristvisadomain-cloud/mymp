@@ -1,13 +1,15 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { Fragment, useSyncExternalStore } from 'react';
 import { agoBn, dateTimeBn, timeBn } from '@/lib/whenBn';
 
 /*
- * When a story was published: "৩ ঘণ্টা আগে, সকাল ১০:২৬" while it is recent,
- * "১২ সেপ্টেম্বর ২০২৬, দুপুর ২:৪৭" once it is older than a week. The page is
+ * When a story was published: the date and time, "১২ সেপ্টেম্বর ২০২৬, দুপুর
+ * ২:৪৭", and while it is recent how long ago, "· ৩ ঘণ্টা আগে" (the owner
+ * asked for the date and time on every story, 2026-10-17). `withDate={false}`
+ * keeps the old short form, "৩ ঘণ্টা আগে, সকাল ১০:২৬". The page is
  * prerendered, so the server writes only the fixed part and the browser adds
- * "আগে", then keeps it current; the full date and time sit in the title.
+ * "আগে", then keeps it current.
  */
 const subscribe = (tick: () => void) => {
   const id = window.setInterval(tick, 60_000);
@@ -22,15 +24,22 @@ export default function When({ iso, withDate = true, className = '' }: { iso: st
   const time = timeBn(iso);
   const full = dateTimeBn(iso);
 
-  let text: string;
-  if (ago) text = time ? `${ago}, ${time}` : ago;
-  else if (withDate) text = full;
-  else text = time ?? '';
+  // Pieces that never break inside; a narrow card breaks between them.
+  let parts: string[];
+  if (withDate) parts = [...full.split(/(?<=,) /), ...(ago ? [`· ${ago}`] : [])];
+  else if (ago) parts = time ? [`${ago},`, time] : [ago];
+  else parts = time ? [time] : [];
 
-  if (!text) return null;
+  if (!parts.length) return null;
   return (
-    <time dateTime={iso} title={full} className={`tnum whitespace-nowrap ${className}`}>
-      {text}
+    <time dateTime={iso} title={full} className={`tnum ${className}`}>
+      {/* The space between pieces sits outside them, where a line may break. */}
+      {parts.map((x, i) => (
+        <Fragment key={i}>
+          {i ? ' ' : null}
+          <span className="whitespace-nowrap">{x}</span>
+        </Fragment>
+      ))}
     </time>
   );
 }
