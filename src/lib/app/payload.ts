@@ -196,7 +196,8 @@ export const brief = (m: Member, lang: Lang = 'bn'): AppMemberBrief => {
     districtSlug: d?.slug ?? null,
     areaBn: inLang(m.seat?.boundaryBn, lang),
     officeBn: office(m, lang),
-    reserved: !m.seat,
+    // A member for one of the fifty seats reserved for women (or, as before, one the source lists with no seat).
+    reserved: !m.seat || m.seat.reserved,
   };
 };
 
