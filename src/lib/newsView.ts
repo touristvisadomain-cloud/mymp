@@ -9,7 +9,14 @@ import { personName } from '@/i18n/names';
  * pulling the site's data files into the browser.
  */
 export interface StoryLink {
+  /** The outlet's own headline, in Bangla (or English, for an outlet that writes in English). */
   title: string;
+  /**
+   * The headline in English for the English pages: machine-translated by
+   * Google Translate, or the outlet's own when it writes in English. Null
+   * (or absent) until translated; the English pages then show `title`.
+   */
+  titleEn?: string | null;
   source: string;
   url: string;
 }
@@ -62,7 +69,7 @@ export function allStories(): StoryView[] {
   if (cache) return cache;
   cache = groupStories(publishedNews(), nameWords).map(({ lead, also }) => {
     const m = lead.memberId ? getMemberById(lead.memberId) : undefined;
-    const link = (n: typeof lead): StoryLink => ({ title: bnText(n.titleBn) ?? n.titleBn, source: n.sourceName, url: n.sourceUrl });
+    const link = (n: typeof lead): StoryLink => ({ title: bnText(n.titleBn) ?? n.titleBn, titleEn: n.titleEn ?? null, source: n.sourceName, url: n.sourceUrl });
     return {
       id: lead.id,
       date: lead.publishedOn.slice(0, 10),

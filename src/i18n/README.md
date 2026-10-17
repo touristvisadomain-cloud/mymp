@@ -63,10 +63,16 @@ ministries, notes beside election results. Their English is in
 - `inLang(bnText, t.lang)`: the Bangla on a Bangla page; its English, or **null**, on an English page. When null, leave the field out on the English page; never show the Bangla in its place.
 - `translated(bnText, t.lang)`: the same with a flag. Under translated running text (a biography, a boundary) put `<TranslatedNote bnHref={'/mp/x'} />` from `@/components/ui`: "Translated from Bangla. Read the original".
 
-## Text that stays in Bangla on English pages
+## News headlines on English pages
 
-News headlines and excerpts (`titleBn`, `excerptBn`): they are the outlets'
-own words. Mark the element `lang="bn"`. Nothing else.
+News headlines (and excerpts) are the outlets' own words, in Bangla. They are
+machine-translated by Google Translate once collected (`docs/feed/README.md`,
+English headlines) and carried as `titleEn` beside `title`/`titleBn`. On an
+English page show `englishHeadline(title, titleEn)` from `@/lib/headline`: the
+English when there is some, else the Bangla marked `lang="bn"`. Under a list
+that shows a machine translation put `<MachineNote />` (from
+`@/components/MachineNote`), and give a translated headline
+`title={MACHINE_TITLE}`. Nothing else stays in Bangla.
 
 ## Metadata
 

@@ -4,6 +4,8 @@ import { getMember } from '@/lib/data';
 import { getT } from '@/i18n/server';
 import type { T } from '@/i18n/core';
 import { outletName, personName } from '@/i18n/names';
+import MachineNote from './MachineNote';
+import { anyMachine, englishHeadline, MACHINE_TITLE } from '@/lib/headline';
 
 const duration = (s: number | null | undefined, t: T) =>
   s ? `${t.n(Math.floor(s / 60))}:${t.n(String(s % 60).padStart(2, '0'))}` : null;
@@ -61,7 +63,8 @@ export default async function VideoStrip({ videos, moreHref }: { videos: StoryVi
                   <span className="absolute bottom-1.5 end-1.5 px-1.5 rounded bg-ink/80 text-white text-[11.5px] tnum">{duration(v.durationSeconds, t)}</span>
                 )}
               </span>
-              <span className="font-semibold text-[14.5px] leading-snug line-clamp-2 group-hover:text-brand transition-colors" lang={t.en && /[\u0980-\u09FF]/.test(v.lead.title) ? 'bn' : undefined}>{v.lead.title}</span>
+              {/* The channel's own title; on an English page its English once translated, the Bangla (marked) until then. */}
+              <span className="font-semibold text-[14.5px] leading-snug line-clamp-2 group-hover:text-brand transition-colors" lang={t.en ? englishHeadline(v.lead.title, v.lead.titleEn).lang : undefined} title={t.en && englishHeadline(v.lead.title, v.lead.titleEn).machine ? MACHINE_TITLE : undefined}>{t.en ? englishHeadline(v.lead.title, v.lead.titleEn).text : v.lead.title}</span>
               <span className="text-[12.5px] text-muted flex flex-wrap items-center gap-x-2">
                 <span>{channelName(v.lead.source, t)}</span>
                 {v.member && <span className="truncate">{memberName(v.member, t)}</span>}
@@ -70,6 +73,7 @@ export default async function VideoStrip({ videos, moreHref }: { videos: StoryVi
           </li>
         ))}
       </ul>
+      {t.en && anyMachine(videos.slice(0, 6).map((v) => v.lead)) && <MachineNote />}
     </section>
   );
 }

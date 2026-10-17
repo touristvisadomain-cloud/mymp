@@ -9,6 +9,7 @@ import type { StoryView } from '@/lib/newsView';
 import { useT } from '@/i18n/client';
 import { outletName } from '@/i18n/names';
 import type { Lang } from '@/i18n/core';
+import { englishHeadline, MACHINE_TITLE } from '@/lib/headline';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const bn = (n: number | string) => String(n).replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
@@ -34,8 +35,10 @@ const duration = (s: number | null | undefined, en = false) =>
  * own server and nothing is copied here. A story without one keeps its shape:
  * most headlines arrive from a sitemap, which carries no picture at all.
  *
- * On English pages the headlines stay in Bangla (the outlets' own words,
- * marked lang="bn"); everything around them is in English. A member's English
+ * On English pages a headline is shown in English once it has been
+ * translated (`titleEn`, by Google Translate; the list it is in says so), and
+ * until then in Bangla, the outlet's own words, marked lang="bn"; everything
+ * around it is in English. A member's English
  * name is `nameEn`, which the story's producer fills; a story without it shows
  * the Bangla name, marked as Bangla.
  */
@@ -44,6 +47,8 @@ export default function StoryCard({ s, showMember = true, showDate = true }: { s
   const video = s.kind === 'video';
   const people = s.members?.length ? s.members : s.member ? [s.member] : [];
   const length = duration(s.durationSeconds, t.en);
+  // English pages: the English headline when there is one. Bangla pages: the outlet's own, as always.
+  const head = t.en ? englishHeadline(s.lead.title, s.lead.titleEn) : null;
 
   return (
     <article className="reveal h-full bg-surface border border-rule rounded-card shadow-card p-4 sm:p-5 flex gap-4 hover:border-brandring transition-colors">
@@ -88,10 +93,11 @@ export default function StoryCard({ s, showMember = true, showDate = true }: { s
           href={s.lead.url}
           target="_blank"
           rel="noopener noreferrer"
-          lang="bn"
+          lang={head ? head.lang : 'bn'}
+          title={head?.machine ? MACHINE_TITLE : undefined}
           className="display text-[16.5px] sm:text-[17.5px] leading-snug hover:text-brand transition-colors"
         >
-          {s.lead.title}
+          {head ? head.text : s.lead.title}
         </a>
 
         {s.also.length > 0 && (
@@ -108,9 +114,9 @@ export default function StoryCard({ s, showMember = true, showDate = true }: { s
                   href={a.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title={a.title}
-                  // The title is the outlet's Bangla headline; the outlet's name inside is in the page's language.
-                  lang={t.en ? 'bn' : undefined}
+                  title={t.en ? englishHeadline(a.title, a.titleEn).text : a.title}
+                  // The title is the headline (Bangla until translated); the outlet's name inside is in the page's language.
+                  lang={t.en ? englishHeadline(a.title, a.titleEn).lang : undefined}
                   className="px-2.5 py-1 rounded-full border border-rule bg-paper text-[13px] font-medium text-inksoft hover:border-brand hover:text-brand transition-colors"
                 >
                   {t.en ? <span lang="en">{outletIn(a.source, 'en')}</span> : a.source}

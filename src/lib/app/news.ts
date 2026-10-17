@@ -1,8 +1,11 @@
 /**
  * The news and videos, as the app's সংবাদ screen reads them: the stories the
  * website's /songbad draws, and on an English response everything around a
- * headline in English. The headlines themselves are the outlets' own words
- * and stay in Bangla, as they do on the English website.
+ * headline in English. The headline itself is the outlet's own words: on an
+ * English response `title` carries its machine translation when there is one
+ * (`titleTranslated: true`, show "Translated automatically from Bangla"), the
+ * outlet's Bangla when there is none yet, and `titleOriginal` always the
+ * outlet's own, as the English website does.
  */
 import { getMember } from '@/lib/data';
 import { dayLabel, type StoryView, type StoryMember, type StoryLink } from '@/lib/newsView';
@@ -19,8 +22,14 @@ const memberIn = (m: StoryMember): Omit<StoryMember, 'name'> & { name: string | 
   return { ...m, name: enOnly(m.nameEn ?? (own ? personName(own, 'en') : null)), nameEn: m.nameEn ?? (own ? personName(own, 'en') : undefined) };
 };
 
-/** A headline's link on an English response: the outlet's English name, null when the site has none for it yet. */
-const linkIn = (l: StoryLink) => ({ ...l, source: enOnly(outletName(l.source, 'en')) });
+/** One headline on an English response: the English when there is some, and the outlet's own beside it. */
+export function headlineIn(title: string, titleEn: string | null | undefined) {
+  const en = titleEn ?? null;
+  return { title: en ?? title, titleOriginal: title, titleEn: en, titleTranslated: !!en && en !== title };
+}
+
+/** A headline's link on an English response: the headline as above, the outlet's English name (null when the site has none yet). */
+const linkIn = (l: StoryLink) => ({ ...l, ...headlineIn(l.title, l.titleEn), source: enOnly(outletName(l.source, 'en')) });
 
 /** A story in the response's language; on Bangla exactly as the website's news page has it. */
 export function storyIn(s: StoryView, lang: Lang) {
@@ -46,16 +55,37 @@ export async function newsCounts() {
   }
 }
 
-type FeedItemLike = { outletName?: string | null; alsoIn?: { outletName: string | null }[] };
+type FeedItemLike = {
+  title?: string;
+  titleEn?: string | null;
+  summary?: string | null;
+  summaryEn?: string | null;
+  outletName?: string | null;
+  alsoIn?: { outletName: string | null }[];
+};
 
 /**
  * A member's feed (/api/feed/<slug>) for an English reader: each outlet under
- * its English name, null when the site has none for it yet. The headlines and
- * summaries stay as the outlets wrote them.
+ * its English name, null when the site has none for it yet; the headline and
+ * summary in English where they have been translated (`titleTranslated`,
+ * `summaryTranslated`), the outlet's own words otherwise, and the outlet's own
+ * always in `titleOriginal` and `summaryOriginal`.
  */
 export function feedInEnglish<B extends Record<string, unknown>>(body: B): B {
   const outlet = (name: string | null | undefined) => (name ? enOnly(outletName(name, 'en')) : null);
-  const item = (i: FeedItemLike) => ({ ...i, outletName: outlet(i.outletName), alsoIn: (i.alsoIn ?? []).map((a) => ({ ...a, outletName: outlet(a.outletName) })) });
+  const item = (i: FeedItemLike) => {
+    const summaryEn = i.summaryEn ?? null;
+    return {
+      ...i,
+      ...(typeof i.title === 'string' ? headlineIn(i.title, i.titleEn) : {}),
+      summary: summaryEn ?? i.summary ?? null,
+      summaryOriginal: i.summary ?? null,
+      summaryEn,
+      summaryTranslated: !!summaryEn && summaryEn !== i.summary,
+      outletName: outlet(i.outletName),
+      alsoIn: (i.alsoIn ?? []).map((a) => ({ ...a, outletName: outlet(a.outletName) })),
+    };
+  };
   const out: Record<string, unknown> = { ...body, lang: 'en' };
   for (const k of ['pinned', 'items'] as const) if (Array.isArray(body[k])) out[k] = (body[k] as FeedItemLike[]).map(item);
   if (Array.isArray(body.outlets)) out.outlets = (body.outlets as string[]).map(outlet);

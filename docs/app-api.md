@@ -45,9 +45,16 @@ On an English answer:
   everything is translated; the fields that are actually null for some records
   are a member's `fatherBn`/`motherBn` (about 90 members) and an adviser's
   `postNameBn` (always null in English, it is the cabinet list's Bangla key).
-- **News headlines stay in Bangla** in both languages: a story's
-  `lead.title` and `also[].title`, and a feed item's `title` and `summary`. They
-  are the outlets' own words; show them with a Bangla font.
+- **News headlines are the one exception to null.** A story's `lead.title`
+  and `also[].title`, and a feed item's `title` (and `summary`), carry on an
+  English answer the headline's English when it has been translated, and the
+  outlet's own Bangla until then (never null). `titleTranslated: true` says the
+  English is a machine translation (Google Translate): show "Translated
+  automatically from Bangla" once under the list, as the website does, and
+  `titleOriginal` holds the outlet's own words. A `title` still in Bangla
+  (`titleTranslated: false` with Bangla letters) needs a Bangla font. See
+  [the story](#the-story). Every answer, Bangla included, also carries
+  `titleEn` (string or null) beside `title`.
 - **Search fields stay in Bangla** in both languages: a brief's `areaBn` (never
   shown, only searched), the `upazilaEn` table's second column, and the
   `nameAlt`/`seatAlt`/`districtAlt` fields that English answers add beside the
@@ -192,8 +199,11 @@ One news story or video, as the website's news page draws it. Used by
 | `date` | day | The day it was published, in Dhaka. |
 | `dateLabel` | string | `"শুক্রবার, ১২ সেপ্টেম্বর ২০২৬"` / `"Friday, 12 September 2026"`. |
 | `publishedAt` | instant \| day | Absent on some archive stories; a bare day when the outlet gave no time. |
-| `lead` | link | The headline: `{title, source, url}`. |
-| `lead.title` | string | **The outlet's headline, in Bangla in both languages.** |
+| `lead` | link | The headline: `{title, titleEn, source, url}`, and on English also `titleOriginal`, `titleTranslated`. |
+| `lead.title` | string | The headline to show. Bangla: the outlet's own. English: the English headline when it has been translated, the outlet's own (Bangla) until then. |
+| `lead.titleEn` | string \| null | The headline in English, both languages: Google Translate's translation, or the outlet's own when it publishes in English; null until translated. |
+| `lead.titleOriginal` | string | English only: the outlet's own headline, as published (usually Bangla). |
+| `lead.titleTranslated` | boolean | English only: `title` is a machine translation of `titleOriginal`. Show "Translated automatically from Bangla" under the list. |
 | `lead.source` | string \| null | The outlet: `"বাংলা ট্রিবিউন"` / `"Bangla Tribune"`. **en: null if the site has no English name for the outlet.** |
 | `lead.url` | string | The story on the outlet's site. |
 | `also` | link[] | The same story in other outlets, same shape as `lead`. |
@@ -603,7 +613,7 @@ it. Five minutes at the edge.
 | `from`, `to` | A span of days, `YYYY-MM-DD`, both included (`from` ≤ `to`). Returns 300 stories at a time with a cursor; `limit` and `type` are ignored. |
 | `before` | With `from`/`to`: the previous page's `next`, for the next page. |
 | `counts=1` | Instead of stories, the news page's figures: the same answer as [`/news/counts`](#get-newscounts). |
-| `lang` | `en`: everything but the headlines in English (see [the story](#the-story)). |
+| `lang` | `en`: in English, the headlines too where they have been translated (see [the story](#the-story)). |
 
 Without `from`/`to`:
 
@@ -637,7 +647,10 @@ A bad span answers 400 `{"error":"bad range"}`.
       "dateLabel": "Friday, 16 October 2026",
       "publishedAt": "2026-10-16T17:55:52+00:00",
       "lead": {
-        "title": "দলীয় প্রার্থী হারলে ওই ইউনিয়নে উন্নয়নকাজ করবেন না, বললেন চিফ হুইপ মনি",
+        "title": "Chief Whip Moni says he will not carry out development work in the union if the party candidate loses",
+        "titleEn": "Chief Whip Moni says he will not carry out development work in the union if the party candidate loses",
+        "titleOriginal": "দলীয় প্রার্থী হারলে ওই ইউনিয়নে উন্নয়নকাজ করবেন না, বললেন চিফ হুইপ মনি",
+        "titleTranslated": true,
         "source": "Daily Janakantha",
         "url": "https://www.dailyjanakantha.com/politics/news/917396"
       },
@@ -1047,12 +1060,15 @@ A member's news and videos (`/api/feed/tarique-rahman`, not under
 | `m=YYYY-MM` | `{month, items[]}`: one month. |
 | `from=YYYY-MM-DD&to=YYYY-MM-DD` | `{from, to, items[], more}`: a span, at most 1,000 items; `more: true` when there were more. |
 | `type=news` \| `video` | Only headlines, or only videos (with any of the above). |
-| `lang=en` | Adds `"lang": "en"`; every `outletName` (and `outlets[]`) in English, **null when the site has no English name for the outlet**. Titles and summaries stay as the outlets wrote them. |
+| `lang=en` | Adds `"lang": "en"`; every `outletName` (and `outlets[]`) in English, **null when the site has no English name for the outlet**. `title` and `summary` are the English where translated and the outlet's own until then; each item adds `titleOriginal`, `titleTranslated`, `summaryOriginal`, `summaryTranslated`. |
 
-An item: `{id, type, title, url, summary, outletName, thumbnailUrl,
-durationSeconds, publishedAt, alsoIn[], pinned, lowConfidence}`. `type`:
-`"news"`, `"video"`, `"press"` or `"social"`. `title` and `summary` are the
-outlet's words (Bangla in both languages). `alsoIn[]`: `{outletName, url}`,
+An item: `{id, type, title, titleEn, url, summary, summaryEn, outletName,
+thumbnailUrl, durationSeconds, publishedAt, alsoIn[], pinned, lowConfidence}`.
+`type`: `"news"`, `"video"`, `"press"` or `"social"`. Without `lang=en`,
+`title` and `summary` are the outlet's words; `titleEn` and `summaryEn` their
+English (Google Translate, or the outlet's own English), null until
+translated. Summaries are translated only when the site has
+`FEED_TRANSLATE_SUMMARIES=1`, so `summaryEn` is usually null. `alsoIn[]`: `{outletName, url}`,
 the same story elsewhere. `lowConfidence`: the member match is less certain.
 Before the feed's tables exist the answer has `"unavailable": true` and empty
 lists.
@@ -1075,5 +1091,6 @@ lists.
 
 `?from=YYYY-MM-DD&to=YYYY-MM-DD[&before=…]`: the same as
 [`/api/app/v1/news?from=…&to=…`](#get-news) but always in Bangla and without
-`version`/`lang`: `{from, to, stories[], next, counts}`.
+`version`/`lang`: `{from, to, stories[], next, counts}`. Each link has
+`titleEn` beside `title`.
 The app should prefer `/api/app/v1/news`.

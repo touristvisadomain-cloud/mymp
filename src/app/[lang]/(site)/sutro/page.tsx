@@ -159,7 +159,7 @@ export default async function SourcesPage() {
               from={t.en ? `Headlines published by ${outlets} approved news outlets, added by matching members’ names` : `${bn(outlets)}টি অনুমোদিত সংবাদমাধ্যমের প্রকাশিত শিরোনাম, সদস্যের নাম মিলিয়ে যুক্ত`}
               note={t(
                 'সাইট শুধু শিরোনাম, সংবাদমাধ্যমের নাম আর মূল লিংক রাখে; নিজে কোনো সংবাদ লেখে না, লেখাও কপি করে না। একই নামের অন্য কারও খবর ভুলে যুক্ত হলে জানালে সরানো হয়।',
-                'The site keeps only the headline, the outlet’s name and the original link; it writes no news itself and copies no text. If a story about someone else with the same name is added by mistake, it is removed once reported.',
+                'The site keeps only the headline, the outlet’s name and the original link; it writes no news itself and copies no text. If a story about someone else with the same name is added by mistake, it is removed once reported. On the English pages the headlines are translated automatically from Bangla by Google Translate (Google Cloud Translation); members’ names and seats keep the site’s own spelling, and only the headline text is sent, nothing about readers. A headline not yet translated is shown in Bangla.',
               )}
             />
           </div>

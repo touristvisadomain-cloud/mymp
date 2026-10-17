@@ -170,6 +170,9 @@ export interface NewsPost {
   sourceUrl: string;
   publishedOn: string;
   excerptBn: string | null;
+  /** The headline and excerpt in English, machine-translated (supabase/migrations/006); null or absent until then. */
+  titleEn?: string | null;
+  excerptEn?: string | null;
   memberId: string | null;
   seatSlug: string | null;
 }

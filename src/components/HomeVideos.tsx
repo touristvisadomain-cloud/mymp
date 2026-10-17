@@ -4,12 +4,19 @@ import { dayLabel, type StoryView } from '@/lib/newsView';
 import { getT } from '@/i18n/server';
 import type { T } from '@/i18n/core';
 import { channelName, memberName } from './VideoStrip';
+import MachineNote from './MachineNote';
+import { anyMachine, englishHeadline, MACHINE_TITLE } from '@/lib/headline';
+import type { StoryLink } from '@/lib/newsView';
 
 const duration = (s: number | null | undefined, t: T) =>
   s ? `${t.n(Math.floor(s / 60))}:${t.n(String(s % 60).padStart(2, '0'))}` : null;
 
-/** A video's title is the channel's own words: marked as Bangla on an English page when it is. */
-const titleLang = (title: string, t: T) => (t.en && /[\u0980-\u09FF]/.test(title) ? 'bn' : undefined);
+/**
+ * A video's title is the channel's own words. On an English page: its English
+ * once translated, and the Bangla, marked as Bangla, until then.
+ */
+const shown = (l: StoryLink, t: T) =>
+  t.en ? englishHeadline(l.title, l.titleEn) : { text: l.title, lang: undefined, machine: false };
 
 function Play({ size }: { size: 'lg' | 'sm' }) {
   const box = size === 'lg' ? 'w-16 h-16' : 'w-9 h-9';
@@ -72,11 +79,12 @@ export default async function HomeVideos({ videos }: { videos: StoryView[] }) {
   if (!picked.length) return null;
   const [lead, ...side] = picked;
   const when = (v: StoryView) => (t.en ? dayLabel(v.date, 'en') : v.dateLabel);
+  const top = shown(lead!.lead, t);
 
-  return (
+  const grid = (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] gap-4 items-stretch">
       <article className="reveal group relative rounded-card overflow-hidden bg-ink shadow-card flex flex-col lg:min-h-[420px]">
-        <a href={lead!.lead.url} target="_blank" rel="noopener noreferrer" aria-label={lead!.lead.title} lang={titleLang(lead!.lead.title, t)} className="relative block aspect-video lg:aspect-auto lg:absolute lg:inset-0">
+        <a href={lead!.lead.url} target="_blank" rel="noopener noreferrer" aria-label={top.text} lang={top.lang} className="relative block aspect-video lg:aspect-auto lg:absolute lg:inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={lead!.thumbnail!} alt="" loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500" />
           <span className="hidden lg:block absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
@@ -95,10 +103,11 @@ export default async function HomeVideos({ videos }: { videos: StoryView[] }) {
             href={lead!.lead.url}
             target="_blank"
             rel="noopener noreferrer"
-            lang={titleLang(lead!.lead.title, t)}
+            lang={top.lang}
+            title={top.machine ? MACHINE_TITLE : undefined}
             className="pointer-events-auto display text-white text-[18px] sm:text-[23px] leading-snug line-clamp-3 hover:underline"
           >
-            {lead!.lead.title}
+            {top.text}
           </a>
           <div className="pointer-events-auto"><People v={lead!} t={t} light /></div>
         </div>
@@ -124,8 +133,8 @@ export default async function HomeVideos({ videos }: { videos: StoryView[] }) {
                 )}
               </a>
               <div className="min-w-0 flex flex-col gap-1.5">
-                <a href={v.lead.url} target="_blank" rel="noopener noreferrer" lang={titleLang(v.lead.title, t)} className="font-semibold text-[14.5px] leading-snug line-clamp-2 hover:text-brand transition-colors">
-                  {v.lead.title}
+                <a href={v.lead.url} target="_blank" rel="noopener noreferrer" lang={shown(v.lead, t).lang} title={shown(v.lead, t).machine ? MACHINE_TITLE : undefined} className="font-semibold text-[14.5px] leading-snug line-clamp-2 hover:text-brand transition-colors">
+                  {shown(v.lead, t).text}
                 </a>
                 <span className="text-[12.5px] text-muted truncate">{channelName(v.lead.source, t)}, {when(v)}</span>
                 <People v={v} t={t} />
@@ -136,4 +145,6 @@ export default async function HomeVideos({ videos }: { videos: StoryView[] }) {
       )}
     </div>
   );
+  // English pages: the one line saying the titles are machine translations, when some are.
+  return t.en && anyMachine(picked.map((v) => v.lead)) ? <>{grid}<MachineNote /></> : grid;
 }

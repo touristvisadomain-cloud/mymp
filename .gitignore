@@ -50,3 +50,6 @@ next-env.d.ts
 # Local memory of the Command Code assistant; one of its file names holds a colon,
 # which Windows cannot check out.
 .commandcode/
+
+# local fixtures for next dev (src/lib/feed/devEnglish.ts)
+/.dev/

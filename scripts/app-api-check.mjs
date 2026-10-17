@@ -5,7 +5,8 @@
 // Every endpoint, in both languages: it answers 200 with JSON, gzipped when
 // asked, readable from any origin, with the language it was asked for; and
 // an English answer carries no Bangla, except in the news headlines (the
-// outlets' own words), which stay in Bangla on English pages too.
+// outlets' own words): a headline not yet translated stays in Bangla, and the
+// original is kept beside a translated one (titleOriginal, summaryOriginal).
 
 const base = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
 const BANGLA = /[ঀ-৿]/;
@@ -16,7 +17,7 @@ const BANGLA = /[ঀ-৿]/;
  * column is the Bangla an English name is matched to; and the fields kept in
  * Bangla for search: a brief's `areaBn` and the `…Alt` names. Addresses are not text.
  */
-const ALLOWED = [/\.stories\[\d+\]\.(lead|also\[\d+\])\.title$/, /^\.(items|pinned)\[\d+\]\.(title|summary)$/, /^\.upazilaEn\[\d+\]\[1\]$/, /\.areaBn$/, /\.(name|seat|district)Alt$/];
+const ALLOWED = [/\.stories\[\d+\]\.(lead|also\[\d+\])\.(title|titleOriginal)$/, /^\.(items|pinned)\[\d+\]\.(title|summary|titleOriginal|summaryOriginal)$/, /^\.upazilaEn\[\d+\]\[1\]$/, /\.areaBn$/, /\.(name|seat|district)Alt$/];
 const isUrl = (s) => /^https?:\/\//.test(s);
 
 const get = async (path) => {

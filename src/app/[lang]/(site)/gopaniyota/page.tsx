@@ -120,6 +120,11 @@ export default async function PrivacyPage() {
               that outlet&rsquo;s own policy. The news pictures, too, are shown from the outlets&rsquo; own servers and are not copied
               anywhere on our side.
             </p>
+            <p>
+              On the English pages, news headlines are translated from Bangla by Google Translate (Google Cloud Translation). The
+              translation is made on our server when a headline is collected, not in your browser: only the headline&rsquo;s text, which
+              the outlet has already published, is sent to Google, and nothing about you or what you read.
+            </p>
           </Section>
 
           <Section title="Information about members of parliament">

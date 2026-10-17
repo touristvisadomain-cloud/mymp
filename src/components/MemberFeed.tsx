@@ -10,6 +10,7 @@ import { useQueryParam } from '@/lib/useQueryParam';
 import RangePicker, { parseRange, rangeLabel } from './RangePicker';
 import { useT } from '@/i18n/client';
 import { plural, type T } from '@/i18n/core';
+import { anyMachine, englishHeadline, MACHINE_NOTE, MACHINE_TITLE } from '@/lib/headline';
 
 /** Stories drawn at first, and added by each "আরও দেখুন". */
 const STEP = 30;
@@ -36,6 +37,9 @@ export interface FeedEntry {
   publishedAt: string;
   alsoIn: { outletName: string | null; url: string }[];
   pinned: boolean;
+  /** The headline and summary in English (Google Translate), null until translated. */
+  titleEn?: string | null;
+  summaryEn?: string | null;
 }
 
 interface MonthCount { month: string; total: number; news: number; video: number }
@@ -77,6 +81,7 @@ const youtubeId = (url: string) => {
 function Row({ item, onPlay }: { item: FeedEntry; onPlay: (item: FeedEntry) => void }) {
   const t = useT();
   const vid = item.type === 'video' ? youtubeId(item.url) : null;
+  const head = t.en ? englishHeadline(item.title, item.titleEn) : null;
   const body = (
     <>
       <span className="shrink-0 w-[92px] sm:w-[116px] aspect-video rounded-lg bg-paper border border-rulesoft overflow-hidden grid place-items-center relative">
@@ -91,8 +96,8 @@ function Row({ item, onPlay }: { item: FeedEntry; onPlay: (item: FeedEntry) => v
         )}
       </span>
       <span className="min-w-0 flex flex-col gap-1">
-        {/* The outlet's own headline, in Bangla on the English pages too. */}
-        <span className="font-semibold text-[15.5px] leading-snug" lang="bn">{item.title}</span>
+        {/* The outlet's own headline; on the English pages its English once translated, the Bangla until then. */}
+        <span className="font-semibold text-[15.5px] leading-snug" lang={head ? head.lang : 'bn'} title={head?.machine ? MACHINE_TITLE : undefined}>{head ? head.text : item.title}</span>
         <span className="text-[12.5px] text-muted flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className={`px-1.5 py-px rounded border text-[11.5px] ${item.type === 'video' ? 'border-brandring text-brand' : 'border-rule'}`}>
             {item.type === 'video' ? t('ভিডিও', 'Video') : item.type === 'press' ? t('প্রজ্ঞাপন', 'Notification') : t('সংবাদ', 'News')}
@@ -221,6 +226,7 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
   const listKey = `${key}|${outlet ?? ''}`;
   const shown = shownCount.key === listKey ? shownCount.n : STEP;
   const rangeItems = range && rangeData?.key === rangeKey ? byOutlet(rangeData.items) : null;
+  const playingTitle = playing ? (t.en ? englishHeadline(playing.title, playing.titleEn).text : playing.title) : '';
 
   return (
     <div className="flex flex-col gap-4">
@@ -369,6 +375,7 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
       {t.en ? (
         <p className="text-[12.5px] text-muted leading-relaxed">
           News and videos are collected automatically from various news outlets and YouTube. Clicking a headline takes you to the original source.{' '}
+          {anyMachine([...data.pinned, ...data.items, ...Object.values(monthData).flat(), ...(rangeData?.items ?? [])]) && <>{MACHINE_NOTE}{' '}</>}
           If a story has been added wrongly, <a href={t.href(correctionHref)} className="underline decoration-rule underline-offset-2 hover:text-brand">let us know</a>.
         </p>
       ) : (
@@ -382,9 +389,9 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={playing.title}
-          // The video's title is the outlet's, in Bangla; the button inside is in the page's language.
-          lang={t.en ? 'bn' : undefined}
+          aria-label={playingTitle}
+          // The video's title is the outlet's (in Bangla until translated); the button inside is in the page's language.
+          lang={t.en ? englishHeadline(playing.title, playing.titleEn).lang : undefined}
           className="fixed inset-0 z-50 bg-ink/80 grid place-items-center p-4"
           onClick={() => setPlaying(null)}
         >
@@ -395,13 +402,13 @@ export default function MemberFeed({ slug, correctionHref }: { slug: string; cor
             <div className="aspect-video w-full rounded-card overflow-hidden bg-black">
               <iframe
                 src={`https://www.youtube-nocookie.com/embed/${youtubeId(playing.url)}?autoplay=1`}
-                title={playing.title}
+                title={playingTitle}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 className="w-full h-full"
               />
             </div>
-            <p className="pt-2 text-[13.5px] text-paper">{playing.title}</p>
+            <p className="pt-2 text-[13.5px] text-paper">{playingTitle}</p>
           </div>
         </div>
       )}

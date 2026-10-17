@@ -6,7 +6,7 @@
  *   ?from=YYYY-MM-DD&to=YYYY-MM-DD[&before=…]   a span of days, a page of 300
  *                      at a time, as /api/news/range answers it
  *   ?counts=1          the news page's figures instead (as /news/counts)
- *   ?lang=en           everything but the headlines in English
+ *   ?lang=en           in English, the headlines too where they have been translated
  *
  * Five minutes at the edge, as the web page has: a headline that lands during
  * a bus ride is soon enough, and the app never waits on a cold function.

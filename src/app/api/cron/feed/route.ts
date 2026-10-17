@@ -13,6 +13,8 @@ import { runYoutubeCollector, runSearchCollector, runPressCollector } from '@/li
 import { learnFromFeedback } from '@/lib/feed/learn';
 import { fillThumbnails } from '@/lib/feed/thumbnails';
 import { isMissingTable } from '@/lib/posts/db';
+import { translatePending } from '@/lib/feed/translateRun';
+import { translationProvider } from '@/lib/feed/translate';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -27,6 +29,12 @@ export async function GET(req: Request) {
   const collector = url.searchParams.get('collector') ?? 'rss';
 
   try {
+    // English headlines for the English pages: what is on a member's page and not translated yet.
+    // Also run after every collector below; this is for a schedule or a manual catch-up.
+    if (collector === 'translate') {
+      const t = await translatePending({ limit: 600, budgetMs: 50_000 });
+      return NextResponse.json({ ok: t.status !== 'failed', collector, ...t }, { status: t.status === 'failed' ? 500 : 200 });
+    }
     if (collector === 'thumbs') {
       const t = await fillThumbnails({ days: 3, limit: 40, budgetMs: 45_000 });
       return NextResponse.json({ ok: true, collector, ...t });
@@ -41,6 +49,11 @@ export async function GET(req: Request) {
       : collector === 'press' ? await runPressCollector({ trigger })
       : collector === 'sitemap' ? await runSitemapCollector({ trigger, budgetMs: 45_000 })
       : await runRssCollector({ trigger, budgetMs: 45_000 });
+    // What the run stored is translated straight away, inside a short time box;
+    // what does not fit is taken by the next run. Nothing happens without a key.
+    const translated = translationProvider()
+      ? await translatePending({ limit: 300, budgetMs: 12_000 }).catch((e: Error) => ({ status: 'failed' as const, reason: e.message }))
+      : undefined;
     // A collector with no key has not run rather than failed, so a schedule
     // that is waiting for a credential does not turn red every hour.
     const waiting = r.status === 'aborted' && r.errors.some((e) => /is not set|refused every call/.test(e.message));
@@ -56,6 +69,7 @@ export async function GET(req: Request) {
         lowConfidence: r.lowConfidence,
         unmatched: r.unmatched,
         errors: r.errors,
+        translated,
       },
       { status: r.status === 'ok' || waiting ? 200 : 500 },
     );

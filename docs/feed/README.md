@@ -103,6 +103,44 @@ Microsoft retired the Bing Search APIs; both stay in `searchProvider.ts` only
 for a project that still has access. Brave Search API (free: 2,000 queries a
 month, set `FEED_SEARCH_PER_RUN=2`) and SerpAPI work too.
 
+## English headlines
+
+The English pages (`/en/...`) show each headline in English once it has been
+translated, with one quiet line under each list: "Headlines translated
+automatically from Bangla by Google Translate". A headline without English yet
+is shown in Bangla, marked `lang="bn"`, as before. The Bangla pages never change.
+
+| | |
+|---|---|
+| service | Google Cloud Translation, Basic edition (v2 REST), `source=bn`, `target=en` |
+| switch | `GOOGLE_TRANSLATE_KEY` in the environment of the site (Dokploy), which is where the collectors run (`/api/cron/feed`). Without it nothing is translated and nothing breaks |
+| what is sent | the headline only (and the outlet's summary with `FEED_TRANSLATE_SUMMARIES=1`; summaries are not shown on the site's pages, so this is off). Public text the outlets published; nothing about readers |
+| what is stored | `feed_items.title_en`, `summary_en`, `en_source` (`google`, `original` for an outlet that writes in English, `failed`), `en_at`; the same on `news_posts` with `excerpt_en`. `supabase/migrations/006_feed_title_en.sql` (`npm run db:migrate`) |
+| when | after every collector run, the items on a member's page that have no English, newest first, at most 300 in 12 seconds; or `/api/cron/feed?collector=translate` |
+| backlog | `npm run feed:translate` counts and prices it; `-- --apply` translates it (`--limit`, `--since 2026-10-01`, `--only feed\|news`, `--retry-failed`) |
+| code | `src/lib/feed/translate.ts` (requests, checks), `translateGlossary.ts` (names), `translateRun.ts` (the run) |
+
+Names are kept as the site spells them: every member's official Bangla name
+and every general seat in a headline is replaced, before it is sent, by the
+site's English inside `<span translate="no">`, and the request goes as HTML, so
+"তারেক রহমানের ভারত সফর" comes back "Tarique Rahman's India visit" and
+"ঢাকা-১৭" as "Dhaka-17". The spans are stripped and the entities decoded before
+the English is stored. A popular name the press uses instead of the official
+one is left to Google: writing the roll's name in its place would change the
+headline.
+
+Every answer is checked: one per headline, not empty, no Bangla script left. A
+batch that fails is tried once more; a headline whose English is still unusable
+is marked `failed` and left in Bangla. When the outlet rewords a headline the
+collector clears its English, so the new words are translated on the next run;
+an editor's change to a news post does the same.
+
+Only items on some member's page are translated (about 200 a day in October
+2026, 18,300 in all): the feed also keeps general outlets' whole feeds, and
+nobody reads those. Google bills $20 per million characters after the first
+500,000 each month; a headline is about 80 characters, 110 with the name
+markup.
+
 ## The matcher
 
 `lib/feed/matchMp.ts`. A name counts only when every word of a stored variant
