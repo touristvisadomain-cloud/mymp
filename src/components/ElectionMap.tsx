@@ -178,6 +178,35 @@ function symbolIcon(party: string, color: string, size: number): Promise<string>
 }
 
 /**
+ * A tied district's two halves, cut on the diagonal from its box's top left to
+ * bottom right, as the drawn map's two-colour gradient: [top-left, bottom-right].
+ * Each ring is clipped to a half-plane; where a ring is not convex the cut can
+ * leave a zero-width seam, which does not show since the halves are not stroked.
+ */
+function tieHalves(rings: number[][][]): [number[][][], number[][][]] {
+  const pts = rings.flat();
+  const xs = pts.map((p) => p[0]!), ys = pts.map((p) => p[1]!);
+  const x0 = Math.min(...xs), y1 = Math.max(...ys);
+  const w = Math.max(...xs) - x0 || 1, h = y1 - Math.min(...ys) || 1;
+  const u = (p: number[]) => (p[0]! - x0) / w + (y1 - p[1]!) / h - 1;
+  const clip = (ring: number[][], keep: (v: number) => boolean) => {
+    const out: number[][] = [];
+    for (let i = 0; i < ring.length; i++) {
+      const p = ring[i]!, q = ring[(i + 1) % ring.length]!;
+      const up = u(p), uq = u(q);
+      if (keep(up)) out.push(p);
+      if (keep(up) !== keep(uq)) {
+        const k = up / (up - uq);
+        out.push([p[0]! + (q[0]! - p[0]!) * k, p[1]! + (q[1]! - p[1]!) * k]);
+      }
+    }
+    return out.length >= 3 ? [...out, out[0]!] : null;
+  };
+  const half = (keep: (v: number) => boolean) => rings.map((r) => clip(r, keep)).filter((r): r is number[][] => !!r);
+  return [half((v) => v < 0), half((v) => v >= 0)];
+}
+
+/**
  * `districtNames`: the districts' English names by slug, on the English page;
  * the Bangla page names them from public/geo/overview.json.
  */
@@ -202,7 +231,7 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
   const svgRef = useRef<SVGSVGElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const gmBox = useRef<HTMLDivElement>(null);
-  const gm = useRef<{ map: google.maps.Map; districts: google.maps.Data; areas: google.maps.Data; markers: Map<string, google.maps.Marker>; icons: Map<string, string> } | null>(null);
+  const gm = useRef<{ map: google.maps.Map; districts: google.maps.Data; ties: google.maps.Data; areas: google.maps.Data; markers: Map<string, google.maps.Marker>; icons: Map<string, string> } | null>(null);
   const drag = useRef<{ x: number; y: number; vb: Box } | null>(null);
   const pinch = useRef<{ d: number; vb: Box } | null>(null);
   const ptrs = useRef(new Map<number, { x: number; y: number }>());
@@ -357,6 +386,7 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
     if (!m) return;
     for (const mk of m.markers.values()) mk.setMap(null);
     m.districts.setMap(null);
+    m.ties.setMap(null);
     m.areas.setMap(null);
     gm.current = null;
   };
@@ -376,18 +406,22 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
         isFractionalZoomEnabled: true,
       });
       showCountry(map, gmBox.current);
+      // A tied district's two colours, under the district outlines.
+      const ties = new g.maps.Data({ map });
       const districts = new g.maps.Data({ map });
       districts.addGeoJson({
         type: 'FeatureCollection',
         features: overview.districts.map((d) => ({ type: 'Feature', properties: { slug: d.slug, name: d.name }, geometry: { type: 'MultiPolygon', coordinates: d.polys.map((ring) => [ring]) } })),
       });
-      districts.addListener('click', (e: google.maps.Data.MouseEvent) => {
+      const pickFrom = (e: google.maps.Data.MouseEvent) => {
         if (live.current.mode === 'districts') live.current.pickDistrict(String(e.feature.getProperty('slug')));
         else live.current.close();
-      });
+      };
+      districts.addListener('click', pickFrom);
+      ties.addListener('click', pickFrom);
       const areaLayer = new g.maps.Data({ map });
       map.addListener('click', () => live.current.close());
-      gm.current = { map, districts, areas: areaLayer, markers: new Map(), icons: new Map() };
+      gm.current = { map, districts, ties, areas: areaLayer, markers: new Map(), icons: new Map() };
       setGmReady((n) => n + 1);
     }).catch(() => setUseGoogle(false));
     return () => { cancelled = true; };
@@ -470,12 +504,26 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
       const [a, b] = lead.get(slug) ?? [];
       const on = pickedDistrict === slug;
       if (mode === 'districts') {
+        // A tie's colours are the two halves on the layer below; the district itself is only its outline.
         const tie = a && b && a.seats === b.seats;
-        return { fillColor: a ? resolve(tie ? b.color : a.color) : '#9a9a9a', fillOpacity: pickedDistrict && !on ? 0.3 : 0.55, strokeColor: on ? '#17201b' : tie ? resolve(a.color) : '#ffffff', strokeWeight: on ? 3 : tie ? 3 : 1.2, cursor: 'pointer' };
+        return { fillColor: a ? resolve(a.color) : '#9a9a9a', fillOpacity: tie ? 0 : pickedDistrict && !on ? 0.3 : 0.55, strokeColor: on ? '#17201b' : '#ffffff', strokeWeight: on ? 3 : 1.2, zIndex: on ? 2 : 1, cursor: 'pointer' };
       }
       return { fillColor: '#1f7a4f', fillOpacity: on ? 0.08 : 0, strokeColor: on ? '#17201b' : '#5f6b64', strokeWeight: on ? 2 : 1, strokeOpacity: on ? 1 : 0.6, clickable: true };
     });
-  }, [gmReady, mode, lead, pickedDistrict]);
+    m.ties.forEach((f) => m.ties.remove(f));
+    if (mode !== 'districts' || !overview) return;
+    for (const d of overview.districts) {
+      const [a, b] = lead.get(d.slug) ?? [];
+      if (!a || !b || a.seats !== b.seats) continue;
+      tieHalves(d.polys).forEach((rings, i) => {
+        if (rings.length) m.ties.addGeoJson({ type: 'Feature', properties: { slug: d.slug, color: resolve((i ? b : a).color) }, geometry: { type: 'MultiPolygon', coordinates: rings.map((r) => [r]) } });
+      });
+    }
+    m.ties.setStyle((f) => {
+      const on = pickedDistrict === f.getProperty('slug');
+      return { fillColor: String(f.getProperty('color')), fillOpacity: pickedDistrict && !on ? 0.3 : 0.55, strokeWeight: 0, cursor: 'pointer' };
+    });
+  }, [gmReady, mode, lead, pickedDistrict, overview]);
 
   // The picked seat's area, and the view to it.
   useEffect(() => {
