@@ -690,10 +690,17 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
                     {current.partyFull ?? current.partyShort}
                   </span>
                 )}
-                <dl className="grid grid-cols-2 gap-2.5 mt-3">
-                  <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">{t('প্রাপ্ত ভোট', 'Votes received')}</dt><dd className="text-[16px] font-bold tnum">{current.votes != null ? t.group(current.votes) : '—'}</dd></div>
-                  <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">{t('ব্যবধান', 'Margin')}</dt><dd className="text-[16px] font-bold tnum">{current.margin != null ? t.group(current.margin) : '—'}</dd></div>
-                </dl>
+                {current.votes != null ? (
+                  <dl className="grid grid-cols-2 gap-2.5 mt-3">
+                    <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">{t('প্রাপ্ত ভোট', 'Votes received')}</dt><dd className="text-[16px] font-bold tnum">{t.group(current.votes)}</dd></div>
+                    <div className="rounded-[10px] bg-paper px-2.5 py-2"><dt className="text-[11.5px] text-muted">{t('ব্যবধান', 'Margin')}</dt><dd className="text-[16px] font-bold tnum">{current.margin != null ? t.group(current.margin) : '—'}</dd></div>
+                  </dl>
+                ) : (
+                  // A seat whose 2026 count is not in the results yet: said so, rather than two empty boxes.
+                  <p className="mt-3 rounded-[10px] bg-paper px-3 py-2.5 text-[13px] text-inksoft leading-relaxed">
+                    {t('এই আসনের ২০২৬ নির্বাচনের ভোটের হিসাব এখনো যুক্ত হয়নি।', 'The vote count for this seat in the 2026 election has not been added yet.')}
+                  </p>
+                )}
                 {current.runnerUp && (
                   <p className="mt-2.5 text-[12.5px] text-muted">{t('নিকটতম: ', 'Runner-up: ')}{current.runnerUp.name}{current.runnerUp.party ? ` (${current.runnerUp.party})` : ''}, {t.group(current.runnerUp.votes)}{t(' ভোট', plural(current.runnerUp.votes, ' vote', ' votes'))}</p>
                 )}

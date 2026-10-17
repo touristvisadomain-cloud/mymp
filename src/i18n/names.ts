@@ -134,6 +134,9 @@ const PARTY_EN: Record<string, { full: string; short: string }> = {
   PSM: { full: 'Ganosamhati Andolan', short: 'Ganosamhati Andolan' },
   GSA: { full: 'Ganosamhati Andolan', short: 'Ganosamhati Andolan' },
   JAGPA: { full: 'Jatiya Ganatantrik Party (JAGPA)', short: 'JAGPA' },
+  JUIB: { full: 'Jamiat Ulema-e-Islam Bangladesh', short: 'Jamiat Ulema-e-Islam' },
+  AB: { full: 'AB Party (Amar Bangladesh Party)', short: 'AB Party' },
+  RWPB: { full: 'Revolutionary Workers Party of Bangladesh', short: 'Revolutionary Workers Party' },
   // Parties of earlier parliaments (data/history.json).
   BAL: { full: 'Bangladesh Awami League', short: 'Awami League' },
   JP: { full: 'Jatiya Party', short: 'Jatiya Party' },
@@ -166,6 +169,9 @@ type PartyLike = { abbr: string; nameBn?: string | null; nameEn?: string | null 
 const PARTY_SHORT_BN: Record<string, string> = {
   BNP: 'বিএনপি', BJEI: 'জামায়াতে ইসলামী', Ind: 'স্বতন্ত্র', NCP: 'এনসিপি', BKM: 'বাংলাদেশ খেলাফত মজলিস',
   IMB: 'ইসলামী আন্দোলন', GOP: 'গণঅধিকার পরিষদ', BJP: 'বিজেপি', KM: 'খেলাফত মজলিস', PSM: 'গণসংহতি আন্দোলন', JAGPA: 'জাগপা',
+  // The parties' codes in the 2026 results (data/results.json, from The Business Standard), for the runners-up.
+  IAB: 'ইসলামী আন্দোলন', JUIB: 'জমিয়তে উলামায়ে ইসলাম', AB: 'এবি পার্টি', LDP: 'এলডিপি', RWPB: 'বিপ্লবী ওয়ার্কার্স পার্টি',
+  BIF: 'ইসলামী ফ্রন্ট', 'JP(ERSHAD)': 'জাতীয় পার্টি (এরশাদ)',
 };
 
 /** A party's full name: "বাংলাদেশ জাতীয়তাবাদী দল (বি.এন.পি)" / "Bangladesh Nationalist Party (BNP)". */

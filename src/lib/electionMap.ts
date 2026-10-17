@@ -61,7 +61,7 @@ export function pinSeats(t: T): PinSeat[] {
       votes: a?.votes ?? null,
       margin: a && b ? a.votes - b.votes : null,
       runnerUp: runnerUp
-        ? { name: runnerUp.name, party: t.en ? partyByAbbr(runnerUp.party, null, 'en', true) || null : runnerUp.party, votes: runnerUp.votes }
+        ? { name: runnerUp.name, party: partyByAbbr(runnerUp.party, null, t.lang, true) || runnerUp.party, votes: runnerUp.votes }
         : null,
     });
   }
