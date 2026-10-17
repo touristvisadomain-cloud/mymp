@@ -13,6 +13,8 @@
  */
 import { restDb, type Db } from '@/lib/posts/db';
 import { FEED_UA } from './rss';
+import { isGoogleNewsLink, resolveGoogleNews } from './googleNews';
+import { canonicalUrl } from './store';
 
 function db(): Db {
   const d = restDb();
@@ -72,9 +74,21 @@ export async function fillThumbnails(opts: { days?: number; limit?: number; budg
     for (let row = queue.shift(); row; row = queue.shift()) {
       if (Date.now() > deadline - 12_000) { counts.ranOut = true; return; }
       counts.tried++;
+      // A story stored by its Google News link: first the outlet's own address,
+      // which the story then keeps, unless another row already has it.
+      let pageUrl = row.url;
+      if (isGoogleNewsLink(row.url)) {
+        const real = await resolveGoogleNews(row.url);
+        if (real) {
+          pageUrl = real;
+          const canonical = canonicalUrl(real);
+          const [taken] = await sb.get<{ id: number }[]>(`feed_items?canonical_url=eq.${encodeURIComponent(canonical)}&select=id&limit=1`);
+          if (!taken) await sb.patch(`feed_items?id=eq.${row.id}`, { url: real, canonical_url: canonical });
+        }
+      }
       let html = '';
       try {
-        const res = await fetch(row.url, {
+        const res = await fetch(pageUrl, {
           headers: { 'user-agent': FEED_UA, accept: 'text/html' },
           signal: AbortSignal.timeout(10_000),
           redirect: 'follow',
@@ -84,7 +98,7 @@ export async function fillThumbnails(opts: { days?: number; limit?: number; budg
       } catch {
         // Counted below as unreadable.
       }
-      const image = html ? pageImage(html, row.url) : null;
+      const image = html ? pageImage(html, pageUrl) : null;
       if (image) counts.found++;
       else if (html) counts.none++;
       else counts.unreadable++;

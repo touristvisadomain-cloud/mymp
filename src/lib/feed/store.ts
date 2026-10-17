@@ -14,6 +14,7 @@ import { restDb, DbError, type Db } from '@/lib/posts/db';
 import { allMembers } from '@/lib/data';
 import { FEED_FROM, FEED_FROM_INSTANT, FEED_FROM_MONTH, notBeforeWindow } from './window';
 import { devEnglish } from './devEnglish';
+import { isGoogleNewsLink, resolveGoogleNews } from './googleNews';
 
 /** Only stories from the window, on an embedded feed_items row. */
 const IN_WINDOW = `&feed_items.published_at=gte.${encodeURIComponent(FEED_FROM_INSTANT)}`;
@@ -180,6 +181,13 @@ export async function upsertItem(input: FeedItemInput): Promise<UpsertResult | n
       return { id: existing.id, isNew: false, edited: existing.content_hash !== hash };
     }
     return { id: existing.id, isNew: false, edited: false };
+  }
+
+  // A new story by its Google News link is stored under the outlet's own address
+  // (lib/feed/googleNews.ts); when Google does not say, the link it gave stays.
+  if (isGoogleNewsLink(input.url)) {
+    const real = await resolveGoogleNews(input.url);
+    if (real) return upsertItem({ ...input, url: real });
   }
 
   // The same headline from another outlet within two days is the same story.
