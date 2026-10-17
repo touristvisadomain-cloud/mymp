@@ -13,12 +13,15 @@ import { bnTextImage } from '@/lib/og/banglaText';
 import { card, Disc, Mark, Pill, Text, TEXT_WIDTH } from '@/lib/og/frame';
 import { isPageKey, pageCardText } from '@/lib/og/pages';
 import { makeT, type Lang } from '@/i18n/core';
+import { electionCard } from '@/lib/og/electionCard';
 
 const DISC = 190;
 
 /** The card for a list page, in the given language; 404 for a key no page has. */
 export async function pageCard(key: string, lang: Lang): Promise<Response> {
   if (!isPageKey(key)) return new Response('Not found', { status: 404 });
+  // The election's card is its map (src/lib/og/electionCard.tsx).
+  if (key === 'nirbachon') return electionCard(lang);
   const { kicker, title, figure } = pageCardText(key, makeT(lang));
   const white = { color: '#ffffff' };
 
