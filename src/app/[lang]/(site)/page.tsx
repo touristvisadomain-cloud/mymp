@@ -266,11 +266,7 @@ export default async function Home() {
                   { k: t("নারী সদস্য", "Women members"), v: t.n(stats.women), href: "/parisonkhan#nari" },
                   { k: t("প্রথমবার সংসদে", "First-time MPs"), v: t.n(experience.firstTime), href: "/parisonkhan#obhiggota" },
                   { k: t("মন্ত্রিসভায়", "In the Cabinet"), v: t.n(cabinetSize), href: "/ministers" },
-                  {
-                    k: t("মধ্যক বয়স", "Median age"),
-                    v: stats.medianAge == null ? "" : t(`${t.n(stats.medianAge)} বছর`, `${stats.medianAge} years`),
-                    href: "/parisonkhan#boyos",
-                  },
+                  { k: t("মুক্তিযোদ্ধা", "Freedom fighters"), v: t.n(stats.freedomFighters), href: "/parisonkhan" },
                 ]
                   .filter((f) => f.v)
                   .map((f) => (
