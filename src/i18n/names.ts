@@ -188,6 +188,41 @@ export function partyShort(p: PartyLike, lang: Lang): string {
   return PARTY_SHORT_BN[p.abbr] ?? p.nameBn ?? p.abbr;
 }
 
+/**
+ * A party's full name with its everyday short name, "বাংলাদেশ জাতীয়তাবাদী দল,
+ * বিএনপি" / "Bangladesh Nationalist Party, BNP" (owner, 2026-10-17), for a
+ * party known by its code alone (the 2026 results' runners-up). Where the
+ * short name is only a shorter form of the full one, the full name stands
+ * alone; a code the tables do not know is shown as it is.
+ */
+const PARTY_FULL_SHORT: Record<string, { bn: [string, string?]; en: [string, string?] }> = {
+  BNP: { bn: ['বাংলাদেশ জাতীয়তাবাদী দল', 'বিএনপি'], en: ['Bangladesh Nationalist Party', 'BNP'] },
+  BJEI: { bn: ['বাংলাদেশ জামায়াতে ইসলামী'], en: ['Bangladesh Jamaat-e-Islami'] },
+  Ind: { bn: ['স্বতন্ত্র'], en: ['Independent'] },
+  NCP: { bn: ['জাতীয় নাগরিক পার্টি', 'এনসিপি'], en: ['National Citizen Party', 'NCP'] },
+  IAB: { bn: ['ইসলামী আন্দোলন বাংলাদেশ'], en: ['Islami Andolan Bangladesh'] },
+  IMB: { bn: ['ইসলামী আন্দোলন বাংলাদেশ'], en: ['Islami Andolan Bangladesh'] },
+  BKM: { bn: ['বাংলাদেশ খেলাফত মজলিস'], en: ['Bangladesh Khelafat Majlis'] },
+  KM: { bn: ['খেলাফত মজলিস'], en: ['Khelafat Majlis'] },
+  GOP: { bn: ['গণঅধিকার পরিষদ'], en: ['Gono Odhikar Parishad'] },
+  JUIB: { bn: ['জমিয়তে উলামায়ে ইসলাম বাংলাদেশ'], en: ['Jamiat Ulema-e-Islam Bangladesh'] },
+  AB: { bn: ['আমার বাংলাদেশ পার্টি', 'এবি পার্টি'], en: ['Amar Bangladesh Party', 'AB Party'] },
+  LDP: { bn: ['লিবারেল ডেমোক্রেটিক পার্টি', 'এলডিপি'], en: ['Liberal Democratic Party', 'LDP'] },
+  RWPB: { bn: ['বিপ্লবী ওয়ার্কার্স পার্টি বাংলাদেশ'], en: ['Revolutionary Workers Party of Bangladesh'] },
+  BIF: { bn: ['বাংলাদেশ ইসলামী ফ্রন্ট'], en: ['Bangladesh Islami Front'] },
+  'JP(ERSHAD)': { bn: ['জাতীয় পার্টি (এরশাদ)'], en: ['Jatiya Party (Ershad)'] },
+  // Named by its symbol file on The Business Standard's results page (bangladesh_development_party_bdp.png).
+  BDP: { bn: ['বাংলাদেশ ডেভেলপমেন্ট পার্টি', 'বিডিপি'], en: ['Bangladesh Development Party', 'BDP'] },
+};
+
+export function partyFullShort(abbr: string | null | undefined, lang: Lang): string {
+  if (!abbr) return '';
+  const p = PARTY_FULL_SHORT[abbr];
+  if (!p) return abbr;
+  const [full, short] = p[lang];
+  return short ? `${full}, ${short}` : full;
+}
+
 /** A party by its abbreviation alone, with the Bangla name a record carries (results, history). */
 export const partyByAbbr = (abbr: string | null | undefined, nameBn: string | null | undefined, lang: Lang, short = false) =>
   abbr ? (short ? partyShort : partyName)({ abbr, nameBn }, lang) : '';

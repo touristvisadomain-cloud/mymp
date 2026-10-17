@@ -7,7 +7,7 @@ import { seats, getMemberById, districtOf, partyShortBn, partyColor, initial, ty
 import { resultForSeat } from '@/lib/history';
 import type { PinSeat } from '@/components/ElectionMap';
 import type { T } from '@/i18n/core';
-import { districtName, partyByAbbr, partyName, partyShort, personName, seatName } from '@/i18n/names';
+import { districtName, partyFullShort, partyName, partyShort, personName, seatName } from '@/i18n/names';
 import { inLang } from '@/i18n/content';
 
 // Seats of this parliament with a published result, and each seat's winner.
@@ -61,7 +61,7 @@ export function pinSeats(t: T): PinSeat[] {
       votes: a?.votes ?? null,
       margin: a && b ? a.votes - b.votes : null,
       runnerUp: runnerUp
-        ? { name: runnerUp.name, party: partyByAbbr(runnerUp.party, null, t.lang, true) || runnerUp.party, votes: runnerUp.votes }
+        ? { name: runnerUp.name, party: partyFullShort(runnerUp.party, t.lang) || null, votes: runnerUp.votes }
         : null,
     });
   }
