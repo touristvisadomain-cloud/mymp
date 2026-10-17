@@ -13,6 +13,7 @@ import { isGenericThumbnail } from '../../../config/feed-matching';
 import { restDb, DbError, type Db } from '@/lib/posts/db';
 import { allMembers } from '@/lib/data';
 import { FEED_FROM, FEED_FROM_INSTANT, FEED_FROM_MONTH, notBeforeWindow } from './window';
+import { devEnglish } from './devEnglish';
 
 /** Only stories from the window, on an embedded feed_items row. */
 const IN_WINDOW = `&feed_items.published_at=gte.${encodeURIComponent(FEED_FROM_INSTANT)}`;
@@ -59,6 +60,9 @@ export interface FeedItemRow {
   published_at: string;
   source: FeedSource;
   also_in: AlsoIn[];
+  /** Migration 006: the English, null until translated (lib/feed/translateRun.ts). */
+  title_en?: string | null;
+  summary_en?: string | null;
 }
 
 /** Tracking parameters and AMP paths make one story look like many. */
@@ -102,6 +106,36 @@ function db(): Db {
   return d;
 }
 
+/** A query named a column the database does not have yet (Postgres 42703, PostgREST PGRST204). */
+export const isMissingColumn = (e: unknown, column: string) =>
+  e instanceof DbError && e.body.includes(column) && /42703|PGRST204|does not exist|could not find/i.test(e.body);
+
+let englishCache: { at: number; ok: boolean } | null = null;
+
+/**
+ * Whether the English headline columns exist (supabase/migrations/006).
+ * Until the migration is run every read leaves them out, so a deploy that
+ * comes before the migration shows the Bangla headlines rather than an empty
+ * page. Asked once per five minutes, so running the migration needs no
+ * restart.
+ */
+export async function englishColumns(): Promise<boolean> {
+  if (englishCache && Date.now() - englishCache.at < 5 * 60_000) return englishCache.ok;
+  try {
+    await db().get('feed_items?select=title_en&limit=1');
+    englishCache = { at: Date.now(), ok: true };
+    return true;
+  } catch (e) {
+    // Only a missing column is remembered; a busy gateway is asked again next time.
+    if (isMissingColumn(e, 'title_en')) englishCache = { at: Date.now(), ok: false };
+    else if (!(e instanceof DbError)) throw e;
+    return false;
+  }
+}
+
+/** The English columns as nothing: what an edited headline is given, so its new words are translated again. */
+export const NO_ENGLISH = { title_en: null, summary_en: null, en_source: null, en_at: null } as const;
+
 const q = (v: string | number) => encodeURIComponent(String(v));
 
 export interface UpsertResult {
@@ -133,10 +167,13 @@ export async function upsertItem(input: FeedItemInput): Promise<UpsertResult | n
     // only learned to look for one after these rows were stored.
     const gainedPicture = !existing.thumbnail_url && !!input.thumbnailUrl;
     if (existing.content_hash !== hash || gainedPicture) {
+      const reworded = existing.content_hash !== hash;
       await sb.patch(`feed_items?id=eq.${existing.id}`, {
         title: fixJoiners(input.title),
         summary: input.summary ? fixJoiners(input.summary) : null,
         ...(gainedPicture ? { thumbnail_url: input.thumbnailUrl } : {}),
+        // The English was of the old words.
+        ...(reworded && (await englishColumns()) ? NO_ENGLISH : {}),
         content_hash: hash,
         updated_at: new Date().toISOString(),
       });
@@ -342,6 +379,10 @@ export interface FeedEntry {
   alsoIn: AlsoIn[];
   pinned: boolean;
   lowConfidence: boolean;
+  /** The headline in English, machine-translated (or the outlet's own English); null until translated. */
+  titleEn: string | null;
+  /** The summary in English, when summaries are translated (FEED_TRANSLATE_SUMMARIES=1). */
+  summaryEn: string | null;
 }
 
 interface JoinRow {
@@ -352,13 +393,19 @@ interface JoinRow {
   feed_items: FeedItemRow | null;
 }
 
-const SELECT_ITEM = 'feed_item_id,pinned,pinned_until,low_confidence,feed_items(id,type,title,url,summary,outlet_name,thumbnail_url,duration_seconds,published_at,also_in)';
-const SELECT_ITEM_INNER = SELECT_ITEM.replace('feed_items(', 'feed_items!inner(');
+const ITEM_COLUMNS = 'id,type,title,url,summary,outlet_name,thumbnail_url,duration_seconds,published_at,also_in';
+
+/** An attachment with its item; the English columns only once the migration has added them. */
+async function selectItem(inner: boolean): Promise<string> {
+  const english = (await englishColumns()) ? ',title_en,summary_en' : '';
+  return `feed_item_id,pinned,pinned_until,low_confidence,feed_items${inner ? '!inner' : ''}(${ITEM_COLUMNS}${english})`;
+}
 
 const toEntry = (r: JoinRow): FeedEntry | null => {
   const i = r.feed_items;
   if (!i) return null;
   const pinned = r.pinned && (!r.pinned_until || new Date(r.pinned_until) > new Date());
+  const dev = devEnglish(i.id);
   return {
     id: i.id,
     type: i.type,
@@ -372,6 +419,8 @@ const toEntry = (r: JoinRow): FeedEntry | null => {
     alsoIn: i.also_in ?? [],
     pinned,
     lowConfidence: r.low_confidence,
+    titleEn: dev?.titleEn ?? i.title_en ?? null,
+    summaryEn: dev?.summaryEn ?? i.summary_en ?? null,
   };
 };
 
@@ -387,7 +436,7 @@ export async function monthItems(mpId: string, month: string, type?: FeedType): 
   // Without it every attachment came back, other months' with an empty item, and a
   // member with more than 300 of them (the Prime Minister) got an empty month.
   const rows = await db().get<JoinRow[]>(
-    `feed_item_mps?mp_id=eq.${q(mpId)}&status=eq.visible&select=${SELECT_ITEM_INNER}` +
+    `feed_item_mps?mp_id=eq.${q(mpId)}&status=eq.visible&select=${await selectItem(true)}` +
       `&feed_items.published_at=gte.${q(from)}&feed_items.published_at=lt.${q(to)}${typeFilter}` +
       '&order=feed_items(published_at).desc&limit=300',
   );
@@ -405,7 +454,7 @@ export async function rangeItems(mpId: string, fromDay: string, toDay: string, t
   const to = `${new Date(Date.UTC(y!, m! - 1, d! + 1)).toISOString().slice(0, 10)}T00:00:00+06:00`;
   const typeFilter = type ? `&feed_items.type=eq.${type}` : '';
   const rows = await db().get<JoinRow[]>(
-    `feed_item_mps?mp_id=eq.${q(mpId)}&status=eq.visible&select=${SELECT_ITEM_INNER}` +
+    `feed_item_mps?mp_id=eq.${q(mpId)}&status=eq.visible&select=${await selectItem(true)}` +
       `&feed_items.published_at=gte.${q(from)}&feed_items.published_at=lt.${q(to)}${typeFilter}` +
       `&order=feed_items(published_at).desc&limit=${RANGE_LIMIT}`,
   );
@@ -416,7 +465,7 @@ export async function rangeItems(mpId: string, fromDay: string, toDay: string, t
 export async function recentItems(mpId: string, limit: number, type?: FeedType): Promise<FeedEntry[]> {
   const typeFilter = type ? `&feed_items.type=eq.${type}` : '';
   const rows = await db().get<JoinRow[]>(
-    `feed_item_mps?mp_id=eq.${q(mpId)}&status=eq.visible&select=${SELECT_ITEM_INNER}${typeFilter}${IN_WINDOW}` +
+    `feed_item_mps?mp_id=eq.${q(mpId)}&status=eq.visible&select=${await selectItem(true)}${typeFilter}${IN_WINDOW}` +
       `&order=feed_items(published_at).desc&limit=${Math.min(Math.max(limit, 1), 200)}`,
   );
   return rows.map(toEntry).filter((x): x is FeedEntry => !!x);
@@ -438,7 +487,7 @@ export async function latestItems(opts: { limit?: number; type?: FeedType } = {}
   const limit = opts.limit ?? 300;
   const typeFilter = opts.type ? `&feed_items.type=eq.${opts.type}` : '';
   const rows = await db().get<(JoinRow & { mp_id: string })[]>(
-    `feed_item_mps?status=eq.visible${SITTING_ONLY}&select=mp_id,${SELECT_ITEM}${typeFilter}${IN_WINDOW}` +
+    `feed_item_mps?status=eq.visible${SITTING_ONLY}&select=mp_id,${await selectItem(false)}${typeFilter}${IN_WINDOW}` +
       `&feed_items=not.is.null&order=feed_items(published_at).desc&limit=${Math.min(limit * 3, 2000)}`,
   );
   const byItem = new Map<number, LatestEntry>();
@@ -551,7 +600,7 @@ export async function rangeLatest(fromDay: string, toDay: string, before?: strin
   let exhausted = false;
   for (let offset = 0; byItem.size <= NEWS_RANGE_PAGE; offset += 1000) {
     const rows = await db().get<(JoinRow & { mp_id: string })[]>(
-      `feed_item_mps?status=eq.visible${SITTING_ONLY}&select=mp_id,${SELECT_ITEM_INNER}${window}` +
+      `feed_item_mps?status=eq.visible${SITTING_ONLY}&select=mp_id,${await selectItem(true)}${window}` +
         `&order=feed_items(published_at).desc,feed_item_id.desc&offset=${offset}&limit=1000`,
     );
     for (const r of rows) {
@@ -574,7 +623,7 @@ export async function rangeLatest(fromDay: string, toDay: string, before?: strin
 /** The items pinned to the top of a member's feed. */
 export async function pinnedItems(mpId: string): Promise<FeedEntry[]> {
   const rows = await db().get<JoinRow[]>(
-    `feed_item_mps?mp_id=eq.${q(mpId)}&status=eq.visible&pinned=is.true&select=${SELECT_ITEM_INNER}${IN_WINDOW}&order=feed_items(published_at).desc&limit=20`,
+    `feed_item_mps?mp_id=eq.${q(mpId)}&status=eq.visible&pinned=is.true&select=${await selectItem(true)}${IN_WINDOW}&order=feed_items(published_at).desc&limit=20`,
   );
   return rows.map(toEntry).filter((x): x is FeedEntry => !!x && x.pinned);
 }

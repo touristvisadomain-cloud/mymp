@@ -24,6 +24,7 @@
     "feed:thumbs": "tsx scripts/feed-thumbnails.ts",
     "feed:archive": "tsx scripts/feed-archive.ts",
     "feed:fill": "tsx scripts/feed-fill.ts",
+    "feed:translate": "tsx scripts/feed-translate.ts",
     "i18n:check": "node scripts/i18n-coverage.mjs",
     "i18n:pages": "node scripts/i18n-check.mjs",
     "i18n:bn-intact": "node scripts/i18n-bn-intact.mjs"

@@ -318,7 +318,11 @@ export async function upsertNews(a: Actor, id: string | null, input: NewsInput):
   const db = supabaseAdmin();
   if (id) {
     const before = await getNews(id);
-    must(await db.from('news_posts').update({ ...input, updated_by: a.id, updated_at: new Date().toISOString() }).eq('id', id), 'the news post could not be saved');
+    // A reworded headline or excerpt is translated again (supabase/migrations/006); the
+    // columns are cleared only where the migration has added them.
+    const reworded = before && (before.title_bn !== input.title_bn || (before.excerpt_bn ?? null) !== (input.excerpt_bn ?? null));
+    const english = reworded && 'title_en' in before ? { title_en: null, excerpt_en: null, en_source: null, en_at: null } : {};
+    must(await db.from('news_posts').update({ ...input, ...english, updated_by: a.id, updated_at: new Date().toISOString() }).eq('id', id), 'the news post could not be saved');
     await audit(a, { action: 'news.update', entity_type: 'news', entity_id: id, field: null, old_value: before?.title_bn ?? null, new_value: input.title_bn });
     return id;
   }

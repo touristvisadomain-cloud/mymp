@@ -905,10 +905,18 @@ async function main() {
   // Only published items reach the site, and only the fields the site shows.
   if (dbConfigured()) {
     try {
-      const rows = await dbAll('news_posts?select=id,title_bn,source_name,source_url,published_on,excerpt_bn,member_id,seat_slug&status=eq.published&order=published_on.desc,created_at.desc,id');
+      // The English (supabase/migrations/006) when the database has it: the English pages show it.
+      const NEWS_COLUMNS = 'id,title_bn,source_name,source_url,published_on,excerpt_bn,member_id,seat_slug';
+      const newsQuery = (cols) => `news_posts?select=${cols}&status=eq.published&order=published_on.desc,created_at.desc,id`;
+      const rows = await dbAll(newsQuery(`${NEWS_COLUMNS},title_en,excerpt_en`)).catch((err) => {
+        if (!/42703|PGRST204|does not exist/.test(err.message)) throw err;
+        console.warn('  news: no English columns yet (run supabase/migrations/006_feed_title_en.sql); the headlines go out in Bangla only');
+        return dbAll(newsQuery(NEWS_COLUMNS));
+      });
       const news = rows.map((r) => ({
         id: r.id, titleBn: r.title_bn, sourceName: r.source_name, sourceUrl: r.source_url,
         publishedOn: r.published_on, excerptBn: r.excerpt_bn ?? null, memberId: r.member_id ?? null, seatSlug: r.seat_slug ?? null,
+        titleEn: r.title_en ?? null, excerptEn: r.excerpt_en ?? null,
       }));
       const drop = allowDrop ? null : dataDrop('published news', news.length, baseline.news, FLOORS.news);
       if (drop) throw dataDropError(drop);
