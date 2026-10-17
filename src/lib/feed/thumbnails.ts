@@ -58,7 +58,7 @@ export function pageImage(html: string, pageUrl: string): string | null {
 
 export interface ThumbnailCounts { tried: number; found: number; unreadable: number; none: number; ranOut: boolean }
 
-export async function fillThumbnails(opts: { days?: number; limit?: number; budgetMs?: number; concurrency?: number; triedBefore?: string } = {}): Promise<ThumbnailCounts> {
+export async function fillThumbnails(opts: { days?: number; limit?: number; budgetMs?: number; concurrency?: number; triedBefore?: string; googleBacklog?: number } = {}): Promise<ThumbnailCounts> {
   const sb = db();
   const deadline = Date.now() + (opts.budgetMs ?? 40_000);
   const since = new Date(Date.now() - (opts.days ?? 3) * 86_400_000).toISOString();
@@ -67,6 +67,16 @@ export async function fillThumbnails(opts: { days?: number; limit?: number; budg
       (opts.triedBefore ? `&updated_at=lt.${encodeURIComponent(opts.triedBefore)}` : '') +
       `&select=id,url,feed_item_mps!inner(mp_id)&order=updated_at.asc&limit=${opts.limit ?? 30}`,
   );
+  // And a few older stories still under a Google News link, the least recently
+  // tried first: the half-hourly run turns that backlog into the outlets' own
+  // addresses and pictures a handful at a time, gently enough for Google.
+  if (opts.googleBacklog) {
+    const old = await sb.get<{ id: number; url: string }[]>(
+      `feed_items?type=eq.news&thumbnail_url=is.null&url=like.*news.google.com*&published_at=lt.${encodeURIComponent(since)}` +
+        `&select=id,url,feed_item_mps!inner(mp_id)&order=updated_at.asc&limit=${opts.googleBacklog}`,
+    );
+    rows.push(...old);
+  }
 
   const counts: ThumbnailCounts = { tried: 0, found: 0, unreadable: 0, none: 0, ranOut: false };
   const queue = [...rows];

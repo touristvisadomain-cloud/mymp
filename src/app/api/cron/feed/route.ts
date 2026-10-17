@@ -36,7 +36,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: t.status !== 'failed', collector, ...t }, { status: t.status === 'failed' ? 500 : 200 });
     }
     if (collector === 'thumbs') {
-      const t = await fillThumbnails({ days: 3, limit: 40, budgetMs: 45_000 });
+      const t = await fillThumbnails({ days: 3, limit: 40, budgetMs: 45_000, googleBacklog: 8 });
       return NextResponse.json({ ok: true, collector, ...t });
     }
     if (collector === 'learn') {
