@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     alternates: langAlternates(t.lang, '/committee'),
     openGraph: shareGraph('/committee', undefined, t.lang),
-    title: t('সংসদীয় কমিটি', 'Parliamentary committees'),
+    title: t('সংসদীয় স্থায়ী কমিটি: সভাপতি ও সদস্য', 'Parliamentary standing committees of Bangladesh'),
     description: t(
       `ত্রয়োদশ জাতীয় সংসদের ${t.n(currentCommittees)}টি সংসদীয় কমিটির তালিকা: প্রতিটি কমিটির সভাপতি, সদস্য ও বৈঠকের বিজ্ঞপ্তি, সংসদ সচিবালয়ের প্রকাশিত তথ্য থেকে।`,
       `The ${currentCommittees} parliamentary committees of the 13th Parliament: each committee's chair, members and meeting notices, from what the Parliament Secretariat publishes.`,

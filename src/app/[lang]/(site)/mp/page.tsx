@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     alternates: langAlternates(t.lang, '/mp'),
     openGraph: shareGraph('/mp', undefined, t.lang),
-    title: t('সব সংসদ সদস্য', 'All MPs'),
+    title: t('সংসদ সদস্যদের তালিকা ২০২৬: সব এমপি', 'List of MPs of Bangladesh 2026'),
     description: t(
       `ত্রয়োদশ জাতীয় সংসদের ${bn(members.length)} জন সংসদ সদস্যের তালিকা: ${bn(generalSeats)}টি সাধারণ আসন ও ${bn(members.length - generalSeats)}টি সংরক্ষিত নারী আসন। নাম, দল, আসন বা জেলা দিয়ে খুঁজুন।`,
       `The ${members.length} Members of the 13th Parliament: ${generalSeats} general seats and ${members.length - generalSeats} seats reserved for women. Search by name, party, seat or district.`,

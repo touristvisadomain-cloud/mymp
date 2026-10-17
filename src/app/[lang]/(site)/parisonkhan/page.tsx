@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     alternates: langAlternates(t.lang, '/parisonkhan'),
     openGraph: shareGraph('/parisonkhan', undefined, t.lang),
-    title: t('পরিসংখ্যান', 'Statistics'),
+    title: t('সংসদ সদস্যদের পরিসংখ্যান', 'Statistics on the MPs of Bangladesh'),
     description: t(
       'ত্রয়োদশ জাতীয় সংসদের সদস্যদের পরিসংখ্যান: দলভিত্তিক আসন, নারী ও পুরুষ সদস্য, বয়স, পেশা ও কতবার নির্বাচিত, সংসদের তথ্যভান্ডার থেকে হিসাব করা।',
       'Statistics on the members of the 13th Parliament: seats by party, women and men, age, profession and how many times elected, worked out from Parliament’s own database.',

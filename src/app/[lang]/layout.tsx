@@ -35,6 +35,12 @@ export async function generateMetadata(): Promise<Metadata> {
     description: siteDescription(lang),
     openGraph: baseOpenGraph(lang),
     twitter: baseTwitter(lang),
+    // Ownership tags for Google Search Console and Bing Webmaster Tools (which also feeds ChatGPT search
+    // and Copilot), read at build time; unset, no tag is written.
+    verification: {
+      google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+      other: process.env.BING_SITE_VERIFICATION ? { 'msvalidate.01': process.env.BING_SITE_VERIFICATION } : undefined,
+    },
   };
 }
 

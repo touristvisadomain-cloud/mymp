@@ -8,7 +8,7 @@ import { districtIntro } from '@/lib/districtIntro';
 import { Page, PageHead, Card, Breadcrumb, MemberRow, PartyDot, Stat } from '@/components/ui';
 import Link from '@/i18n/Link';
 import { getT } from '@/i18n/server';
-import { districtName, partyName, seatName } from '@/i18n/names';
+import { districtName, partyName, partyShort, personName, seatName } from '@/i18n/names';
 
 export function generateStaticParams() {
   return [...districts().keys()].map((slug) => ({ slug }));
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/jela/[slug
   if (!d) return { title: t('জেলা পাওয়া যায়নি', 'District not found') };
   const name = districtName(d, t.lang);
   return {
-    title: t(`${d.bn} জেলার সংসদ সদস্য ও আসন`, `Members of Parliament and seats in ${name} district`),
+    title: t(`${d.bn} জেলার এমপি ও সংসদীয় আসন`, `${name} district: MPs and constituencies`),
     alternates: langAlternates(t.lang, `/jela/${d.slug}`),
     openGraph: shareGraph(`/jela/${d.slug}`, undefined, t.lang),
     description: districtIntro(d, t.lang).short,
@@ -39,8 +39,42 @@ export default async function DistrictPage({ params }: PageProps<'/[lang]/jela/[
   const parties = new Map<string, number>();
   for (const r of rows) if (r.m?.party) parties.set(r.m.party.abbr, (parties.get(r.m.party.abbr) ?? 0) + 1);
 
+  // The two things people ask of a district, answered from the list below: how many seats, and who holds each.
+  const seatLabel = (s: (typeof d.seats)[number]) => (t.en ? seatName(s, 'en') || s.slug : s.nameBn ?? s.slug);
+  const holders = rows.map(({ seat, m }) =>
+    m && !seat.vacantSince
+      ? `${seatLabel(seat)}: ${personName(m, t.lang)}${m.party ? ` (${partyShort(m.party, t.lang)})` : ''}`
+      : `${seatLabel(seat)}: ${t('শূন্য', 'vacant')}`,
+  );
+  const faqLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: t(`${d.bn} জেলায় কয়টি সংসদীয় আসন?`, `How many parliamentary seats does ${name} district have?`),
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: t(
+            `${d.bn} জেলায় ${t.n(d.seats.length)}টি সংসদীয় আসন: ${d.seats.map(seatLabel).join(', ')}।`,
+            `${name} district has ${t.count(d.seats.length, '', 'parliamentary seat', 'parliamentary seats')}: ${d.seats.map(seatLabel).join(', ')}.`,
+          ),
+        },
+      },
+      {
+        '@type': 'Question',
+        name: t(`${d.bn} জেলার এমপি কারা?`, `Who are the MPs of ${name} district?`),
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: t(`ত্রয়োদশ জাতীয় সংসদে ${d.bn} জেলার সংসদ সদস্য: ${holders.join('; ')}।`, `The Members of the 13th Parliament from ${name} district: ${holders.join('; ')}.`),
+        },
+      },
+    ],
+  };
+
   return (
     <Page>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
       <Breadcrumb
         items={[
           { href: '/', label: t('হোম', 'Home') },

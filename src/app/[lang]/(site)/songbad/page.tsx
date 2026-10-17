@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     alternates: langAlternates(t.lang, '/songbad'),
     openGraph: shareGraph('/songbad', undefined, t.lang),
-    title: t('সংবাদ', 'News'),
+    title: t('সংসদ সদস্যদের খবর', 'News about the MPs of Bangladesh'),
     description: t(
       'সংসদ সদস্যদের নিয়ে দেশের সংবাদমাধ্যমের সর্বশেষ শিরোনাম, মূল খবরের লিংকসহ। প্রতিটি শিরোনাম সংশ্লিষ্ট সংসদ সদস্যের পাতাতেও দেখা যায়।',
       "The latest headlines from the country's news media about members of parliament, with links to the original stories. Each headline also appears on the page of the member concerned.",

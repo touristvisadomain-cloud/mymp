@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     alternates: langAlternates(t.lang, '/sangrakkhito-ason'),
     openGraph: shareGraph('/sangrakkhito-ason', undefined, t.lang),
-    title: t('সংরক্ষিত নারী আসন', 'Reserved seats for women'),
+    title: t('সংরক্ষিত নারী আসনের এমপি তালিকা', 'Reserved seats for women: list of women MPs'),
     description: t(
       `ত্রয়োদশ জাতীয় সংসদের ${t.n(RESERVED_SEATS)}টি সংরক্ষিত নারী আসনের সংসদ সদস্যদের তালিকা, কে কোন দলের এবং কোন আসনের। সংরক্ষিত আসন কীভাবে ভাগ হয় ও কারা ভোট দেন, তা-ও এই পাতায়।`,
       `A list of the Members of Parliament for the ${RESERVED_SEATS} reserved seats for women in the 13th Parliament: each one's party and seat. This page also explains how the reserved seats are shared out and who votes for them.`,

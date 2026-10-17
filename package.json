@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "build:local": "next build",
     "og-image": "node scripts/og-image.mjs",
+    "seo:indexnow": "node scripts/indexnow.mjs",
     "test": "node --import tsx --test \"src/lib/**/*.test.ts\"",
     "sync:posts": "tsx scripts/sync-posts.ts",
     "idf": "tsx scripts/build-name-idf.ts",

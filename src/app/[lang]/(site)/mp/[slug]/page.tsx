@@ -156,7 +156,14 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
       // Only links the site stands behind: an unconfirmed Facebook page is not claimed as the member's.
       ...socials.filter((s) => !s.unverified).map((s) => s.url),
     ].filter((u): u is string => !!u && /^https?:\/\//.test(u) && (!/wikipedia\.org/.test(u) || /\/wiki\//.test(u)));
-    const unique = [...new Set(same.filter((u) => !/mymp\.bd|tbsnews\.net\/election/.test(u)))];
+    const canon = (u: string) => {
+      try {
+        return encodeURI(decodeURI(u));
+      } catch {
+        return u;
+      }
+    };
+    const unique = [...new Set(same.filter((u) => !/mymp\.bd|tbsnews\.net\/election/.test(u)).map(canon))];
     return unique.length ? { sameAs: unique } : {};
   })();
   const personLd = {
@@ -164,7 +171,9 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
     '@type': 'Person',
     name: name,
     ...(m.nameEn && m.nameBn ? { alternateName: en ? m.nameBn : nameEnDisplay(m.nameEn) } : {}),
-    jobTitle: t('সংসদ সদস্য', 'Member of Parliament'),
+    jobTitle: m.seat && !m.resignedOn
+      ? t(m.seat.reserved ? `${m.seat.nameBn}-এর সংসদ সদস্য` : `${m.seat.nameBn} আসনের সংসদ সদস্য`, `Member of Parliament for ${seatName(m.seat, 'en')}`)
+      : t('সংসদ সদস্য', 'Member of Parliament'),
     ...(party && !isIndependent(m) ? { memberOf: { '@type': 'Organization', name: en ? partyEnBare(m.party) ?? party.name : party.name } } : {}),
     worksFor: { '@type': 'Organization', name: t('বাংলাদেশ জাতীয় সংসদ', 'Parliament of Bangladesh'), url: 'https://www.parliament.gov.bd' },
     ...(m.photoUrl ? { image: m.photoUrl } : {}),
