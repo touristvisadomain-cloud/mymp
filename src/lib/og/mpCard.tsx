@@ -26,6 +26,7 @@ import { personName, partyName, GOV_POST, HOUSE_ROLE } from '@/i18n/names';
 import { english } from '@/i18n/content';
 import type { Lang } from '@/i18n/core';
 import { OG_BRAND, OG_DARK, ogPartyColour } from '@/lib/og/colours';
+import { photoData } from '@/lib/og/frame';
 
 
 const W = 1200;
@@ -96,18 +97,6 @@ function officeEn(id: string): string | null {
     if (subject && !/ and .* and /.test(subject)) return `${title} for ${subject}`;
   }
   return title;
-}
-
-async function photoData(url: string | null): Promise<string | null> {
-  if (!url) return null;
-  try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) return null;
-    const type = r.headers.get('content-type')?.split(';')[0] || 'image/jpeg';
-    return `data:${type};base64,${Buffer.from(await r.arrayBuffer()).toString('base64')}`;
-  } catch {
-    return null;
-  }
 }
 
 /** The card for a member, in the given language; 404 for an unknown member. */

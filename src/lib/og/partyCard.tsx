@@ -12,6 +12,9 @@
  *
  * Drawn in either language: the English card (/api/og/party/<slug>/en) is for
  * the English page's shares. Noto Sans Bengali has Latin letters too.
+ *
+ * The independents (/dol/ind) are not a party and have no symbol: their card
+ * draws a plain figure in their colour where a party's symbol would be.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -53,19 +56,26 @@ const LOGO: Record<string, () => Buffer> = {
 export async function partyCard(slug: string, lang: Lang): Promise<Response> {
   const en = lang === 'en';
   const p = getParty(slug);
+  // Independents have no symbol of their own; their card draws a figure in their colour instead.
+  const independent = p?.abbr === 'Ind';
   const read = p ? LOGO[p.abbr] : undefined;
-  if (!p || !read) return new Response('Not found', { status: 404 });
+  if (!p || (!read && !independent)) return new Response('Not found', { status: 404 });
 
-  const profile = partyProfile(p, lang);
+  const profile = independent ? null : partyProfile(p, lang);
   const year = foundedYear(profile);
   const leader = profile?.leaderName ? `${profile.leaderTitle ?? (en ? 'Leader' : 'প্রধান')}${en ? ': ' : ' '}${profile.leaderName}` : null;
-  const logo = `data:image/jpeg;base64,${read().toString('base64')}`;
+  const logo = read ? `data:image/jpeg;base64,${read().toString('base64')}` : null;
   const accent = ogPartyColour(p.abbr);
 
   const white = { color: '#ffffff' };
-  const [name, seats, lead, founded] = await Promise.all([
-    bnTextImage(en ? partyName(p, 'en') : p.nameBn ?? p.abbr, { ...white, weight: 'bold', maxSize: 50, minSize: 30, maxWidth: TEXT_WIDTH, maxLines: 2, leading: 1.2, align: 'center' }),
-    bnTextImage(en ? `${p.seats} ${p.seats === 1 ? 'seat' : 'seats'} in the 13th Parliament` : `ত্রয়োদশ সংসদে ${bn(p.seats)}টি আসন`, { ...white, weight: 'bold', maxSize: 28, minSize: 21, maxWidth: TEXT_WIDTH - 48, maxLines: 1 }),
+  const title = independent ? (en ? 'Independent MPs' : 'স্বতন্ত্র সংসদ সদস্য') : en ? partyName(p, 'en') : p.nameBn ?? p.abbr;
+  const count = independent
+    ? en ? `${p.seats} in the 13th Parliament` : `ত্রয়োদশ সংসদে ${bn(p.seats)} জন`
+    : en ? `${p.seats} ${p.seats === 1 ? 'seat' : 'seats'} in the 13th Parliament` : `ত্রয়োদশ সংসদে ${bn(p.seats)}টি আসন`;
+  const [name, seats, note, lead, founded] = await Promise.all([
+    bnTextImage(title, { ...white, weight: 'bold', maxSize: 50, minSize: 30, maxWidth: TEXT_WIDTH, maxLines: 2, leading: 1.2, align: 'center' }),
+    bnTextImage(count, { ...white, weight: 'bold', maxSize: 28, minSize: 21, maxWidth: TEXT_WIDTH - 48, maxLines: 1 }),
+    independent ? bnTextImage(en ? 'Elected without a party ticket' : 'কোনো দলের প্রার্থী না হয়ে নির্বাচিত', { ...white, weight: 'regular', maxSize: 27, minSize: 20, maxWidth: TEXT_WIDTH, maxLines: 1, opacity: 0.9 }) : null,
     leader ? bnTextImage(leader, { ...white, weight: 'regular', maxSize: 27, minSize: 20, maxWidth: TEXT_WIDTH, maxLines: 1, opacity: 0.9 }) : null,
     year ? bnTextImage(en ? `Founded ${year}` : `প্রতিষ্ঠা ${bn(year)}`, { ...white, weight: 'regular', maxSize: 24, minSize: 19, maxWidth: TEXT_WIDTH, maxLines: 1, opacity: 0.75 }) : null,
   ]);
@@ -118,7 +128,15 @@ export async function partyCard(slug: string, lang: Lang): Promise<Response> {
               boxShadow: '0 18px 44px rgba(0,0,0,0.3)',
             }}
           >
-            <img src={logo} width={LOGO_SIZE} height={LOGO_SIZE} style={{ objectFit: 'contain' }} />
+            {logo ? (
+              <img src={logo} width={LOGO_SIZE} height={LOGO_SIZE} style={{ objectFit: 'contain' }} />
+            ) : (
+              // A person, head and shoulders, in the independents' colour.
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 64, height: 64, borderRadius: 9999, display: 'flex', background: accent }} />
+                <div style={{ width: 118, height: 58, borderTopLeftRadius: 59, borderTopRightRadius: 59, display: 'flex', background: accent }} />
+              </div>
+            )}
           </div>
 
           <img src={name.src} width={name.width} height={name.height} />
@@ -127,6 +145,7 @@ export async function partyCard(slug: string, lang: Lang): Promise<Response> {
             <img src={seats.src} width={seats.width} height={seats.height} />
           </div>
 
+          {note && <img src={note.src} width={note.width} height={note.height} />}
           {lead && <img src={lead.src} width={lead.width} height={lead.height} />}
           {founded && <img src={founded.src} width={founded.width} height={founded.height} />}
         </div>
