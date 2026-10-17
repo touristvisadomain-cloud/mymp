@@ -18,6 +18,9 @@ export const PRESS_NAMES: Record<string, string[]> = {
   // Mst. Nusrat Tabassum Joty, Women's Seat-50 (NCP). Prothom Alo, Daily Star,
   // TBS, Bangla Tribune, Desh Rupantor, Jugantor (owner, 2026-10-17).
   '013035001': ['নুসরাত তাবাসসুম', 'Nusrat Tabassum', 'Nusrat Tabassum Jyoti'],
+  // Md. Abul Hasnat, Cumilla-4 (NCP): known everywhere as Hasnat Abdullah
+  // (the owner's list of official pages, 2026-09-17, names him so).
+  '013025201': ['হাসনাত আবদুল্লাহ', 'Hasnat Abdullah'],
 };
 
 /** A member's press names, Bangla first. */

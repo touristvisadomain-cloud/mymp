@@ -23,6 +23,7 @@ import MemberPhoto from './MemberPhoto';
 import { useT } from '@/i18n/client';
 import { plural } from '@/i18n/core';
 import { BUILT_KEY, googleKey, loadGoogle, onAuthFailure, resolve } from '@/lib/googleMaps';
+import { buildEntry, search, type Entry } from '@/lib/search';
 
 /** A seat as the page gives it, its names and words already in the page's language. */
 export interface PinSeat {
@@ -41,6 +42,8 @@ export interface PinSeat {
   votes: number | null;
   margin: number | null;
   runnerUp: { name: string; party: string | null; votes: number } | null;
+  /** The seat's, member's and district's names in the other language, for the search. */
+  alt?: { seat: string; member: string | null; district: string; press?: string[] };
 }
 
 interface Overview {
@@ -311,13 +314,41 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
   const pickDistrict = (slug: string) => { setPickedDistrict(slug); setPicked(null); setAreas([]); };
   const home = () => { setVb(HOME); close(); if (gm.current && gmBox.current) showCountry(gm.current.map, gmBox.current); };
   useEffect(() => { live.current = { mode, open, pickDistrict, close }; });
-  const hits = useMemo(() => {
+  // The search: the site search's matching (src/lib/search.ts), so a seat,
+  // member or district is found in either script, with either digits and the
+  // spellings readers use: "ঢাকা ১৭", "dhaka 17" and "tarique" find the same
+  // seat. A district's own row opens the district.
+  const finder = useMemo(() => {
+    const index: Entry[] = [];
+    const perDistrict = new Map<string, { s: PinSeat; n: number }>();
+    for (const s of seats) {
+      index.push(buildEntry(['seat', s.seat, s.alt?.seat || s.slug.replace(/-/g, ' '), `s:${s.slug}`, '']));
+      if (s.member) index.push(buildEntry(['member', s.member.name, s.alt?.member ?? '', `s:${s.slug}`, '']));
+      for (const name of s.alt?.press ?? []) index.push(buildEntry(['member', name, '', `s:${s.slug}`, '']));
+      const d = perDistrict.get(s.district);
+      perDistrict.set(s.district, { s: d?.s ?? s, n: (d?.n ?? 0) + 1 });
+    }
+    for (const [slug, { s, n }] of perDistrict) {
+      index.push(buildEntry(['district', s.districtName, s.alt?.district || slug, `d:${slug}`, String(n)]));
+    }
+    return index;
+  }, [seats]);
+  const found = useMemo(() => {
     const v = q.trim();
-    if (v.length < 2) return [];
-    // English names match whatever their capitals.
-    const has = (x: string | undefined) => (x == null ? false : t.en ? x.toLowerCase().includes(v.toLowerCase()) : x.includes(v));
-    return seats.filter((s) => has(s.seat) || s.slug.includes(v.toLowerCase()) || has(s.member?.name) || has(s.districtName)).slice(0, 8);
-  }, [q, seats, t]);
+    const out = { seats: [] as PinSeat[], districts: [] as { slug: string; name: string; n: number }[] };
+    if (v.length < 2) return out;
+    for (const e of search(finder, v, 20)) {
+      if (e.url.startsWith('d:')) {
+        if (out.districts.length < 2) out.districts.push({ slug: e.url.slice(2), name: e.bn, n: Number(e.sub) });
+        continue;
+      }
+      const s = bySlug.get(e.url.slice(2));
+      if (s && !out.seats.includes(s) && out.seats.length < 8) out.seats.push(s);
+    }
+    return out;
+  }, [q, finder, bySlug]);
+  const hits = found.seats;
+  const openDistrict = (slug: string) => { setQ(''); setMode('seats'); pickDistrict(slug); };
 
   // --- Google Maps: the map once its box is there, then what each change needs ---
   const disposeGm = () => {
@@ -494,12 +525,33 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter takes the first row; Escape clears.
+              if (e.key === 'Escape') setQ('');
+              if (e.key !== 'Enter') return;
+              e.preventDefault();
+              if (found.districts[0]) openDistrict(found.districts[0].slug);
+              else if (hits[0]) { setMode('seats'); open(hits[0]); }
+            }}
             placeholder={t('এমপি, আসন বা জেলার নাম…', 'Name of an MP, seat or district…')}
             autoComplete="off"
             className="w-full h-10 px-3 rounded-[10px] border-[1.5px] border-rule bg-surface text-[14px] outline-none focus:border-brand"
           />
-          {hits.length > 0 && (
-            <ul className="absolute z-30 mt-1 w-full rounded-xl border border-rule bg-surface shadow-lg py-1 max-h-[260px] overflow-y-auto" role="listbox">
+          {q.trim().length >= 2 && !hits.length && !found.districts.length && (
+            <p className="absolute z-30 mt-1 w-full rounded-xl border border-rule bg-surface shadow-lg px-3 py-2.5 text-[13px] text-muted">
+              {t(`“${q.trim()}” নামে কোনো আসন, এমপি বা জেলা পাওয়া যায়নি।`, `No seat, MP or district found for “${q.trim()}”.`)}
+            </p>
+          )}
+          {(hits.length > 0 || found.districts.length > 0) && (
+            <ul className="absolute z-30 mt-1 w-full rounded-xl border border-rule bg-surface shadow-lg py-1 max-h-[300px] overflow-y-auto" role="listbox">
+              {found.districts.map((d) => (
+                <li key={`d-${d.slug}`} role="option" aria-selected={false}>
+                  <button type="button" onClick={() => openDistrict(d.slug)} className="w-full text-start px-3 py-2 flex justify-between gap-3 hover:bg-brandsoft">
+                    <span className="font-bold text-[14px] text-brand truncate">{t(`${d.name} জেলা`, `${d.name} district`)}</span>
+                    <span className="text-[12.5px] text-muted shrink-0">{t(`${t.n(d.n)}টি আসন`, `${d.n} ${plural(d.n, 'seat', 'seats')}`)}</span>
+                  </button>
+                </li>
+              ))}
               {hits.map((s) => (
                 <li key={s.slug} role="option" aria-selected={false}>
                   <button type="button" onClick={() => { setMode('seats'); open(s); }} className="w-full text-start px-3 py-2 flex justify-between gap-3 hover:bg-brandsoft">

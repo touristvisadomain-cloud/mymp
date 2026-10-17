@@ -9,6 +9,7 @@ import type { PinSeat } from '@/components/ElectionMap';
 import type { T } from '@/i18n/core';
 import { districtName, partyFullShort, partyName, partyShort, personName, seatName } from '@/i18n/names';
 import { inLang } from '@/i18n/content';
+import { pressNamesOf } from '../../config/press-names';
 
 // Seats of this parliament with a published result, and each seat's winner.
 export const winnerOf = (seatNo: number) => {
@@ -63,6 +64,14 @@ export function pinSeats(t: T): PinSeat[] {
       runnerUp: runnerUp
         ? { name: runnerUp.name, party: partyFullShort(runnerUp.party, t.lang) || null, votes: runnerUp.votes }
         : null,
+      // The names in the other language, so the map's search finds a seat typed either way.
+      alt: {
+        seat: t.en ? seat.nameBn ?? '' : seatName(seat, 'en'),
+        member: sitting ? (t.en ? sitting.nameBn ?? null : personName(sitting, 'en') || null) : null,
+        district: districtName(d, t.en ? 'bn' : 'en'),
+        // The name the papers print where the roll has another ("Hasnat Abdullah").
+        press: sitting ? pressNamesOf(sitting.id) : [],
+      },
     });
   }
   return out;
