@@ -231,7 +231,7 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
   const svgRef = useRef<SVGSVGElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const gmBox = useRef<HTMLDivElement>(null);
-  const gm = useRef<{ map: google.maps.Map; districts: google.maps.Data; ties: google.maps.Data; areas: google.maps.Data; markers: Map<string, google.maps.Marker>; icons: Map<string, string> } | null>(null);
+  const gm = useRef<{ map: google.maps.Map; districts: google.maps.Data; ties: google.maps.Data; pick: google.maps.Data; areas: google.maps.Data; markers: Map<string, google.maps.Marker>; icons: Map<string, string> } | null>(null);
   const drag = useRef<{ x: number; y: number; vb: Box } | null>(null);
   const pinch = useRef<{ d: number; vb: Box } | null>(null);
   const ptrs = useRef(new Map<number, { x: number; y: number }>());
@@ -387,6 +387,7 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
     for (const mk of m.markers.values()) mk.setMap(null);
     m.districts.setMap(null);
     m.ties.setMap(null);
+    m.pick.setMap(null);
     m.areas.setMap(null);
     gm.current = null;
   };
@@ -419,9 +420,11 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
       };
       districts.addListener('click', pickFrom);
       ties.addListener('click', pickFrom);
+      // The picked district's line in the brand's dark green, over the white halo the district layer draws.
+      const pick = new g.maps.Data({ map, style: { fillOpacity: 0, strokeColor: '#0a4d36', strokeWeight: 2, clickable: false, zIndex: 3 } });
       const areaLayer = new g.maps.Data({ map });
       map.addListener('click', () => live.current.close());
-      gm.current = { map, districts, ties, areas: areaLayer, markers: new Map(), icons: new Map() };
+      gm.current = { map, districts, ties, pick, areas: areaLayer, markers: new Map(), icons: new Map() };
       setGmReady((n) => n + 1);
     }).catch(() => setUseGoogle(false));
     return () => { cancelled = true; };
@@ -506,10 +509,13 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
       if (mode === 'districts') {
         // A tie's colours are the two halves on the layer below; the district itself is only its outline.
         const tie = a && b && a.seats === b.seats;
-        return { fillColor: a ? resolve(a.color) : '#9a9a9a', fillOpacity: tie ? 0 : pickedDistrict && !on ? 0.3 : 0.55, strokeColor: on ? '#17201b' : '#ffffff', strokeWeight: on ? 3 : 1.2, zIndex: on ? 2 : 1, cursor: 'pointer' };
+        return { fillColor: a ? resolve(a.color) : '#9a9a9a', fillOpacity: tie ? 0 : pickedDistrict && !on ? 0.3 : 0.55, strokeColor: '#ffffff', strokeWeight: on ? 6 : 1.2, zIndex: on ? 2 : 1, cursor: 'pointer' };
       }
-      return { fillColor: '#1f7a4f', fillOpacity: on ? 0.08 : 0, strokeColor: on ? '#17201b' : '#5f6b64', strokeWeight: on ? 2 : 1, strokeOpacity: on ? 1 : 0.6, clickable: true };
+      return { fillColor: '#1f7a4f', fillOpacity: on ? 0.08 : 0, strokeColor: on ? '#ffffff' : '#5f6b64', strokeWeight: on ? 5 : 1, strokeOpacity: on ? 0.9 : 0.6, zIndex: on ? 2 : 1, clickable: true };
     });
+    m.pick.forEach((f) => m.pick.remove(f));
+    const pickedPoly = pickedDistrict ? overview?.districts.find((d) => d.slug === pickedDistrict) : undefined;
+    if (pickedPoly) m.pick.addGeoJson({ type: 'Feature', properties: {}, geometry: { type: 'MultiPolygon', coordinates: pickedPoly.polys.map((ring) => [ring]) } });
     m.ties.forEach((f) => m.ties.remove(f));
     if (mode !== 'districts' || !overview) return;
     for (const d of overview.districts) {
@@ -695,7 +701,7 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
                     d={d.path}
                     fill={fill}
                     fillOpacity={mode === 'districts' ? (pickedDistrict && pickedDistrict !== d.slug ? 0.45 : 0.9) : 1}
-                    stroke={pickedDistrict === d.slug ? 'var(--color-ink)' : 'var(--color-rule)'}
+                    stroke={pickedDistrict === d.slug ? 'var(--color-branddark)' : 'var(--color-rule)'}
                     strokeWidth={pickedDistrict === d.slug ? 2 : 1.2}
                     vectorEffect="non-scaling-stroke"
                     style={{ cursor: mode === 'districts' ? 'pointer' : undefined }}
