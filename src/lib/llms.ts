@@ -65,7 +65,7 @@ export function llmsFullTxt(): string {
   const sorted = [...members].sort((a, b) => (a.seat?.no ?? 999) - (b.seat?.no ?? 999));
   const memberLines = sorted.map((m) => {
     const seat = m.seat ? `${seatName(m.seat, 'en')} (${m.seat.nameBn ?? ''})` : '';
-    const party = m.party ? `${partyName(m.party, 'en')} (${partyShort(m.party, 'bn')})` : '';
+    const party = m.party ? `${partyName(m.party, 'en')} / ${partyShort(m.party, 'bn')}` : '';
     const d = districtOf(m.seat);
     const about = [seat, party, d ? `${districtName(d, 'en')} district` : ''].filter(Boolean).join(', ');
     return `- ${personName(m, 'en')} / ${m.nameBn ?? ''}: ${about}. ${bnUrl(`/mp/${m.slug}`)} | ${enUrl(`/mp/${m.slug}`)}`;
