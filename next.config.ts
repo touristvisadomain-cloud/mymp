@@ -127,6 +127,14 @@ const nextConfig: NextConfig = {
     "/api/og/mp/\\[slug\\]/en": [HARFBUZZ_WASM],
     "/api/og/party/\\[slug\\]": [HARFBUZZ_WASM, "./public/party/og/*.jpg"],
     "/api/og/party/\\[slug\\]/en": [HARFBUZZ_WASM, "./public/party/og/*.jpg"],
+    "/api/og/jela/\\[slug\\]": [HARFBUZZ_WASM],
+    "/api/og/jela/\\[slug\\]/en": [HARFBUZZ_WASM],
+    "/api/og/committee/\\[slug\\]": [HARFBUZZ_WASM],
+    "/api/og/committee/\\[slug\\]/en": [HARFBUZZ_WASM],
+    "/api/og/ministers/\\[slug\\]": [HARFBUZZ_WASM],
+    "/api/og/ministers/\\[slug\\]/en": [HARFBUZZ_WASM],
+    "/api/og/pages/\\[key\\]": [HARFBUZZ_WASM],
+    "/api/og/pages/\\[key\\]/en": [HARFBUZZ_WASM],
   },
 };
 

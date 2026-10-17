@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import Link from '@/i18n/Link';
 import { getMemberById, meta, bnText } from '@/lib/data';
 import {
@@ -17,11 +18,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/odhibeshon'),
-    openGraph: shareGraph('/odhibeshon', undefined, t.lang),
+    ...pageShare('odhibeshon', t),
     title: t('সংসদ অধিবেশন', 'Sessions of Parliament'),
-    description: t(
-      'ত্রয়োদশ জাতীয় সংসদের অধিবেশন, প্রতিটি বৈঠকের দিনের কার্যসূচি, পরিপত্র ও সংসদ সচিবালয়ের বিজ্ঞপ্তি, সংসদের প্রকাশনা থেকে সরাসরি।',
-      'The sessions of the 13th Parliament, the order of the day for every sitting, circulars and Parliament Secretariat notices, straight from what Parliament publishes.',
+    description: fitDescription(
+      t(
+        'ত্রয়োদশ জাতীয় সংসদের অধিবেশন, প্রতিটি বৈঠকের দিনের কার্যসূচি, পরিপত্র ও সংসদ সচিবালয়ের বিজ্ঞপ্তি, সংসদের প্রকাশনা থেকে সরাসরি।',
+        'The sessions of the 13th Parliament: the order of the day for every sitting, circulars and Parliament Secretariat notices, as Parliament publishes them.',
+      ),
     ),
   };
 }

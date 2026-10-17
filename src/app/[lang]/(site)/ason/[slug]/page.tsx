@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { langAlternates, shareGraph, shareTwitter } from '@/lib/seo';
+import { langAlternates, shareGraph, shareTwitter, cardImage, fitDescription, fitTitle } from '@/lib/seo';
+import { isIndependent } from '@/lib/seo/mpDescription';
 import Link from '@/i18n/Link';
 import { notFound } from 'next/navigation';
 import {
@@ -13,7 +14,7 @@ import { ResultCard } from '@/components/results';
 import { seatHolders, resultsForSeat, resultForSeat, parliamentLabel, SAME_AREA_SINCE, electionYear } from '@/lib/history';
 import { getT } from '@/i18n/server';
 import { hrefIn, makeT, type Lang } from '@/i18n/core';
-import { districtName, noParty, partyByAbbr, partyName, personName, seatName, titleCaseName } from '@/i18n/names';
+import { districtName, noParty, partyByAbbr, partyName, partyShort, personName, seatName, titleCaseName } from '@/i18n/names';
 import { inLang, translated } from '@/i18n/content';
 
 /**
@@ -61,7 +62,7 @@ function seatAnswerEn(s: Seat, m: ReturnType<typeof getMemberById>) {
   const party = m?.party ? partyName(m.party, 'en') : null;
   return {
     m, name, where, question,
-    title: s.reserved ? `Member of Parliament for ${seat}: ${name}` : `MP for ${seat}: ${name}`,
+    title: `MP for ${seat}: ${name}`,
     sentence: `In the 13th Parliament, the Member of Parliament for ${where} is ${name}${party ? `, ${party}` : ''}.`,
   };
 }
@@ -84,29 +85,29 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/ason/[slug
   const top = r ? [...r.candidates].sort((a, b) => b.votes - a.votes)[0] : undefined;
   const year = electionYear(meta.parliamentNo);
   const seatEn = seatName(s, 'en');
-  const won = top && m && top.name === m.nameBn
-    ? t(
-      ` ${year ? `${bn(year)} সালের` : 'এই'} নির্বাচনে ${bnGroup(top.votes)} ভোট পেয়ে নির্বাচিত।`,
-      ` Elected in the ${year ? `${year}` : 'same'} election with ${t.group(top.votes)} votes.`,
-    )
-    : '';
+  const votes = top && m && top.name === m.nameBn ? top.votes : null;
+  const won = votes ? ` ${year ? `${bn(year)} সালের` : 'এই'} নির্বাচনে ${bnGroup(votes)} ভোট পেয়ে নির্বাচিত।` : '';
+  const wonEn = votes ? `, elected ${year ? `in ${year} ` : ''}with ${t.group(votes)} votes` : '';
   const where = s.reserved ? s.nameBn : `${s.nameBn} আসন`;
   const card = m
-    ? { url: `/api/og/mp/${m.slug}${t.en ? "/en" : ""}`, width: 1200, height: 630, type: 'image/png', alt: t(`${where}, ${name}`, `${s.reserved ? seatEn : `${seatEn} constituency`}, ${name}`) }
+    ? cardImage(`/api/og/mp/${m.slug}${t.en ? '/en' : ''}`, t(`${where}, ${name}`, `${s.reserved ? seatEn : `${seatEn} constituency`}, ${name}`))
     : null;
-  const party = m?.party ? (t.en ? partyName(m.party, 'en') : m.party.nameBn) : null;
+  // The English names the party as people say it ("BNP"), so the sentence about the member fits a search result.
+  const party = m?.party ? (t.en ? (isIndependent(m) ? 'independent' : partyShort(m.party, 'en')) : m.party.nameBn) : null;
   return {
-    title: seatAnswer(s, t.lang).title,
+    title: fitTitle(t.lang, seatAnswer(s, t.lang).title),
     alternates: langAlternates(t.lang, `/ason/${s.slug}`),
     openGraph: shareGraph(`/ason/${s.slug}`, card, t.lang),
     twitter: { ...shareTwitter(card), ...(card ? { card: 'summary_large_image' as const } : {}) },
-    description: t.en
-      ? name
-        ? `The Member of Parliament for ${seatEn} is ${name}${party ? `, ${party}` : ''}.${won} ${s.reserved ? 'Party and parliamentary information.' : "Candidates' votes, earlier Members of Parliament and the seat's area."}`
-        : `${s.reserved ? seatEn : `The ${seatEn} seat`} ${s.vacantSince ? `has been vacant since ${t.date(s.vacantSince)}` : 'is vacant at present'}. 13th Parliament; the seat's election results and earlier Members of Parliament.`
-      : name
-        ? `${s.reserved ? `${s.nameBn}-এর` : `${s.nameBn} (${seatEn}) আসনের`} সংসদ সদস্য ${name}${m?.party?.nameBn ? `, ${m.party.nameBn}` : ''}।${won} ${s.reserved ? 'দল ও সংসদের তথ্য।' : 'প্রার্থীদের ভোট, আগের সংসদ সদস্য ও আসনের এলাকা।'}`
-        : `${where} ${s.vacantSince ? `${dateBn(s.vacantSince)} থেকে শূন্য` : 'এখন শূন্য'}। ত্রয়োদশ জাতীয় সংসদ; আসনের নির্বাচনী ফল ও আগের সংসদ সদস্য।`,
+    description: fitDescription(
+      t.en
+        ? name
+          ? `${name}${party ? ` (${party})` : ''} is the MP for ${seatEn}${wonEn}. ${s.reserved ? 'Party and parliamentary information.' : "Candidates' votes, past MPs and the seat's area."}`
+          : `${s.reserved ? seatEn : `The ${seatEn} seat`} ${s.vacantSince ? `has been vacant since ${t.date(s.vacantSince)}` : 'is vacant at present'}. 13th Parliament; the seat's election results and earlier Members of Parliament.`
+        : name
+          ? `${s.reserved ? `${s.nameBn}-এর` : `${s.nameBn} (${seatEn}) আসনের`} সংসদ সদস্য ${name}${m?.party?.nameBn ? `, ${m.party.nameBn}` : ''}।${won} ${s.reserved ? 'দল ও সংসদের তথ্য।' : 'প্রার্থীদের ভোট, আগের সংসদ সদস্য ও আসনের এলাকা।'}`
+          : `${where} ${s.vacantSince ? `${dateBn(s.vacantSince)} থেকে শূন্য` : 'এখন শূন্য'}। ত্রয়োদশ জাতীয় সংসদ; আসনের নির্বাচনী ফল ও আগের সংসদ সদস্য।`,
+    ),
   };
 }
 

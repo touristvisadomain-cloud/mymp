@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import Link from '@/i18n/Link';
 import { Page, PageHead, Card } from '@/components/ui';
 import Icon from '@/components/Icon';
@@ -11,11 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/jogajog'),
-    openGraph: shareGraph('/jogajog', undefined, t.lang),
+    ...pageShare('jogajog', t),
     title: t('যোগাযোগ ও সংশোধন', 'Contact and corrections'),
-    description: t.en
-      ? `Contacting My MP: email ${SITE_EMAIL} or the Facebook page. How to report wrong information, how a member of parliament or their office can have their own page updated, and where to contact a member, all on this page.`
-      : `আমার এমপির সঙ্গে যোগাযোগ: ইমেইল ${SITE_EMAIL} বা ফেসবুক পেজ। ভুল তথ্য কীভাবে জানাবেন, সংসদ সদস্য বা তাঁর দপ্তর নিজের পাতা কীভাবে হালনাগাদ করাবেন, আর কোনো সদস্যের সঙ্গে যোগাযোগ কোথায়, এই পাতায়।`,
+    description: fitDescription(
+      t.en
+        ? `Contact My MP by email (${SITE_EMAIL}) or on Facebook: how to report a mistake, how an MP's office can update their page, and how to reach an MP.`
+        : `আমার এমপির সঙ্গে যোগাযোগ: ইমেইল ${SITE_EMAIL} বা ফেসবুক পেজ। ভুল তথ্য কীভাবে জানাবেন, সংসদ সদস্য বা তাঁর দপ্তর নিজের পাতা কীভাবে হালনাগাদ করাবেন, আর কোনো সদস্যের সঙ্গে যোগাযোগ কোথায়, এই পাতায়।`,
+    ),
   };
 }
 

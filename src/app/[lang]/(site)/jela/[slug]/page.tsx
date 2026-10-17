@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { langAlternates, shareGraph } from '@/lib/seo';
+import { langAlternates, shareGraph, shareTwitter, cardImage, fitDescription, fitTitle } from '@/lib/seo';
 import { notFound } from 'next/navigation';
 import { getMemberById, meta, partyColor } from '@/lib/data';
 import SeatMap from '@/components/SeatMap';
@@ -20,11 +20,15 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/jela/[slug
   const d = districts().get(slug);
   if (!d) return { title: t('জেলা পাওয়া যায়নি', 'District not found') };
   const name = districtName(d, t.lang);
+  const title = t(`${d.bn} জেলার এমপি ও সংসদীয় আসন`, `${name} district: MPs and constituencies`);
+  // The district's own card (src/app/api/og/jela/[slug]/route.tsx): its seats, and who holds them.
+  const image = cardImage(`/api/og/jela/${d.slug}${t.en ? '/en' : ''}`, title);
   return {
-    title: t(`${d.bn} জেলার এমপি ও সংসদীয় আসন`, `${name} district: MPs and constituencies`),
+    title: fitTitle(t.lang, title),
     alternates: langAlternates(t.lang, `/jela/${d.slug}`),
-    openGraph: shareGraph(`/jela/${d.slug}`, undefined, t.lang),
-    description: districtIntro(d, t.lang).short,
+    openGraph: shareGraph(`/jela/${d.slug}`, image, t.lang),
+    twitter: shareTwitter(image),
+    description: fitDescription(districtIntro(d, t.lang).short),
   };
 }
 

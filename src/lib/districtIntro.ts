@@ -68,6 +68,10 @@ function holdingsBn(counts: [string, number][], total: number, single: boolean):
   return listBn(counts.map(([p, n]) => `${genitive(p)} ${bn(n)}টি`));
 }
 
+/** The division a district is in, by name: "ঢাকা" / "Dhaka"; null when not on record. */
+export const divisionOf = (d: DistrictGroup, lang: Lang = 'bn'): string | null =>
+  lang === 'en' ? divisionEn(DIVISION[d.slug]) : DIVISION[d.slug] ?? null;
+
 export interface DistrictIntro {
   /** Two to four sentences for the page. */
   text: string;
@@ -285,6 +289,6 @@ function districtIntroEn(d: DistrictGroup): DistrictIntro {
   }
   return {
     text: parts.join(' '),
-    short: `${name} district has ${t.count(n, '', 'parliamentary seat', 'parliamentary seats')}${held}. The current Member of Parliament, party and area of each seat.`,
+    short: `${name} district has ${t.count(n, '', 'parliamentary seat', 'parliamentary seats')}${held}. Each seat's MP, party and area.`,
   };
 }

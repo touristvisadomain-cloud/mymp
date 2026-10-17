@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from '@/i18n/Link';
-import { langAlternates, shareGraph } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import { getMemberById } from '@/lib/data';
 import { districtList } from '@/lib/districts';
 import { Page, PageHead, Stat, PartyDot } from '@/components/ui';
@@ -20,11 +21,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/jela'),
-    openGraph: shareGraph('/jela', undefined, t.lang),
+    ...pageShare('jela', t),
     title: t('জেলাভিত্তিক সংসদীয় আসন ও এমপি তালিকা', 'Constituencies and MPs of Bangladesh by district'),
-    description: t(
-      `বাংলাদেশের ${t.n(districts.length)}টি জেলার ${t.n(seatTotal)}টি সংসদীয় আসন। নিজের জেলা বেছে সেখানকার প্রতিটি আসন ও বর্তমান সংসদ সদস্য দেখুন; তথ্যসূত্র বাংলাদেশ জাতীয় সংসদ।`,
-      `The ${seatTotal} parliamentary seats in Bangladesh's ${districts.length} districts. Choose your district to see each of its seats and its current Member of Parliament; source: Parliament of Bangladesh.`,
+    description: fitDescription(
+      t(
+        `বাংলাদেশের ${t.n(districts.length)}টি জেলার ${t.n(seatTotal)}টি সংসদীয় আসন। নিজের জেলা বেছে সেখানকার প্রতিটি আসন ও বর্তমান সংসদ সদস্য দেখুন; তথ্যসূত্র বাংলাদেশ জাতীয় সংসদ।`,
+        `The ${seatTotal} parliamentary seats in Bangladesh's ${districts.length} districts. Choose your district to see each of its seats and its current MP. Source: Parliament of Bangladesh.`,
+      ),
     ),
   };
 }

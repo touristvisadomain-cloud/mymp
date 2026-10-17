@@ -17,6 +17,10 @@ import { dateBn } from '@/lib/data';
 import { makeT, type Lang } from '@/i18n/core';
 import { inLang } from '@/i18n/content';
 import { partyName, partyShort, personName, seatName } from '@/i18n/names';
+import { charCount, DESCRIPTION_MAX, fitDescription, withSiteName } from '@/lib/seo';
+
+/* Counted the way the site counts everywhere (src/lib/seo.ts); kept importable from here. */
+export { charCount, DESCRIPTION_MAX };
 
 /** The full Bangla name of each party in the database, and its genitive as a sentence needs it. */
 export const PARTY_BN: Record<string, { name: string; of: string }> = {
@@ -131,17 +135,20 @@ function partyRoleEn(m: SeoMember): string | null {
  * Search Console (28 days to 21 September 2026) shows people looking a member
  * up by name and by "<seat> আসনের এমপি"; the title says both, in their words.
  * A member who has resigned keeps the plain seat name, since "এমপি" would be
- * untrue. In English: `{name} | MP for Dhaka-17 | My MP`.
+ * untrue. In English: `{name} | MP for Dhaka-17 | My MP`. Past 60 characters
+ * the site's name is left off.
  */
 export function mpTitle(m: SeoMember, lang: Lang = 'bn'): string {
   if (lang === 'en') {
-    const where = constituencyEn(m);
-    const role = !where || m.resignedOn ? where : m.seat?.reserved ? `Member of Parliament, ${where}` : `MP for ${where}`;
-    return [nameEn(m), role, 'My MP'].filter(Boolean).join(' | ');
+    // A reserved seat by its own name, "MP for Women's Seat-1", as short as a general seat's.
+    const where = m.seat?.reserved ? seatName(m.seat, 'en') || constituencyEn(m) : constituencyEn(m);
+    const role = !where || m.resignedOn ? where : `MP for ${where}`;
+    return withSiteName([nameEn(m), role].filter(Boolean).join(' | '), 'en');
   }
   const where = constituencyBn(m);
-  const role = !where || m.resignedOn ? where : m.seat?.reserved ? `${where}ের সংসদ সদস্য` : `${where} আসনের এমপি`;
-  return [m.nameBn ?? m.nameEn, role, 'আমার এমপি'].filter(Boolean).join(' | ');
+  const role = !where || m.resignedOn ? where : m.seat?.reserved ? `${genitiveBn(where)} সংসদ সদস্য` : `${where} আসনের এমপি`;
+  // The site's name goes when the whole would run past what search results show.
+  return withSiteName([m.nameBn ?? m.nameEn, role].filter(Boolean).join(' | '), 'bn');
 }
 
 /**
@@ -153,7 +160,7 @@ export function mpTitle(m: SeoMember, lang: Lang = 'bn'): string {
  * A party post or ministry with no English on file yet is left out; the post
  * itself (State Minister) is still said.
  */
-function mpSentence1En(m: SeoMember): string {
+function mpSentence1En(m: SeoMember, short = false): string {
   const t = makeT('en');
   const name = nameEn(m);
   const where = constituencyEn(m);
@@ -161,6 +168,7 @@ function mpSentence1En(m: SeoMember): string {
   if (m.resignedOn) {
     return `${name} was a member of the 13th Parliament${elected} and resigned on ${t.date(m.resignedOn)}.`;
   }
+  if (short) return mpShortEn(m, name, where);
   const party = isIndependent(m) ? null : partyEnBare(m.party);
   const role = party ? partyRoleEn(m) : null;
   const who = isIndependent(m) ? 'an independent member' : party && !role ? `${aOrAn(party)} ${party} member` : 'a member';
@@ -177,6 +185,21 @@ function mpSentence1En(m: SeoMember): string {
   }
   const tail = parts.length === 0 ? '' : parts.length === 1 ? ` and ${parts[0]}` : `, ${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
   return `${name} is ${who} of the 13th Parliament${elected}${tail}.`;
+}
+
+/**
+ * Sentence 1 in English when the full one is too long for a description:
+ * "Mir Mohammed Helal Uddin (BNP) is the MP for Chattogram-5 and State
+ * Minister in the Ministry of Land." The party by its short name, no party
+ * post, and the government post as before.
+ */
+function mpShortEn(m: SeoMember, name: string, where: string | null): string {
+  const party = isIndependent(m) ? 'independent' : m.party ? partyShort(m.party, 'en') : null;
+  const seat = m.seat?.reserved ? seatName(m.seat, 'en') || where : where;
+  const post = m.govPost ? GOV_POST_EN[m.govPost.trim().toLowerCase()] ?? GOV_POST_EN[m.govPost.trim()] : undefined;
+  const ministry = post && m.ministryBn?.trim() ? inLang(m.ministryBn.trim(), 'en')?.trim().replace(/^the\s+/i, '') : null;
+  const gov = post ? (ministry ? ` and ${post} in the ${ministry}` : ` and ${aOrAn(post)} ${post}`) : '';
+  return `${name}${party ? ` (${party})` : ''} is the MP for ${seat ?? 'a seat in the 13th Parliament'}${gov}.`;
 }
 
 /** Sentence 1: who the member is, the party, and a government post when one is on record. */
@@ -201,7 +224,6 @@ export function mpSentence1(m: SeoMember, lang: Lang = 'bn'): string {
 /** Items of sentence 2 in order, and the order they are dropped in when the description is too long. */
 const ITEMS = ['পরিচিতি', 'নির্বাচনী ফলাফল', 'আগের মেয়াদ', 'সংসদীয় কমিটি', 'যোগাযোগের'];
 const DROP_ORDER = ['নির্বাচনী ফলাফল', 'আগের মেয়াদ', 'সংসদীয় কমিটি'];
-export const DESCRIPTION_MAX = 160;
 
 /** The same items in English, by their Bangla. */
 const ITEMS_EN: Record<string, string> = {
@@ -221,14 +243,6 @@ const sentence2En = (items: string[], gender: string | null | undefined) => {
   return `This page gives ${possessiveEn(gender)} ${en.length > 1 ? `${en.slice(0, -1).join(', ')} and ${en[en.length - 1]}` : en[0]}.`;
 };
 
-/**
- * Characters as a reader sees them: grapheme clusters, so a conjunct with its
- * vowel sign counts once ("ত্রয়ো" is 3, not 7). The owner's own example
- * description is 131 by this count and 204 in code points.
- */
-const graphemes = new Intl.Segmenter('bn', { granularity: 'grapheme' });
-export const charCount = (s: string) => [...graphemes.segment(s)].length;
-
 /** The description: sentence 1 whole, then as much of sentence 2 as fits in 160 characters. */
 export function mpDescription(m: SeoMember, lang: Lang = 'bn'): string {
   const first = mpSentence1(m, lang);
@@ -241,6 +255,17 @@ export function mpDescription(m: SeoMember, lang: Lang = 'bn'): string {
     items = items.filter((i) => i !== drop);
     text = `${first} ${second(items)}`;
   }
-  // Sentence 1 is never cut; when even the shortest second sentence will not fit, it stands alone.
-  return fits(text) ? text : first;
+  if (fits(text)) return text;
+  // Sentence 1 is never cut in Bangla; when even the shortest second sentence will not fit, it stands alone.
+  if (lang !== 'en') return first;
+  // An English sentence 1 runs longer (a party post, a ministry spelled out), so it gives way to its short form.
+  if (fits(first) || m.resignedOn) return fitDescription(first);
+  const short = mpSentence1En(m, true);
+  items = [...ITEMS];
+  for (const drop of [...DROP_ORDER, 'পরিচিতি', 'যোগাযোগের']) {
+    text = `${short} ${second(items)}`;
+    if (fits(text)) return text;
+    items = items.filter((i) => i !== drop);
+  }
+  return fitDescription(short);
 }

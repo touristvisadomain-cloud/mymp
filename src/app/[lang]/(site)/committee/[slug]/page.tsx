@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { shareGraph, shareTwitter, langAlternates, cardImage, fitDescription, fitTitle } from '@/lib/seo';
 import { notFound } from 'next/navigation';
 import { committees, getCommittee, getMemberById, meta, bnText } from '@/lib/data';
 import { noticesForCommittee } from '@/lib/activity';
@@ -34,7 +34,9 @@ function committeeDescription(c: NonNullable<ReturnType<typeof getCommittee>>, l
   if (withDuty && charCount(withDuty) <= DESCRIPTION_MAX) return withDuty;
   if (duty && charCount(`${name}: ${duty}`) <= DESCRIPTION_MAX) return `${name}: ${duty}`;
   if (en) {
-    return `${name}: a parliamentary committee of the 13th Parliament.${who ? ` ${who}.` : ''} The member list and meeting notices are on this page.`;
+    const full = `${name}: a parliamentary committee of the 13th Parliament.${who ? ` ${who}.` : ''} The member list and meeting notices are on this page.`;
+    // A long English name leaves room only for the roster.
+    return charCount(full) <= DESCRIPTION_MAX ? full : fitDescription(`${name}, 13th Parliament.${who ? ` ${who}.` : ''} Members and meeting notices.`);
   }
   return `${name}: ত্রয়োদশ জাতীয় সংসদের একটি সংসদীয় কমিটি।${who ? ` ${who};` : ''} সদস্যদের তালিকা ও বৈঠকের বিজ্ঞপ্তি এই পাতায়।`;
 }
@@ -44,15 +46,18 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/committee/
   const t = await getT();
   const c = getCommittee(slug);
   if (!c) return { title: t('কমিটি পাওয়া যায়নি', 'Committee not found') };
-  const name = t.en ? committeeTitle(c, 'en') : c.nameBn ?? c.nameEn;
+  const name = (t.en ? committeeTitle(c, 'en') : c.nameBn ?? c.nameEn) || t('কমিটি', 'Committee');
+  // The committee's own card (src/app/api/og/committee/[slug]/route.tsx).
+  const image = cardImage(`/api/og/committee/${c.slug}${t.en ? '/en' : ''}`, name);
   return {
     // "সরকারি হিসাব কমিটির কাজ কি" is how the committee is searched for
     // (Search Console, September 2026), so a committee with a duty on record
-    // says so in its title.
-    title: committeeDuty(c, committees) ? t(`${name}: কাজ ও সদস্য`, `${name}: duties and members`) : (name ?? t('কমিটি', 'Committee')),
+    // says so in its title; a name too long for that keeps the name alone.
+    title: committeeDuty(c, committees) ? fitTitle(t.lang, t(`${name}: কাজ ও সদস্য`, `${name}: duties and members`), name) : fitTitle(t.lang, name),
     alternates: langAlternates(t.lang, `/committee/${c.slug}`),
-    openGraph: shareGraph(`/committee/${c.slug}`, undefined, t.lang),
-    description: committeeDescription(c, t.lang),
+    openGraph: shareGraph(`/committee/${c.slug}`, image, t.lang),
+    twitter: shareTwitter(image),
+    description: fitDescription(committeeDescription(c, t.lang)),
   };
 }
 

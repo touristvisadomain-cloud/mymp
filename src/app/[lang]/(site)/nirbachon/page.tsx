@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { langAlternates, shareGraph } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import Link from '@/i18n/Link';
 import { seats, getMemberById, parties, statistics, districtOf, ecs, partyShortBn, meta, GENERAL_SEATS } from '@/lib/data';
 import { winnerOf, publishedSeats, pinSeats, districtNamesEn } from '@/lib/electionMap';
@@ -35,17 +36,19 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/nirbachon'),
-    openGraph: shareGraph('/nirbachon', undefined, t.lang),
+    ...pageShare('nirbachon', t),
     title: t('ত্রয়োদশ জাতীয় সংসদ নির্বাচন ২০২৬: ফলাফল', 'Bangladesh election 2026 results: 13th Parliament'),
-    description: publishedSeats
-      ? t(
-          `২০২৬ সালের ত্রয়োদশ জাতীয় সংসদ নির্বাচন: ${t.n(publishedSeats)}টি আসনের প্রকাশিত ফল, প্রার্থী ও প্রাপ্ত ভোট, দলভিত্তিক আসনসংখ্যা এবং জেলা অনুযায়ী নির্বাচিত সংসদ সদস্য।`,
-          `The 2026 election to the 13th Parliament: published results for ${publishedSeats} ${plural(publishedSeats, 'seat', 'seats')}, the candidates and their votes, seats by party, and the Members of Parliament elected in each district.`,
-        )
-      : t(
-          'ত্রয়োদশ জাতীয় সংসদ নির্বাচনের আসনভিত্তিক ফলাফল ও নির্বাচিত সদস্যদের তালিকা।',
-          'Seat-by-seat results of the election to the 13th Parliament, and a list of the members elected.',
-        ),
+    description: fitDescription(
+      publishedSeats
+        ? t(
+            `২০২৬ সালের ত্রয়োদশ জাতীয় সংসদ নির্বাচন: ${t.n(publishedSeats)}টি আসনের প্রকাশিত ফল, প্রার্থী ও প্রাপ্ত ভোট, দলভিত্তিক আসনসংখ্যা এবং জেলা অনুযায়ী নির্বাচিত সংসদ সদস্য।`,
+            `The 2026 election to the 13th Parliament: results for ${publishedSeats} ${plural(publishedSeats, 'seat', 'seats')}, the candidates and their votes, seats by party, and the MPs elected in each district.`,
+          )
+        : t(
+            'ত্রয়োদশ জাতীয় সংসদ নির্বাচনের আসনভিত্তিক ফলাফল ও নির্বাচিত সদস্যদের তালিকা।',
+            'Seat-by-seat results of the election to the 13th Parliament, and a list of the members elected.',
+          ),
+    ),
   };
 }
 
