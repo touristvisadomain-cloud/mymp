@@ -36,7 +36,7 @@ const entry = (over: Partial<LatestEntry>): LatestEntry => ({
 });
 
 const render = (lang: 'bn' | 'en', s: ReturnType<typeof toStory>) =>
-  renderToStaticMarkup(createElement(LangProvider, { lang }, createElement(StoryCard, { s })));
+  renderToStaticMarkup(createElement(LangProvider, { lang } as Parameters<typeof LangProvider>[0], createElement(StoryCard, { s })));
 
 test('an English page shows the English headline, with the machine-translation tooltip', () => {
   const html = render('en', toStory(entry({})));
