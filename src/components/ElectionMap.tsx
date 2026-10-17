@@ -77,8 +77,9 @@ const R = 7;
  * is set by the box's size rather than fitted.
  */
 function showCountry(map: google.maps.Map, box: HTMLElement) {
-  map.setCenter({ lat: 23.65, lng: 90.35 });
-  map.setZoom(box.clientHeight >= 600 && box.clientWidth >= 520 ? 7 : 6);
+  // The country's extent fitted to the box, so it fills a wide screen and a
+  // phone alike instead of one fixed zoom; a little padding on a phone.
+  map.fitBounds({ south: 20.6, west: 88.0, north: 26.65, east: 92.7 }, box.clientWidth < 520 ? 4 : 12);
 }
 
 /** Whether the MP card sits over the map (from sm up) or below it (a phone). */
@@ -371,6 +372,8 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
         fullscreenControl: false,
         gestureHandling: 'greedy',
         clickableIcons: false,
+        // Zoom between the steps, so the country can fill a phone's width as well as a wide screen.
+        isFractionalZoomEnabled: true,
       });
       showCountry(map, gmBox.current);
       const districts = new g.maps.Data({ map });
@@ -788,11 +791,11 @@ export default function ElectionMap({ seats, districtNames }: { seats: PinSeat[]
       </div>
       {t.en ? (
         <p className="text-[12.5px] text-muted leading-relaxed">
-          District boundaries from OCHA’s map; each seat’s area is worked out from the boundaries of its upazilas and wards, and is approximate. {mode === 'districts' ? 'Each district is in the colour of the party whose current Members of Parliament hold most of its seats; two colours mean a tie.' : 'Tap a symbol to see the seat’s area and its Member of Parliament.'}{useGoogle !== false ? ' Background map from Google Maps.' : ''}
+          District boundaries are their upazilas’ (OpenStreetMap) merged and cut at the coast; each seat’s area is worked out from the boundaries of its upazilas and wards, and is approximate. {mode === 'districts' ? 'Each district is in the colour of the party whose current Members of Parliament hold most of its seats; two colours mean a tie.' : 'Tap a symbol to see the seat’s area and its Member of Parliament.'}{useGoogle !== false ? ' Background map from Google Maps.' : ''}
         </p>
       ) : (
         <p className="text-[12.5px] text-muted leading-relaxed">
-          জেলার সীমানা OCHA-র মানচিত্রে; আসনের জায়গা তার উপজেলা ও ওয়ার্ডের সীমানা থেকে হিসাব করা, আনুমানিক। {mode === 'districts' ? 'রং সেই জেলার বেশিরভাগ আসন যে দলের বর্তমান সংসদ সদস্যদের; দুই রং মানে সমান সমান।' : 'প্রতীকে চাপ দিলে আসনের এলাকা ও সংসদ সদস্য।'}{useGoogle !== false ? ' পটভূমির মানচিত্র Google Maps-এর।' : ''}
+          জেলার সীমানা তার উপজেলাগুলোর (OpenStreetMap) সীমানা জুড়ে, উপকূলে কেটে; আসনের জায়গা তার উপজেলা ও ওয়ার্ডের সীমানা থেকে হিসাব করা, আনুমানিক। {mode === 'districts' ? 'রং সেই জেলার বেশিরভাগ আসন যে দলের বর্তমান সংসদ সদস্যদের; দুই রং মানে সমান সমান।' : 'প্রতীকে চাপ দিলে আসনের এলাকা ও সংসদ সদস্য।'}{useGoogle !== false ? ' পটভূমির মানচিত্র Google Maps-এর।' : ''}
         </p>
       )}
     </div>
