@@ -7,6 +7,8 @@ import { districtList } from '@/lib/districts';
 import { Page, PageHead, Stat, PartyDot } from '@/components/ui';
 import { getT } from '@/i18n/server';
 import { districtName, personName, seatName } from '@/i18n/names';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 /**
  * Every constituency on one page, district by district.
@@ -54,6 +56,17 @@ export default async function SeatIndex() {
           </div>
         }
       />
+
+      <div className="mt-5">
+        <ShareButtons
+          url={`${siteUrl}${t.href('/ason')}`}
+          title={t('সব সংসদীয় আসন | আমার এমপি', 'All constituencies | My MP')}
+          text={t(
+            `ত্রয়োদশ জাতীয় সংসদের ${t.n(seatTotal)}টি সংসদীয় আসন ও প্রতিটি আসনের সংসদ সদস্য, জেলা অনুযায়ী`,
+            `The ${seatTotal} constituencies of the 13th Parliament and the MP for each, district by district`,
+          )}
+        />
+      </div>
 
       {t.en ? (
         <p className="mt-5 text-[14px] text-inksoft">

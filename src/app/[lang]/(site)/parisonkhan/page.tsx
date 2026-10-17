@@ -9,6 +9,8 @@ import Hemicycle from '@/components/Hemicycle';
 import { getT } from '@/i18n/server';
 import { inLang } from '@/i18n/content';
 import { partyName, personName, seatName } from '@/i18n/names';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -118,6 +120,17 @@ export default async function StatisticsPage() {
           `Worked out from the records of the ${s.total} current Members of Parliament. Every figure comes from Parliament’s own database; none is an estimate.`,
         )}
       />
+
+      <div className="mt-5">
+        <ShareButtons
+          url={`${siteUrl}${t.href('/parisonkhan')}`}
+          title={t('সংসদ সদস্যদের পরিসংখ্যান | আমার এমপি', 'Statistics on the MPs | My MP')}
+          text={t(
+            `ত্রয়োদশ জাতীয় সংসদের ${bn(s.total)} জন সদস্যের পরিসংখ্যান: দলভিত্তিক আসন, ${bn(s.women)} জন নারী সদস্য, বয়স ও পেশা`,
+            `The ${s.total} Members of the 13th Parliament in figures: seats by party, ${s.women} women members, age and profession`,
+          )}
+        />
+      </div>
 
       <nav aria-label={t('এই পাতায়', 'On this page')} className="mt-6 flex flex-wrap gap-2">
         {SECTIONS.map(([id, label, labelEn]) => (

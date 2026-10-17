@@ -7,6 +7,8 @@ import { districtList } from '@/lib/districts';
 import { Page, PageHead, Stat, PartyDot } from '@/components/ui';
 import { getT } from '@/i18n/server';
 import { districtName } from '@/i18n/names';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 /**
  * The district index. Each district already had a page and the seat pages link
@@ -50,6 +52,17 @@ export default async function DistrictIndex() {
           </div>
         }
       />
+
+      <div className="mt-5">
+        <ShareButtons
+          url={`${siteUrl}${t.href('/jela')}`}
+          title={t('জেলাভিত্তিক সংসদীয় আসন | আমার এমপি', 'Constituencies by district | My MP')}
+          text={t(
+            `${t.n(districts.length)}টি জেলার ${t.n(seatTotal)}টি সংসদীয় আসন ও তাদের সংসদ সদস্য`,
+            `The ${seatTotal} parliamentary seats in Bangladesh's ${districts.length} districts, and their MPs`,
+          )}
+        />
+      </div>
 
       <ul className="mt-8 pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {districts.map((d) => {

@@ -12,6 +12,8 @@ import MinistersBrowser, { type MinisterGroup, type MinisterPerson } from '@/com
 import { getT } from '@/i18n/server';
 import { inLang } from '@/i18n/content';
 import { govPost, partyName, seatName } from '@/i18n/names';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 import type { Lang, T } from '@/i18n/core';
 import { CABINET_PAGE_FOR_READERS } from '../../../../../config/sync-sources';
 
@@ -151,6 +153,18 @@ export default async function MinistersPage() {
           'Who is in charge of which ministry, since when, and which seat each one holds as a Member of Parliament. The list is checked against the Cabinet Division’s website several times a day; no name is entered by hand.',
         )}
       />
+
+      <div className="mt-5">
+        <ShareButtons
+          url={`${siteUrl}${t.href('/ministers')}`}
+          title={t('মন্ত্রিসভা | আমার এমপি', 'Cabinet | My MP')}
+          text={
+            t.en
+              ? `The Cabinet of Bangladesh: the Prime Minister, ${t.count(count('মন্ত্রী'), '', 'minister', 'ministers')}, ${t.count(count('প্রতিমন্ত্রী'), '', 'state minister', 'state ministers')} and ${t.count(count('উপদেষ্টা'), '', 'adviser', 'advisers')}, with their ministries`
+              : `বাংলাদেশের মন্ত্রিসভা: প্রধানমন্ত্রী, ${bn(count('মন্ত্রী'))} জন মন্ত্রী, ${bn(count('প্রতিমন্ত্রী'))} জন প্রতিমন্ত্রী ও ${bn(count('উপদেষ্টা'))} জন উপদেষ্টা, মন্ত্রণালয়সহ`
+          }
+        />
+      </div>
 
       <div className="pt-6 flex flex-col gap-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">

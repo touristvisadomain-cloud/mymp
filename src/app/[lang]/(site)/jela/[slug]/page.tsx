@@ -9,6 +9,8 @@ import { Page, PageHead, Card, Breadcrumb, MemberRow, PartyDot, Stat } from '@/c
 import Link from '@/i18n/Link';
 import { getT } from '@/i18n/server';
 import { districtName, partyName, partyShort, personName, seatName } from '@/i18n/names';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 export function generateStaticParams() {
   return [...districts().keys()].map((slug) => ({ slug }));
@@ -100,6 +102,18 @@ export default async function DistrictPage({ params }: PageProps<'/[lang]/jela/[
           </div>
         }
       />
+
+      <div className="mt-5">
+        <ShareButtons
+          url={`${siteUrl}${t.href(`/jela/${d.slug}`)}`}
+          title={`${t(`${d.bn} জেলা`, `${name} district`)} | ${t('আমার এমপি', 'My MP')}`}
+          text={
+            d.seats.length === 1
+              ? t(`${d.bn} জেলার একমাত্র আসনের সংসদ সদস্য`, `The Member of Parliament for ${name} district's only seat`)
+              : t(`${d.bn} জেলার ${t.n(d.seats.length)}টি আসনের সংসদ সদস্য`, `The Members of Parliament for the ${d.seats.length} seats of ${name} district`)
+          }
+        />
+      </div>
 
       {/* The district in a paragraph, from the site's own records: division, seats and their upazilas, who holds them now and who held them last time. */}
       <p className="mt-6 max-w-[760px] text-[16px] leading-[1.75] text-inksoft text-pretty">{districtIntro(d, t.lang).text}</p>

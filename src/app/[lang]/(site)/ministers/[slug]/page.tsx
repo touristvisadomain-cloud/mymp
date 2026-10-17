@@ -11,6 +11,8 @@ import { getT } from '@/i18n/server';
 import { govPost } from '@/i18n/names';
 import { inLang, translated } from '@/i18n/content';
 import type { Lang } from '@/i18n/core';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 /**
  * A cabinet member from outside parliament (an adviser to the Prime Minister,
@@ -153,6 +155,15 @@ export default async function CabinetMemberPage({ params }: { params: Promise<{ 
             {t.en ? (rank ? `${rank} · Not an MP` : 'Not an MP') : <>{a.rankBn ?? 'উপদেষ্টা'} · সংসদ সদস্য নন</>}
           </p>
         </div>
+      </div>
+
+      {/* Name and post; an English page without an English name shares the post alone. */}
+      <div className="mt-5">
+        <ShareButtons
+          url={`${siteUrl}${t.href(`/ministers/${a.slug}`)}`}
+          title={`${nameLang ? role : name.text} | ${t('আমার এমপি', 'My MP')}`}
+          text={nameLang ? role : `${name.text}, ${role}`}
+        />
       </div>
 
       <div className="pt-8 pb-14 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start">
