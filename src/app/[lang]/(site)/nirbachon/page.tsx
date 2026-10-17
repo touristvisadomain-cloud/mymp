@@ -12,6 +12,8 @@ import ElectionMap from '@/components/ElectionMap';
 import { getT } from '@/i18n/server';
 import { plural } from '@/i18n/core';
 import { districtName, partyByAbbr, partyName, partyShort, personName, seatName } from '@/i18n/names';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 /** The page's sections, for the shortcuts under the heading. */
 const SECTIONS: [string, string, string][] = [
@@ -84,6 +86,21 @@ export default async function ElectionPage() {
           </div>
         }
       />
+
+      <div className="mt-5">
+        <ShareButtons
+          url={`${siteUrl}${t.href('/nirbachon')}`}
+          title={t('ত্রয়োদশ জাতীয় সংসদ নির্বাচন | আমার এমপি', 'Election to the 13th Parliament | My MP')}
+          text={
+            publishedSeats
+              ? t(
+                  `২০২৬ সালের ত্রয়োদশ জাতীয় সংসদ নির্বাচন: ${t.n(publishedSeats)}টি আসনের ফল, প্রার্থীদের ভোট ও দলভিত্তিক আসন`,
+                  `The 2026 election to the 13th Parliament: results for ${t.count(publishedSeats, '', 'seat', 'seats')}, the candidates' votes and seats by party`,
+                )
+              : t('২০২৬ সালের ত্রয়োদশ জাতীয় সংসদ নির্বাচনের আসনভিত্তিক ফল', 'Seat-by-seat results of the 2026 election to the 13th Parliament')
+          }
+        />
+      </div>
 
       <nav aria-label={t('এই পাতায়', 'On this page')} className="mt-6 flex flex-wrap gap-2">
         {SECTIONS.map(([id, label, labelEn]) => (

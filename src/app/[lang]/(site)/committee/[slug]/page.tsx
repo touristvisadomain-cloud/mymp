@@ -12,6 +12,8 @@ import { getT } from '@/i18n/server';
 import type { Lang, T } from '@/i18n/core';
 import { makeT, plural } from '@/i18n/core';
 import { committeeRole, personName } from '@/i18n/names';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 export function generateStaticParams() {
   return committees.map((c) => ({ slug: c.slug }));
@@ -133,6 +135,12 @@ export default async function CommitteePage({ params }: PageProps<'/[lang]/commi
       }
     : null;
   const type = typeName(c.type, t.lang);
+  // Shared, the committee is its name and its chair; a roster not yet updated for this parliament names no one.
+  const chairName = c.rosterCurrent && chairMember ? (t.en ? personName(chairMember, 'en') : chairMember.nameBn ?? chairMember.nameEn) : null;
+  const shareName = name || t('কমিটি', 'Committee');
+  const shareText = chairName
+    ? t(`${shareName}, সভাপতি ${chairName}`, `${shareName}, chaired by ${chairName}`)
+    : t(`${shareName}, ত্রয়োদশ জাতীয় সংসদ`, `${shareName}, 13th Parliament`);
 
   return (
     <Page>
@@ -154,6 +162,10 @@ export default async function CommitteePage({ params }: PageProps<'/[lang]/commi
             : [c.nameEn, c.startDate ? `গঠিত ${t.date(c.startDate)}` : null].filter(Boolean).join(', ')
         }
       />
+
+      <div className="mt-5">
+        <ShareButtons url={`${siteUrl}${t.href(`/committee/${c.slug}`)}`} title={`${shareName} | ${t('আমার এমপি', 'My MP')}`} text={shareText} />
+      </div>
 
       <div className="pt-8 pb-14 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start">
         <div className="flex flex-col gap-8 min-w-0">

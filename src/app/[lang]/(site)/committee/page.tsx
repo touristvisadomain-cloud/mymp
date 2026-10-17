@@ -8,6 +8,8 @@ import { committeeDuty, committeeTitle, typeName } from '@/lib/committeeDuties';
 import { getT } from '@/i18n/server';
 import { plural } from '@/i18n/core';
 import { committeeRole, personName, seatName } from '@/i18n/names';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 const currentCommittees = committees.filter((c) => c.rosterCurrent).length;
 
@@ -70,6 +72,17 @@ export default async function CommitteesPage() {
           </div>
         }
       />
+
+      <div className="mt-5">
+        <ShareButtons
+          url={`${siteUrl}${t.href('/committee')}`}
+          title={t('সংসদীয় কমিটি | আমার এমপি', 'Parliamentary committees | My MP')}
+          text={t(
+            `ত্রয়োদশ জাতীয় সংসদের ${t.n(committees.length)}টি সংসদীয় কমিটি: সভাপতি, সদস্য ও প্রতিটি কমিটির কাজ`,
+            `The ${committees.length} parliamentary committees of the 13th Parliament: their chairs, their members and what each one does`,
+          )}
+        />
+      </div>
 
       <div className="pt-8 pb-14 flex flex-col gap-8">
         <section className="flex flex-col gap-4">

@@ -13,6 +13,8 @@ import SessionCountdown from '@/components/SessionCountdown';
 import { getT } from '@/i18n/server';
 import { plural, type T } from '@/i18n/core';
 import { HOUSE_ROLE } from '@/i18n/names';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -72,6 +74,17 @@ export default async function SessionsPage() {
           </div>
         }
       />
+
+      <div className="mt-5">
+        <ShareButtons
+          url={`${siteUrl}${t.href('/odhibeshon')}`}
+          title={t('সংসদ অধিবেশন | আমার এমপি', 'Sessions of Parliament | My MP')}
+          text={t(
+            `ত্রয়োদশ জাতীয় সংসদের ${t.n(sessions.length)}টি অধিবেশন ও ${t.n(totalSittings())}টি বৈঠক: দিনের কার্যসূচি, পরিপত্র ও বিজ্ঞপ্তি`,
+            `The 13th Parliament's ${t.count(sessions.length, '', 'session', 'sessions')} and ${t.count(totalSittings(), '', 'sitting', 'sittings')}: orders of the day, circulars and notices`,
+          )}
+        />
+      </div>
 
       {current?.startDate && (
         <div className="mt-8">

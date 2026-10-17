@@ -6,6 +6,8 @@ import { members, parties, bn, statistics, partyShortBn, districtOf } from '@/li
 import { Page, PageHead, Stat } from '@/components/ui';
 import MemberFilter from '@/components/MemberFilter';
 import { getT } from '@/i18n/server';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 const generalSeats = members.filter((m) => !m.seat?.reserved).length;
 export async function generateMetadata(): Promise<Metadata> {
@@ -44,6 +46,17 @@ export default async function AllMps() {
           </div>
         }
       />
+
+      <div className="mt-5">
+        <ShareButtons
+          url={`${siteUrl}${t.href('/mp')}`}
+          title={t('সব সংসদ সদস্য | আমার এমপি', 'All MPs | My MP')}
+          text={t(
+            `ত্রয়োদশ জাতীয় সংসদের ${bn(stats.total)} জন সংসদ সদস্যের তালিকা, দল, আসন ও জেলাসহ`,
+            `The ${stats.total} Members of the 13th Parliament, with their parties, seats and districts`,
+          )}
+        />
+      </div>
 
       {t.en ? (
         <p className="mt-5 text-[14px] text-inksoft">

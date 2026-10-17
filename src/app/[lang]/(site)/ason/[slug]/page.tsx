@@ -16,6 +16,8 @@ import { getT } from '@/i18n/server';
 import { hrefIn, makeT, type Lang } from '@/i18n/core';
 import { districtName, noParty, partyByAbbr, partyName, partyShort, personName, seatName, titleCaseName } from '@/i18n/names';
 import { inLang, translated } from '@/i18n/content';
+import ShareButtons from '@/components/ShareButtons';
+import { siteUrl } from '@/lib/site';
 
 /**
  * What people actually type, and what a seat page has to answer in its first
@@ -153,6 +155,14 @@ export default async function SeatPage({ params }: PageProps<'/[lang]/ason/[slug
   const bnPath = hrefIn('bn', `/ason/${seat.slug}`);
   const boundary = translated(seat.boundaryBn, t.lang);
   const profession = member ? inLang(member.professionBn, t.lang) : null;
+  // Shared, the seat says who holds it, or that it is vacant.
+  const seatEn = seatName(seat, 'en');
+  const shareText = answer.name
+    ? t(`${answer.where} সংসদ সদস্য ${answer.name}`, `The ${seat.reserved ? 'Member of Parliament' : 'MP'} for ${seatEn} is ${answer.name}`)
+    : t(
+        `${seat.reserved ? seat.nameBn : `${seat.nameBn} আসন`} ${seat.vacantSince ? `${dateBn(seat.vacantSince)} থেকে শূন্য` : 'এখন শূন্য'}`,
+        `${seat.reserved ? seatEn : `The ${seatEn} seat`} ${seat.vacantSince ? `has been vacant since ${t.date(seat.vacantSince)}` : 'is vacant at present'}`,
+      );
 
   return (
     <Page>
@@ -196,6 +206,10 @@ export default async function SeatPage({ params }: PageProps<'/[lang]/ason/[slug
           )}
         </div>
       </header>
+
+      <div className="mt-5">
+        <ShareButtons url={`${siteUrl}${t.href(`/ason/${seat.slug}`)}`} title={`${answer.title} | ${t('আমার এমপি', 'My MP')}`} text={shareText} />
+      </div>
 
       <div className="pt-8 pb-14 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 lg:gap-10 items-start">
         <div className="flex flex-col gap-8">
