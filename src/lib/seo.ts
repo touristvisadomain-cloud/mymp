@@ -105,7 +105,7 @@ export const withSiteName = (title: string, lang: Lang) => {
  * they were shared with; Facebook's Sharing Debugger can be asked to look at a
  * single address again.
  */
-export const CARD_VERSION = '2';
+export const CARD_VERSION = '3';
 
 /** A drawn preview card, at the address the crawlers are given. */
 export const cardImage = (path: string, alt: string) => ({
