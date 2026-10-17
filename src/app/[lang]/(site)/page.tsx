@@ -10,6 +10,7 @@ import {
   getSeat,
   getParty,
   GENERAL_SEATS,
+  HOUSE_SEATS,
 } from "@/lib/data";
 import { districtList } from "@/lib/districts";
 import { finderSeats } from "@/lib/finderSeats";
@@ -33,7 +34,6 @@ import {
   HOUSE_ROLE,
   OFFICE,
   districtName,
-  partyName,
   partyShort,
   personName,
   seatName,
@@ -42,12 +42,12 @@ import {
   Page,
   Card,
   MemberCard,
-  CompositionBar,
   Empty,
   SectionHead,
   DocLink,
 } from "@/components/ui";
 import SiteSearch from "@/components/SiteSearch";
+import HouseComposition from "@/components/HouseComposition";
 import StoryCard from "@/components/StoryCard";
 import HomeVideos from "@/components/HomeVideos";
 import Icon from "@/components/Icon";
@@ -266,35 +266,11 @@ export default async function Home() {
                 </Link>
               </div>
               <p className="text-[13.5px] text-muted -mt-2">
-                {t.en ? (
-                  `${t.count(stats.total, "", "member", "members")}: ${stats.territorial} elected from constituencies, ${stats.reserved} in reserved seats for women`
-                ) : (
-                  <>
-                    {t.n(stats.total)} সদস্য, {t.n(stats.territorial)} আসনভিত্তিক,{" "}
-                    {t.n(stats.reserved)} সংরক্ষিত নারী আসন
-                  </>
-                )}
+                {t.en
+                  ? `${stats.total} of ${HOUSE_SEATS} seats filled: ${stats.territorial} elected from constituencies, ${stats.reserved} reserved seats for women`
+                  : `${t.n(HOUSE_SEATS)} আসনের ${t.n(stats.total)}টি পূর্ণ: ${t.n(stats.territorial)} আসনভিত্তিক, ${t.n(stats.reserved)} সংরক্ষিত নারী আসন`}
               </p>
-              <CompositionBar
-                parties={parties}
-                total={stats.total}
-                majority={stats.majority}
-              />
-              <p className="text-[12px] text-muted border-t border-rule pt-3 leading-relaxed">
-                {t("শুধু আসনভিত্তিক ফল আলাদা:", "The constituency results on their own:")}{" "}
-                {parties
-                  .slice(0, 2)
-                  .map((p) => `${partyName(p, t.lang)} ${t.n(p.seatsTerritorial)}`)
-                  .join(", ")}
-                {t.en ? (
-                  `. The ${stats.reserved} reserved seats are shared among the parties after the results.`
-                ) : (
-                  <>
-                    । সংরক্ষিত {t.n(stats.reserved)}টি আসন ফলের পর দলগুলোর মধ্যে ভাগ
-                    হয়।
-                  </>
-                )}
-              </p>
+              <HouseComposition parties={parties} total={stats.total} majority={stats.majority} />
             </Card>
           </div>
         </Page>
