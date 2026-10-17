@@ -15,6 +15,7 @@ import { allMembers } from '@/lib/data';
 import { FEED_FROM, FEED_FROM_INSTANT, FEED_FROM_MONTH, notBeforeWindow } from './window';
 import { devEnglish } from './devEnglish';
 import { isGoogleNewsLink, resolveGoogleNews } from './googleNews';
+import { cleanText } from './text';
 
 /** Only stories from the window, on an embedded feed_items row. */
 const IN_WINDOW = `&feed_items.published_at=gte.${encodeURIComponent(FEED_FROM_INSTANT)}`;
@@ -156,6 +157,8 @@ export async function upsertItem(input: FeedItemInput): Promise<UpsertResult | n
   // placeholder is better than the same front page on every card.
   if (isGenericThumbnail(input.thumbnailUrl)) input = { ...input, thumbnailUrl: null };
   input = { ...input, publishedAt: notLaterThanNow(input.publishedAt) };
+  // Plain text only: some feeds send HTML, some twice encoded (lib/feed/text.ts).
+  input = { ...input, title: cleanText(input.title), summary: input.summary ? cleanText(input.summary) || null : input.summary };
   const canonical = canonicalUrl(input.url);
   const hash = contentHash(input.title, input.summary);
   const sb = db();
