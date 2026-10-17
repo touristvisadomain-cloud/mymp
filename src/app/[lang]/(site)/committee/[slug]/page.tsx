@@ -3,6 +3,7 @@ import { shareGraph, langAlternates } from '@/lib/seo';
 import { notFound } from 'next/navigation';
 import { committees, getCommittee, getMemberById, meta, bnText } from '@/lib/data';
 import { noticesForCommittee } from '@/lib/activity';
+import { tidyEn } from '@/lib/sessionsView';
 import Link from '@/i18n/Link';
 import { Page, PageHead, Card, Breadcrumb, Notice, MemberRow, Empty, DocLink } from '@/components/ui';
 import { committeeDuty, committeeTitle, typeName, RULES_URL, type CommitteeDuty } from '@/lib/committeeDuties';
@@ -15,15 +16,6 @@ import { committeeRole, personName } from '@/i18n/names';
 export function generateStaticParams() {
   return committees.map((c) => ({ slug: c.slug }));
 }
-
-/** A source's English title, cleaned of doubled spaces and spaces on the wrong side of brackets and commas; the words are left as they are. */
-const tidyEn = (s: string | null | undefined) =>
-  (s ?? '')
-    .replace(/\s+/g, ' ')
-    .replace(/([A-Za-z.])\(/g, '$1 (')
-    .replace(/\(\s+/g, '(')
-    .replace(/\s+([,.;:)])/g, '$1')
-    .trim();
 
 /** "{committee}: … সভাপতি {name}, সদস্য {n} জন; …" from the committee's roster. */
 function committeeDescription(c: NonNullable<ReturnType<typeof getCommittee>>, lang: Lang = 'bn'): string {

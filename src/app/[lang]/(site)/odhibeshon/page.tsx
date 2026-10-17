@@ -4,14 +4,14 @@ import Link from '@/i18n/Link';
 import { getMemberById, meta, bnText } from '@/lib/data';
 import {
   sessions, officers, parliament, sessionLabel, latestSitting, totalSittings, generalNotices, ROLE_LABELS, daysSince,
-  type Officer, type Sitting, type Circular,
 } from '@/lib/activity';
+import { weekdayOf, sittingTitleEn, circularTitleEn, tidyEn, officerNameEn, tenureEn } from '@/lib/sessionsView';
 import { Page, PageHead, Card, Stat, Empty, PartyDot, DocLink } from '@/components/ui';
 import Icon from '@/components/Icon';
 import SessionCountdown from '@/components/SessionCountdown';
 import { getT } from '@/i18n/server';
-import { MONTHS_BN, MONTHS_EN, plural, type T } from '@/i18n/core';
-import { HOUSE_ROLE, personName, titleCaseName } from '@/i18n/names';
+import { plural, type T } from '@/i18n/core';
+import { HOUSE_ROLE } from '@/i18n/names';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -24,61 +24,6 @@ export async function generateMetadata(): Promise<Metadata> {
       'The sessions of the 13th Parliament, the order of the day for every sitting, circulars and Parliament Secretariat notices, straight from what Parliament publishes.',
     ),
   };
-}
-
-/** The weekday of an ISO date, as the calendar in Dhaka has it. */
-const weekdayOf = (t: T, iso: string) => t.weekday(new Date(`${iso}T12:00:00+06:00`).getUTCDay());
-
-const latin = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
-
-/** "দিনের কার্যসূচী: ১০-০৯-২০২৬" → "Order of the day: 10 September 2026", from the sitting's date (or the title's, when it has none). */
-function sittingTitleEn(t: T, o: Sitting): string {
-  let iso = o.date;
-  if (!iso) {
-    const m = /(\d{1,2})[-./](\d{1,2})[-./](\d{4})/.exec(latin(o.titleBn ?? ''));
-    if (m) iso = `${m[3]}-${m[2]!.padStart(2, '0')}-${m[1]!.padStart(2, '0')}`;
-  }
-  const date = t.date(iso);
-  return date ? `Order of the day: ${date}` : 'Order of the day';
-}
-
-/** "পরিপত্র-১" → "Circular 1". */
-function circularTitleEn(c: Circular): string {
-  const no = c.no ?? Number(/\d+/.exec(latin(c.titleBn ?? ''))?.[0] ?? NaN);
-  return Number.isFinite(no) ? `Circular ${no}` : 'Circular';
-}
-
-/** A source's English title, cleaned of doubled spaces and spaces on the wrong side of brackets and commas; the words are left as they are. */
-const tidyEn = (s: string | null | undefined) =>
-  (s ?? '')
-    .replace(/\s+/g, ' ')
-    .replace(/([A-Za-z.])\(/g, '$1 (')
-    .replace(/\(\s+/g, '(')
-    .replace(/\s+([,.;:)])/g, '$1')
-    .trim();
-
-/** An officer's English name: the source writes some after the title in capitals ("Mr. MIAH NURUDDIN AHMAD APU"). */
-function officerNameEn(o: Officer): string {
-  const raw = tidyEn(o.nameEn);
-  const m = /^((?:Mr|Mrs|Ms|Dr)\.\s+)(.+)$/.exec(raw);
-  const nameEn = m && m[2] === m[2]!.toUpperCase() ? `${m[1]}${titleCaseName(m[2]!)}` : raw;
-  return personName({ id: o.memberId ?? undefined, nameBn: o.nameBn, nameEn }, 'en');
-}
-
-/** "১২ মার্চ ২০২৬ -" → "from 12 March 2026"; null when the tenure cannot be read. */
-function tenureEn(bn: string | null): string | null {
-  if (!bn) return null;
-  const date = (s: string) => {
-    const m = /^(\d{1,2}) (\S+) (\d{4})$/.exec(latin(s.trim()));
-    const month = m ? MONTHS_BN.indexOf(m[2]!) : -1;
-    return m && month >= 0 ? `${Number(m[1])} ${MONTHS_EN[month]} ${m[3]}` : null;
-  };
-  const [from, to] = bn.split(/\s+-\s*/);
-  const a = from ? date(from) : null;
-  if (!a) return null;
-  if (!to?.trim()) return `from ${a}`;
-  const b = date(to);
-  return b ? `${a} to ${b}` : null;
 }
 
 function Fact({ label, value, t }: { label: string; value: string | null; t: T }) {

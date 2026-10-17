@@ -1,14 +1,9 @@
-/** The cabinet, for the app's মন্ত্রিসভা screen. */
-import { NextResponse } from 'next/server';
+/** The cabinet, for the app's মন্ত্রিসভা screen. `?lang=en` for English. */
 import { cabinet } from '@/lib/app/payload';
+import { appJson, appLang } from '@/lib/app/respond';
 
 export const revalidate = 3600;
 
-export function GET() {
-  return NextResponse.json(cabinet(), {
-    headers: {
-      'cache-control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-      'access-control-allow-origin': '*',
-    },
-  });
+export function GET(req: Request) {
+  return appJson(req, cabinet(appLang(req)));
 }
