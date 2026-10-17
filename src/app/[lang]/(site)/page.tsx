@@ -10,6 +10,8 @@ import {
   getSeat,
   getParty,
   GENERAL_SEATS,
+  HOUSE_SEATS,
+  currentPosts,
 } from "@/lib/data";
 import { districtList } from "@/lib/districts";
 import { finderSeats } from "@/lib/finderSeats";
@@ -33,7 +35,6 @@ import {
   HOUSE_ROLE,
   OFFICE,
   districtName,
-  partyName,
   partyShort,
   personName,
   seatName,
@@ -42,12 +43,13 @@ import {
   Page,
   Card,
   MemberCard,
-  CompositionBar,
   Empty,
   SectionHead,
   DocLink,
 } from "@/components/ui";
 import SiteSearch from "@/components/SiteSearch";
+import HouseComposition from "@/components/HouseComposition";
+import { experienceStats } from "@/lib/history";
 import StoryCard from "@/components/StoryCard";
 import HomeVideos from "@/components/HomeVideos";
 import Icon from "@/components/Icon";
@@ -132,6 +134,24 @@ export const revalidate = 300;
 export default async function Home() {
   const t = await getT();
   const stats = statistics();
+  const experience = experienceStats(t.lang);
+  // People in the cabinet: one per person, however many portfolios they hold.
+  const cabinetSize = new Set(currentPosts("government").map((p) => p.memberId ?? p.nameBn)).size;
+  // The cabinet by rank, each person once, under their first-listed post.
+  const firstPost = new Map<string, string>();
+  for (const p of currentPosts("government")) {
+    const who = p.memberId ?? p.nameBn;
+    if (!firstPost.has(who)) firstPost.set(who, p.title);
+  }
+  const cabinetRanks = [
+    { bn: "প্রধানমন্ত্রী", en: "Prime Minister", enMany: "Prime Ministers" },
+    { bn: "মন্ত্রী", en: "minister", enMany: "ministers" },
+    { bn: "প্রতিমন্ত্রী", en: "state minister", enMany: "state ministers" },
+    { bn: "উপমন্ত্রী", en: "deputy minister", enMany: "deputy ministers" },
+    { bn: "উপদেষ্টা", en: "adviser", enMany: "advisers" },
+  ]
+    .map((r) => ({ ...r, n: [...firstPost.values()].filter((title) => title === r.bn).length }))
+    .filter((r) => r.n > 0);
   const [{ stories }, videos] = await Promise.all([
     newsPageStories(40),
     latestVideos(30),
@@ -253,6 +273,67 @@ export default async function Home() {
                   </Link>
                 ))}
               </div>
+
+              {/* Four facts at a glance, each opening the page that has the rest (owner, 2026-10-17:
+                  the hero's left side stood empty beside the taller composition card). */}
+              <div className="rise [--rise-i:5] grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                {[
+                  {
+                    icon: "users",
+                    k: t("নারী সদস্য", "Women MPs"),
+                    v: t.n(stats.women),
+                    note: t(
+                      `${t.n(stats.womenTerritorial)} জন সরাসরি নির্বাচিত, ${t.n(stats.womenReserved)} জন সংরক্ষিত আসনে`,
+                      `${stats.womenTerritorial} directly elected, ${stats.womenReserved} in reserved seats`,
+                    ),
+                    href: "/parisonkhan#nari",
+                  },
+                  {
+                    icon: "userplus",
+                    k: t("প্রথমবার সংসদে", "First-time MPs"),
+                    v: t.n(experience.firstTime),
+                    note: t(
+                      `নতুন মুখ, সংসদের ${t.n(Math.round((experience.firstTime / stats.total) * 100))}%`,
+                      `New faces: ${Math.round((experience.firstTime / stats.total) * 100)}% of the House`,
+                    ),
+                    href: "/parisonkhan#obhiggota",
+                  },
+                  {
+                    icon: "building",
+                    k: t("মন্ত্রিসভায়", "In the Cabinet"),
+                    v: t.n(cabinetSize),
+                    note: cabinetRanks
+                      // The one Prime Minister goes unnumbered: "প্রধানমন্ত্রী, ২৬ মন্ত্রী…".
+                      .map((r) => (r.n === 1 && r.bn === "প্রধানমন্ত্রী" ? t(r.bn, r.en) : t.en ? `${r.n} ${r.n === 1 ? r.en : r.enMany}` : `${t.n(r.n)} ${r.bn}`))
+                      .join(", "),
+                    href: "/ministers",
+                  },
+                  ...(stats.youngest
+                    ? [
+                        {
+                          icon: "award",
+                          k: t("সর্বকনিষ্ঠ এমপি", "Youngest MP"),
+                          v: t(`${t.n(stats.youngest.age)} বছর`, `${stats.youngest.age} years`),
+                          note: personName(stats.youngest.m, t.lang),
+                          href: `/mp/${stats.youngest.m.slug}`,
+                        },
+                      ]
+                    : []),
+                ].map((f) => (
+                  <Link
+                    key={f.href + f.k}
+                    href={f.href}
+                    className="group bg-surface/80 border border-rule rounded-xl px-4 py-3 flex flex-col gap-1 hover:border-brand transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5 text-[12px] font-semibold text-muted">
+                      <Icon name={f.icon} size={14} className="text-brand shrink-0" />
+                      {f.k}
+                    </span>
+                    <span className="display tnum text-[24px] leading-tight text-ink group-hover:text-brand transition-colors">{f.v}</span>
+                    <span className="text-[11.5px] leading-snug text-muted text-pretty">{f.note}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
 
             <Card className="rise [--rise-i:2] w-full lg:w-[440px] shrink-0 p-5 sm:p-7 flex flex-col gap-4">
@@ -266,35 +347,11 @@ export default async function Home() {
                 </Link>
               </div>
               <p className="text-[13.5px] text-muted -mt-2">
-                {t.en ? (
-                  `${t.count(stats.total, "", "member", "members")}: ${stats.territorial} elected from constituencies, ${stats.reserved} in reserved seats for women`
-                ) : (
-                  <>
-                    {t.n(stats.total)} সদস্য, {t.n(stats.territorial)} আসনভিত্তিক,{" "}
-                    {t.n(stats.reserved)} সংরক্ষিত নারী আসন
-                  </>
-                )}
+                {t.en
+                  ? `${stats.total} of ${HOUSE_SEATS} seats filled: ${stats.territorial} elected from constituencies, ${stats.reserved} reserved seats for women`
+                  : `${t.n(HOUSE_SEATS)} আসনের ${t.n(stats.total)}টি পূর্ণ: ${t.n(stats.territorial)} আসনভিত্তিক, ${t.n(stats.reserved)} সংরক্ষিত নারী আসন`}
               </p>
-              <CompositionBar
-                parties={parties}
-                total={stats.total}
-                majority={stats.majority}
-              />
-              <p className="text-[12px] text-muted border-t border-rule pt-3 leading-relaxed">
-                {t("শুধু আসনভিত্তিক ফল আলাদা:", "The constituency results on their own:")}{" "}
-                {parties
-                  .slice(0, 2)
-                  .map((p) => `${partyName(p, t.lang)} ${t.n(p.seatsTerritorial)}`)
-                  .join(", ")}
-                {t.en ? (
-                  `. The ${stats.reserved} reserved seats are shared among the parties after the results.`
-                ) : (
-                  <>
-                    । সংরক্ষিত {t.n(stats.reserved)}টি আসন ফলের পর দলগুলোর মধ্যে ভাগ
-                    হয়।
-                  </>
-                )}
-              </p>
+              <HouseComposition parties={parties} total={stats.total} majority={stats.majority} />
             </Card>
           </div>
         </Page>
