@@ -16,6 +16,8 @@ import { NEWS_SOURCES, SEARCH_ONLY_SOURCES } from '../../../config/news-sources'
 import { TRUSTED_CHANNELS } from '../../../config/feed-matching';
 import { OFFICIAL_CHANNELS, OFFICIAL_CHANNEL_IDS } from '../../../config/video-channels';
 import { FEED_FROM, FEED_FROM_INSTANT } from './window';
+import { pressNamesOf } from '../../../config/press-names';
+import { foldBangla, HONORIFICS } from '@/lib/matching/nameMatch';
 
 /** The outlet a channel belongs to, by its Bangla name, so a video reads "যুগান্তর" and not "Daily Jugantor". */
 const CHANNEL_OUTLET = new Map(OFFICIAL_CHANNELS.map((c) => [c.id, NEWS_SOURCES.find((s) => s.key === c.source)?.nameBn ?? null]));
@@ -69,6 +71,24 @@ export interface Target {
   nameBn: string | null;
   seatBn: string | null;
   priority: boolean;
+  /** What a search asks for: the name the press prints, and the seat only where the press writes it. */
+  query?: { name: string | null; seat: string | null };
+}
+
+/**
+ * The name to search for. The press drops "মোঃ", "মোছাঃ", "ড." and the like,
+ * and a phrase search for the roll's "মোছাঃ নুসরাত তাবাসসুম জ্যোতি" finds
+ * nothing, so the leading titles go; a name in config/press-names.ts is used
+ * as it is.
+ */
+export function searchName(id: string, nameBn: string | null): string | null {
+  const press = pressNamesOf(id).find((n) => /[ঀ-৿]/.test(n));
+  if (press) return press;
+  if (!nameBn) return null;
+  const words = nameBn.trim().split(/\s+/);
+  let i = 0;
+  while (i < words.length - 2 && HONORIFICS.has(foldBangla(words[i]!.replace(/[ঃ.:,]/g, '')))) i++;
+  return words.slice(i).join(' ');
 }
 
 /** Everyone, with the post holders marked so they come round twice as often. */
@@ -76,7 +96,14 @@ function targets(): Target[] {
   const withPost = new Set(currentPosts().map((p) => p.memberId).filter(Boolean) as string[]);
   return allMembers
     .filter((m) => !m.resignedOn)
-    .map((m) => ({ id: m.id, nameBn: m.nameBn, seatBn: m.seat?.nameBn ?? null, priority: withPost.has(m.id) }));
+    .map((m) => ({
+      id: m.id,
+      nameBn: m.nameBn,
+      seatBn: m.seat?.nameBn ?? null,
+      priority: withPost.has(m.id),
+      // "মহিলা আসন-৫০" is never in a story about a reserved-seat member, and every word of a query must be found.
+      query: { name: searchName(m.id, m.nameBn), seat: m.seat?.reserved ? null : (m.seat?.nameBn ?? null) },
+    }));
 }
 
 /**
@@ -173,7 +200,7 @@ export async function runYoutubeCollector(opts: { trigger?: string; perRun?: num
 
   for (const t of slice) {
     if (!t.nameBn || Date.now() > deadline) continue;
-    const q = [t.nameBn, t.seatBn].filter(Boolean).join(' ');
+    const q = [t.query?.name ?? t.nameBn, t.query ? t.query.seat : t.seatBn].filter(Boolean).join(' ');
     const url = new URL('https://www.googleapis.com/youtube/v3/search');
     url.searchParams.set('part', 'snippet');
     url.searchParams.set('q', q);
@@ -388,7 +415,7 @@ export async function runSearchCollector(opts: { trigger?: string; perRun?: numb
     if (!t.nameBn) continue;
     for (const group of groups) {
       // "নাম" seat (site:… OR site:…) keeps the search on the outlets we cannot read.
-      const q = `"${t.nameBn}" ${t.seatBn ?? ''} (${group.map((s) => `site:${s}`).join(' OR ')})`.trim();
+      const q = `"${t.query?.name ?? t.nameBn}" ${(t.query ? t.query.seat : t.seatBn) ?? ''} (${group.map((s) => `site:${s}`).join(' OR ')})`.trim();
       try {
         const hits = await provider.search(q, { limit: 20 });
         for (const h of hits) {

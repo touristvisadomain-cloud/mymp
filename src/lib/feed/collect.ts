@@ -13,6 +13,7 @@
 import { allMembers, currentPosts, districtOf } from '@/lib/data';
 import { buildFeedIndex, matchItem, type FeedIndex, type FeedMp } from './matchMp';
 import { RSS_SOURCES, SITEMAP_SOURCES } from '../../../config/news-sources';
+import { pressNamesOf } from '../../../config/press-names';
 import { fetchFeed } from './rss';
 import {
   attach, attachedToday, finishRun, lastRun, nameVariants, startRun, turnOf, upsertItem,
@@ -50,7 +51,8 @@ export async function buildIndex(): Promise<FeedIndex> {
         posts: post?.titles ?? [],
         partyOffices: partyOffice(m.party?.abbr, m.partyRoleBn),
         ministries: post?.ministries ?? [],
-        variants: variants.get(m.id) ?? [],
+        // The editors' variants and the names the press prints (config/press-names.ts).
+        variants: [...(variants.get(m.id) ?? []), ...pressNamesOf(m.id).map((variant) => ({ variant, weight: 1 }))],
       };
     });
   return buildFeedIndex(mps);

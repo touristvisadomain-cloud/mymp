@@ -302,3 +302,27 @@ test('an office inside a quoted nickname is not the office holder', () => {
   assert.deepEqual(ids('সংসদ অধিবেশন সোমবার পর্যন্ত মুলতবি করলেন স্পিকার'), ['hafiz']);
   assert.deepEqual(ids('‘সংসদ সবার’, বললেন স্পিকার'), ['hafiz']);
 });
+
+test('a woman member under the name the press prints, without "মোছাঃ"', async () => {
+  const { pressNamesOf } = await import('../../../../config/press-names');
+  const { variantTokens } = await import('../matchMp');
+  const { searchName } = await import('../collectors');
+  const id = '013035001';
+  const members = [
+    { id, nameBn: 'মোছাঃ নুসরাত তাবাসসুম জ্যোতি', nameEn: 'Mst. Nusrat Tabassum Joty', seatBn: 'মহিলা আসন-৫০', seatEn: 'Women Seat-50', districtBn: null, districtEn: null, partyBn: 'জাতীয় নাগরিক পার্টি-এনসিপি', partyAbbr: 'NCP', posts: [], ministries: [], variants: pressNamesOf(id).map((variant) => ({ variant, weight: 1 })) },
+    ...MEMBERS.map((m) => ({ ...m, variants: [] })),
+  ];
+  const index = buildFeedIndex(members);
+  const score = (title: string) => matchItem(index, { title }).find((m) => m.mpId === id)?.score ?? 0;
+  // Headlines from Bangla Tribune, Desh Rupantor and TBS, May 2026.
+  assert.ok(score('শপথ নিলেন নুসরাত তাবাসসুম') >= 60);
+  assert.ok(score('সংসদের সর্বকনিষ্ঠ এমপি নুসরাত তাবাসসুম') >= 60);
+  assert.ok(score("NCP's Nusrat Tabassum takes oath as reserved seat MP") >= 60);
+  // "মোছাঃ" is a title, not a word of her name.
+  assert.deepEqual(variantTokens('মোছাঃ নুসরাত তাবাসসুম জ্যোতি'), variantTokens('নুসরাত তাবাসসুম জ্যোতি'));
+  // The searches ask for the printed name, and for others drop the leading title.
+  assert.equal(searchName(id, 'মোছাঃ নুসরাত তাবাসসুম জ্যোতি'), 'নুসরাত তাবাসসুম');
+  assert.equal(searchName('x', 'মোঃ জাহিদুর রহমান'), 'জাহিদুর রহমান');
+  assert.equal(searchName('x', 'মোসাম্মৎ শাম্মী আক্তার'), 'শাম্মী আক্তার');
+  assert.equal(searchName('x', 'তারেক রহমান'), 'তারেক রহমান');
+});
