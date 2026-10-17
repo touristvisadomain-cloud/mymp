@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from '@/i18n/Link';
-import { langAlternates, shareGraph } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import { getMemberById, GENERAL_SEATS, RESERVED_SEATS } from '@/lib/data';
 import { districtList } from '@/lib/districts';
 import { Page, PageHead, Stat, PartyDot } from '@/components/ui';
@@ -22,11 +23,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/ason'),
-    openGraph: shareGraph('/ason', undefined, t.lang),
+    ...pageShare('ason', t),
     title: t('সংসদীয় আসনের তালিকা ও প্রতিটি আসনের এমপি', 'Constituencies of Bangladesh and their MPs'),
-    description: t(
-      `ত্রয়োদশ জাতীয় সংসদের ${t.n(seatTotal)}টি সংসদীয় আসনের তালিকা, জেলা অনুযায়ী সাজানো, প্রতিটি আসনের বর্তমান সংসদ সদস্য ও দলসহ। তথ্যসূত্র বাংলাদেশ জাতীয় সংসদ।`,
-      `The ${seatTotal} constituencies of the 13th Parliament, listed by district, with each seat's current Member of Parliament and party. Source: Parliament of Bangladesh.`,
+    description: fitDescription(
+      t(
+        `ত্রয়োদশ জাতীয় সংসদের ${t.n(seatTotal)}টি সংসদীয় আসনের তালিকা, জেলা অনুযায়ী সাজানো, প্রতিটি আসনের বর্তমান সংসদ সদস্য ও দলসহ। তথ্যসূত্র বাংলাদেশ জাতীয় সংসদ।`,
+        `The ${seatTotal} constituencies of the 13th Parliament, listed by district, with each seat's current Member of Parliament and party. Source: Parliament of Bangladesh.`,
+      ),
     ),
   };
 }

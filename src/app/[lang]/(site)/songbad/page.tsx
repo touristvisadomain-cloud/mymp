@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import { bn, initial, getMember, allMembers, type Member } from '@/lib/data';
 import { newsPageStories } from '@/lib/feed/storyView';
 import { siteCounts, type SiteCounts } from '@/lib/feed/store';
@@ -17,11 +18,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/songbad'),
-    openGraph: shareGraph('/songbad', undefined, t.lang),
+    ...pageShare('songbad', t),
     title: t('সংসদ সদস্যদের খবর', 'News about the MPs of Bangladesh'),
-    description: t(
-      'সংসদ সদস্যদের নিয়ে দেশের সংবাদমাধ্যমের সর্বশেষ শিরোনাম, মূল খবরের লিংকসহ। প্রতিটি শিরোনাম সংশ্লিষ্ট সংসদ সদস্যের পাতাতেও দেখা যায়।',
-      "The latest headlines from the country's news media about members of parliament, with links to the original stories. Each headline also appears on the page of the member concerned.",
+    description: fitDescription(
+      t(
+        'সংসদ সদস্যদের নিয়ে দেশের সংবাদমাধ্যমের সর্বশেষ শিরোনাম, মূল খবরের লিংকসহ। প্রতিটি শিরোনাম সংশ্লিষ্ট সংসদ সদস্যের পাতাতেও দেখা যায়।',
+        "The latest headlines about MPs from Bangladesh's news media, with links to the original stories. Each headline also appears on the member's own page.",
+      ),
     ),
   };
 }

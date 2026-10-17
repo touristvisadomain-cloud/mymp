@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from '@/i18n/Link';
-import { langAlternates, shareGraph } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import { partyColor, statistics, RESERVED_SEATS } from '@/lib/data';
 import { reservedMembers as reserved, reservedByParty as byParty, reservedQuestions as questions } from '@/lib/reservedSeats';
 import { Page, PageHead, Stat, Card, MemberCard, PartyDot, DocLink } from '@/components/ui';
@@ -22,11 +23,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/sangrakkhito-ason'),
-    openGraph: shareGraph('/sangrakkhito-ason', undefined, t.lang),
+    ...pageShare('sangrakkhito-ason', t),
     title: t('সংরক্ষিত নারী আসনের এমপি তালিকা', 'Reserved seats for women: list of women MPs'),
-    description: t(
-      `ত্রয়োদশ জাতীয় সংসদের ${t.n(RESERVED_SEATS)}টি সংরক্ষিত নারী আসনের সংসদ সদস্যদের তালিকা, কে কোন দলের এবং কোন আসনের। সংরক্ষিত আসন কীভাবে ভাগ হয় ও কারা ভোট দেন, তা-ও এই পাতায়।`,
-      `A list of the Members of Parliament for the ${RESERVED_SEATS} reserved seats for women in the 13th Parliament: each one's party and seat. This page also explains how the reserved seats are shared out and who votes for them.`,
+    description: fitDescription(
+      t(
+        `ত্রয়োদশ জাতীয় সংসদের ${t.n(RESERVED_SEATS)}টি সংরক্ষিত নারী আসনের সংসদ সদস্যদের তালিকা, কে কোন দলের এবং কোন আসনের। সংরক্ষিত আসন কীভাবে ভাগ হয় ও কারা ভোট দেন, তা-ও এই পাতায়।`,
+        `The MPs in the ${RESERVED_SEATS} reserved seats for women in the 13th Parliament, with each one's party and seat, and how the seats are shared out and who elects them.`,
+      ),
     ),
   };
 }

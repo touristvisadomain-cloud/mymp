@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from '@/i18n/Link';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import { members, parties, bn, statistics, partyShortBn, districtOf } from '@/lib/data';
 import { Page, PageHead, Stat } from '@/components/ui';
 import MemberFilter from '@/components/MemberFilter';
@@ -11,11 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/mp'),
-    openGraph: shareGraph('/mp', undefined, t.lang),
+    ...pageShare('mp', t),
     title: t('সংসদ সদস্যদের তালিকা ২০২৬: সব এমপি', 'List of MPs of Bangladesh 2026'),
-    description: t(
-      `ত্রয়োদশ জাতীয় সংসদের ${bn(members.length)} জন সংসদ সদস্যের তালিকা: ${bn(generalSeats)}টি সাধারণ আসন ও ${bn(members.length - generalSeats)}টি সংরক্ষিত নারী আসন। নাম, দল, আসন বা জেলা দিয়ে খুঁজুন।`,
-      `The ${members.length} Members of the 13th Parliament: ${generalSeats} general seats and ${members.length - generalSeats} seats reserved for women. Search by name, party, seat or district.`,
+    description: fitDescription(
+      t(
+        `ত্রয়োদশ জাতীয় সংসদের ${bn(members.length)} জন সংসদ সদস্যের তালিকা: ${bn(generalSeats)}টি সাধারণ আসন ও ${bn(members.length - generalSeats)}টি সংরক্ষিত নারী আসন। নাম, দল, আসন বা জেলা দিয়ে খুঁজুন।`,
+        `The ${members.length} Members of the 13th Parliament: ${generalSeats} general seats and ${members.length - generalSeats} seats reserved for women. Search by name, party, seat or district.`,
+      ),
     ),
   };
 }

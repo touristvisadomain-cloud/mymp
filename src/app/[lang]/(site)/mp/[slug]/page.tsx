@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { shareGraph, shareTwitter, cardImage, langAlternates } from '@/lib/seo';
+import { shareGraph, shareTwitter, cardImage, langAlternates, fitDescription } from '@/lib/seo';
 import { sourceLabel, sourceList } from '@/lib/sourceLabel';
 import { mpDescription, mpTitle, partyBn, isIndependent, partyEnBare, possessiveEn } from '@/lib/seo/mpDescription';
 import Link from '@/i18n/Link';
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/mp/[slug]'
   const path = `/mp/${m.slug}`;
   // The member's own 1200x630 preview image (src/app/api/og/mp/[slug]/route.tsx).
   const image = cardImage(`/api/og/mp/${m.slug}${t.en ? "/en" : ""}`, mpTitle(m, t.lang));
-  const description = mpDescription(m, t.lang);
+  const description = fitDescription(mpDescription(m, t.lang));
   return {
     title: { absolute: mpTitle(m, t.lang) },
     description,

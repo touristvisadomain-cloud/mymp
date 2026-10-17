@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import Link from '@/i18n/Link';
 import { meta, bn, dateBn, statistics, committeeCounts, parties, GENERAL_SEATS, RESERVED_SEATS } from '@/lib/data';
 import { districtList } from '@/lib/districts';
@@ -10,11 +11,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/somporke'),
-    openGraph: shareGraph('/somporke', undefined, t.lang),
+    ...pageShare('somporke', t),
     title: t('সম্পর্কে', 'About'),
-    description: t(
-      'আমার এমপি বাংলাদেশের সংসদ সদস্যদের তথ্যের একটি স্বাধীন, উন্মুক্ত ওয়েবসাইট: কে আপনার এমপি, কোন দলের, কোন কমিটিতে, কীভাবে যোগাযোগ। কেন বানানো, কী আছে, তথ্য কোথা থেকে আসে আর কী দেখানো হয় না।',
-      'My MP is an independent, open website of information on the members of parliament of Bangladesh: who your MP is, which party they belong to, which committees they sit on, and how to contact them. Why it was made, what it holds, where the information comes from and what it does not show.',
+    description: fitDescription(
+      t(
+        'আমার এমপি বাংলাদেশের সংসদ সদস্যদের তথ্যের একটি স্বাধীন, উন্মুক্ত ওয়েবসাইট: কে আপনার এমপি, কোন দলের, কোন কমিটিতে, কীভাবে যোগাযোগ। কেন বানানো, কী আছে, তথ্য কোথা থেকে আসে আর কী দেখানো হয় না।',
+        'An independent, open website about the members of parliament of Bangladesh: who your MP is, their party, committees and contacts, and where the facts come from.',
+      ),
     ),
   };
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from '@/i18n/Link';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import { Page, PageHead, Card } from '@/components/ui';
 import { bn, dateBn, meta, ecs } from '@/lib/data';
 import { NEWS_SOURCES } from '../../../../../config/news-sources';
@@ -19,11 +20,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/sutro'),
-    openGraph: shareGraph('/sutro', undefined, t.lang),
+    ...pageShare('sutro', t),
     title: t('তথ্যসূত্র ও পদ্ধতি', 'Sources and method'),
-    description: t(
-      'আমার এমপির প্রতিটি তথ্য কোথা থেকে আসে: জাতীয় সংসদ, নির্বাচন কমিশন, মন্ত্রিপরিষদ বিভাগ, দ্য বিজনেস স্ট্যান্ডার্ড, উইকিপিডিয়া ও সংবাদমাধ্যম। কত দিন পরপর হালনাগাদ হয়, কীভাবে যাচাই হয়, আর "যাচাই করা হয়নি" লেবেলের মানে কী।',
-      'Where every piece of information on My MP comes from: the Parliament, the Election Commission, the Cabinet Division, The Business Standard, Wikipedia and the news media. How often it is updated, how it is checked, and what the "Not verified" label means.',
+    description: fitDescription(
+      t(
+        'আমার এমপির প্রতিটি তথ্য কোথা থেকে আসে: জাতীয় সংসদ, নির্বাচন কমিশন, মন্ত্রিপরিষদ বিভাগ, দ্য বিজনেস স্ট্যান্ডার্ড, উইকিপিডিয়া ও সংবাদমাধ্যম। কত দিন পরপর হালনাগাদ হয়, কীভাবে যাচাই হয়, আর "যাচাই করা হয়নি" লেবেলের মানে কী।',
+        'Where every fact on My MP comes from: Parliament, the Election Commission, the Cabinet Division, the press and Wikipedia. How it is updated and checked.',
+      ),
     ),
   };
 }

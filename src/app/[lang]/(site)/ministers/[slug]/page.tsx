@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from '@/i18n/Link';
 import { notFound } from 'next/navigation';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { shareGraph, shareTwitter, langAlternates, cardImage, fitDescription, withSiteName } from '@/lib/seo';
 import { dateBn } from '@/lib/data';
 import { allAdvisers, getAdviser, adviserPosts, adviserName, adviserRole, rankIn, type AdviserProfile } from '@/lib/advisers';
 import { sourceLabel } from '@/lib/sourceLabel';
@@ -37,7 +37,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const path = `/ministers/${a.slug}`;
   const portfolio = portfolioIn(rows, t.lang);
   let description: string;
-  let title: string;
+  /** Who and what, without the site's name: the title's core and the card's alt. */
+  let label: string;
   if (t.en) {
     // A name the English page can only give in Bangla stays out of the English title and description.
     const name = adviserName(a, 'en');
@@ -46,19 +47,24 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const rank = rankIn(a.rankBn, 'en');
     description = plain(
       `${who ? `${who}, ` : ''}${role}${rank ? ` (${rank.charAt(0).toLowerCase()}${rank.slice(1)})` : ''}${portfolio ? `; ${portfolio}` : ''}. Biography, education and responsibilities.`,
-    ).slice(0, 300);
-    title = who ? `${who} | ${role} | My MP` : `${role} | Cabinet | My MP`;
+    );
+    label = who ? `${who} | ${role}` : `${role} | Cabinet`;
   } else {
     description = plain(
       `${a.nameBn}, ${a.roleBn}${a.rankBn ? ` (${a.rankBn})` : ''}${portfolio ? `; ${portfolio}` : ''}। জীবনী, শিক্ষা ও দায়িত্ব।`,
-    ).slice(0, 300);
-    title = `${a.nameBn} | ${a.roleBn} | আমার এমপি`;
+    );
+    label = `${a.nameBn} | ${a.roleBn}`;
   }
+  description = fitDescription(description);
+  // Their own card (src/app/api/og/ministers/[slug]/route.tsx): photo, post and ministries.
+  const image = cardImage(`/api/og/ministers/${a.slug}${t.en ? '/en' : ''}`, label);
   return {
-    title: { absolute: title },
+    // With " | My MP" when the whole still fits what search results show.
+    title: { absolute: withSiteName(label, t.lang) },
     description,
     alternates: langAlternates(t.lang, path),
-    openGraph: { ...shareGraph(path, undefined, t.lang), description },
+    openGraph: { ...shareGraph(path, image, t.lang), description },
+    twitter: { ...shareTwitter(image), description },
   };
 }
 

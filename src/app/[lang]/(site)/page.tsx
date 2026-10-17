@@ -58,6 +58,7 @@ import Icon from "@/components/Icon";
 import { siteUrl } from "@/lib/site";
 import {
   BASE_TWITTER,
+  fitDescription,
   langAlternates,
   shareGraph,
   siteDescription,
@@ -68,8 +69,9 @@ import {
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   const title = siteTitle(t.lang);
-  const description = siteDescription(t.lang);
+  const description = fitDescription(siteDescription(t.lang));
   return {
+    description,
     alternates: langAlternates(t.lang, "/"),
     // A child segment replaces the whole openGraph/twitter object, so the shared parts are spread back in.
     openGraph: {

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import { Page, PageHead, Card } from '@/components/ui';
 import { dateBn } from '@/lib/data';
 import { SITE_EMAIL, SITE_FACEBOOK } from '@/lib/site';
@@ -21,11 +22,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/gopaniyota'),
-    openGraph: shareGraph('/gopaniyota', undefined, t.lang),
+    ...pageShare('gopaniyota', t),
     title: t('গোপনীয়তা নীতি ও ব্যবহারের শর্ত', 'Privacy policy and terms of use'),
-    description: t(
-      'আমার এমপি সাইট আপনার সম্পর্কে কোনো ব্যক্তিগত তথ্য সংগ্রহ করে না। সদস্যদের কোন তথ্য প্রকাশ হয় আর কোনটি হয় না, এবং সাইটের তথ্য কোন শর্তে ব্যবহার করা যায়, এই পাতায়।',
-      'The My MP site collects no personal information about you. Which information about members is published and which is not, and on what terms the site’s information may be used, are set out on this page.',
+    description: fitDescription(
+      t(
+        'আমার এমপি সাইট আপনার সম্পর্কে কোনো ব্যক্তিগত তথ্য সংগ্রহ করে না। সদস্যদের কোন তথ্য প্রকাশ হয় আর কোনটি হয় না, এবং সাইটের তথ্য কোন শর্তে ব্যবহার করা যায়, এই পাতায়।',
+        'My MP collects no personal information about you. What it publishes about members, what it leaves out, and the terms on which its information may be reused.',
+      ),
     ),
   };
 }

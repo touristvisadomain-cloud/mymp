@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import Link from '@/i18n/Link';
 import { statistics, parties, committees, bn, bnGroup, dateBn, meta, ecs, partyColor, AGE_BAND_EN } from '@/lib/data';
 import { Page, PageHead, Card, Stat, Empty } from '@/components/ui';
@@ -13,11 +14,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/parisonkhan'),
-    openGraph: shareGraph('/parisonkhan', undefined, t.lang),
+    ...pageShare('parisonkhan', t),
     title: t('সংসদ সদস্যদের পরিসংখ্যান', 'Statistics on the MPs of Bangladesh'),
-    description: t(
-      'ত্রয়োদশ জাতীয় সংসদের সদস্যদের পরিসংখ্যান: দলভিত্তিক আসন, নারী ও পুরুষ সদস্য, বয়স, পেশা ও কতবার নির্বাচিত, সংসদের তথ্যভান্ডার থেকে হিসাব করা।',
-      'Statistics on the members of the 13th Parliament: seats by party, women and men, age, profession and how many times elected, worked out from Parliament’s own database.',
+    description: fitDescription(
+      t(
+        'ত্রয়োদশ জাতীয় সংসদের সদস্যদের পরিসংখ্যান: দলভিত্তিক আসন, নারী ও পুরুষ সদস্য, বয়স, পেশা ও কতবার নির্বাচিত, সংসদের তথ্যভান্ডার থেকে হিসাব করা।',
+        'Statistics on the members of the 13th Parliament: seats by party, women and men, age, profession and terms served, worked out from Parliament’s own database.',
+      ),
     ),
   };
 }

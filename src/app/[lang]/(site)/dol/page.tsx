@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { shareGraph, langAlternates } from '@/lib/seo';
+import { langAlternates, fitDescription } from '@/lib/seo';
+import { pageShare } from '@/lib/og/pages';
 import Link from '@/i18n/Link';
 import { getT } from '@/i18n/server';
 import type { T } from '@/i18n/core';
@@ -17,11 +18,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     alternates: langAlternates(t.lang, '/dol'),
-    openGraph: shareGraph('/dol', undefined, t.lang),
+    ...pageShare('dol', t),
     title: t('রাজনৈতিক দল: সংসদে কোন দলের কত আসন', 'Political parties in the Parliament of Bangladesh'),
-    description: t(
-      `ত্রয়োদশ জাতীয় সংসদে প্রতিনিধিত্বকারী ${t.n(partyCount)}টি রাজনৈতিক দল ও ${t.n(independents)} জন স্বতন্ত্র সংসদ সদস্যের তালিকা, প্রতিটি দলের আসনসংখ্যা ও সংসদ সদস্যদের নামসহ।`,
-      `The ${t.count(partyCount, '', 'political party', 'political parties')} and ${t.count(independents, '', 'independent member', 'independent members')} in the 13th Parliament, with each party's seats and the names of its MPs.`,
+    description: fitDescription(
+      t(
+        `ত্রয়োদশ জাতীয় সংসদে প্রতিনিধিত্বকারী ${t.n(partyCount)}টি রাজনৈতিক দল ও ${t.n(independents)} জন স্বতন্ত্র সংসদ সদস্যের তালিকা, প্রতিটি দলের আসনসংখ্যা ও সংসদ সদস্যদের নামসহ।`,
+        `The ${t.count(partyCount, '', 'political party', 'political parties')} and ${t.count(independents, '', 'independent member', 'independent members')} in the 13th Parliament, with each party's seats and the names of its MPs.`,
+      ),
     ),
   };
 }
