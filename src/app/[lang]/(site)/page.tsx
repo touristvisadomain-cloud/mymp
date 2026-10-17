@@ -11,6 +11,7 @@ import {
   getParty,
   GENERAL_SEATS,
   HOUSE_SEATS,
+  currentPosts,
 } from "@/lib/data";
 import { districtList } from "@/lib/districts";
 import { finderSeats } from "@/lib/finderSeats";
@@ -48,6 +49,7 @@ import {
 } from "@/components/ui";
 import SiteSearch from "@/components/SiteSearch";
 import HouseComposition from "@/components/HouseComposition";
+import { experienceStats } from "@/lib/history";
 import StoryCard from "@/components/StoryCard";
 import HomeVideos from "@/components/HomeVideos";
 import Icon from "@/components/Icon";
@@ -132,6 +134,9 @@ export const revalidate = 300;
 export default async function Home() {
   const t = await getT();
   const stats = statistics();
+  const experience = experienceStats(t.lang);
+  // People in the cabinet: one per person, however many portfolios they hold.
+  const cabinetSize = new Set(currentPosts("government").map((p) => p.memberId ?? p.nameBn)).size;
   const [{ stories }, videos] = await Promise.all([
     newsPageStories(40),
     latestVideos(30),
@@ -252,6 +257,32 @@ export default async function Home() {
                     {c.label}
                   </Link>
                 ))}
+              </div>
+
+              {/* Four facts at a glance, each opening the page that has the rest (owner, 2026-10-17:
+                  the hero's left side stood empty beside the taller composition card). */}
+              <div className="rise [--rise-i:5] grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                {[
+                  { k: t("নারী সদস্য", "Women members"), v: t.n(stats.women), href: "/parisonkhan#nari" },
+                  { k: t("প্রথমবার সংসদে", "First-time MPs"), v: t.n(experience.firstTime), href: "/parisonkhan#obhiggota" },
+                  { k: t("মন্ত্রিসভায়", "In the Cabinet"), v: t.n(cabinetSize), href: "/ministers" },
+                  {
+                    k: t("মধ্যক বয়স", "Median age"),
+                    v: stats.medianAge == null ? "" : t(`${t.n(stats.medianAge)} বছর`, `${stats.medianAge} years`),
+                    href: "/parisonkhan#boyos",
+                  },
+                ]
+                  .filter((f) => f.v)
+                  .map((f) => (
+                    <Link
+                      key={f.href + f.k}
+                      href={f.href}
+                      className="group bg-surface/80 border border-rule rounded-xl px-4 py-3 flex flex-col gap-0.5 hover:border-brand transition-colors"
+                    >
+                      <span className="text-[12px] font-semibold text-muted">{f.k}</span>
+                      <span className="display tnum text-[24px] leading-tight text-ink group-hover:text-brand transition-colors">{f.v}</span>
+                    </Link>
+                  ))}
               </div>
             </div>
 
