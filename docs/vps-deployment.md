@@ -129,7 +129,12 @@ WORKER_SITE_JOBS=     # no longer needed; Supabase Cron handles everything
 RESEND_API_KEY=...    # for posts sync email notifications
 MAIL_FROM=...         # email sender address
 YOUTUBE_API_KEY=...   # for YouTube feed collector
+GOOGLE_TRANSLATE_KEY=...  # English headlines on /en (Google Cloud Translation v2); see docs/feed/README.md
+FEED_TRANSLATE_SUMMARIES= # 1 to translate feed summaries too (not shown on the site's pages; costs more)
 ```
+
+Without `GOOGLE_TRANSLATE_KEY` nothing is translated and the English pages
+show the Bangla headlines, marked as Bangla, as before.
 
 The sangsad worker jobs (`parliament`, `parliament:photos`, `parliament:report`, `news`, etc.) run as `pnpm worker <job>` inside the `sangsad/` directory via the `/api/cron/sangsad` API route. They use `SANGSAD_DATABASE_URL` (falling back to `DATABASE_URL`) with schema `sangsad`.
 
@@ -197,6 +202,11 @@ audit_log, sync_runs, election_results, posts, post_sync_runs,
 post_aliases, feed_items, feed_item_mps, mp_name_variants,
 mp_feed_settings, app_settings, feed_runs, feed_match_feedback
 ```
+
+and the English headline columns (`supabase/migrations/006_feed_title_en.sql`:
+`title_en`, `summary_en`, `en_source`, `en_at` on `feed_items`, and `title_en`,
+`excerpt_en`, `en_source`, `en_at` on `news_posts`). Every file is idempotent,
+so running `npm run db:migrate` again after a pull is safe.
 
 The Sangsad tables are not in this list and must not be recreated in `public`.
 

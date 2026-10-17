@@ -10,6 +10,7 @@ const SQL_FILES = [
   'supabase/migrations/002_election_results.sql',
   'supabase/migrations/003_posts.sql',
   'supabase/migrations/004_feed.sql',
+  'supabase/migrations/006_feed_title_en.sql',
 ];
 
 function loadEnvFile(text) {
