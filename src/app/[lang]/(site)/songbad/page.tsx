@@ -237,6 +237,16 @@ export default async function NewsPage() {
                   )}
                 </span>
               </li>
+              {t.en && (
+                <li className="flex gap-3">
+                  <span className="shrink-0 w-6 h-6 rounded-full bg-brandsoft text-brand text-[12px] font-bold grid place-items-center tnum">5</span>
+                  <span>
+                    On these English pages, headlines are translated automatically from Bangla by Google Translate, so they may read
+                    awkwardly or miss a nuance; open a story to read the original. Only the headline&rsquo;s text is sent to Google, nothing
+                    about you. A headline not yet translated is shown in Bangla.
+                  </span>
+                </li>
+              )}
             </ol>
           </Card>
         </aside>

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import Link from '@/i18n/Link';
 import { useT } from '@/i18n/client';
 import { outletName } from '@/i18n/names';
+import { englishHeadline, MACHINE_TITLE } from '@/lib/headline';
 
 /** `titleEn`: the headline in English (machine-translated), for the English pages; null until translated. */
 export type TickerItem = { id: string; titleBn: string; titleEn?: string | null; sourceName: string; sourceUrl: string };
@@ -45,13 +46,16 @@ export default function NewsTicker({ initial }: { initial: TickerItem[] }) {
 
   if (!items.length) return null;
 
+  // English pages: the English headline once translated, the Bangla (marked) until then.
+  const head = (n: TickerItem) => (t.en ? englishHeadline(bnText(n.titleBn) ?? n.titleBn, n.titleEn) : null);
+
   // A steady reading speed whatever the number of headlines: about 6.5 characters a second.
-  const chars = items.reduce((n, i) => n + i.titleBn.length + 6, 0);
+  const chars = items.reduce((n, i) => n + (head(i)?.text ?? i.titleBn).length + 6, 0);
   const duration = Math.max(25, Math.round(chars / 6.5));
 
   const row = (copy: boolean) => (
-    // The headlines are the outlets' own, in Bangla, on the English pages too.
-    <ul className="ticker-row flex shrink-0" aria-hidden={copy || undefined} lang="bn">
+    // The headlines are the outlets' own, in Bangla; on the English pages, in English once translated.
+    <ul className="ticker-row flex shrink-0" aria-hidden={copy || undefined} lang={t.en ? undefined : 'bn'}>
       {items.map((n) => (
         <li key={n.id} className="flex items-center whitespace-nowrap">
           <a
@@ -59,9 +63,11 @@ export default function NewsTicker({ initial }: { initial: TickerItem[] }) {
             target="_blank"
             rel="noopener noreferrer nofollow"
             tabIndex={copy ? -1 : undefined}
+            lang={head(n)?.lang}
+            title={head(n)?.machine ? MACHINE_TITLE : undefined}
             className="hover:text-brand"
           >
-            {bnText(n.titleBn)}
+            {t.en ? head(n)!.text : bnText(n.titleBn)}
             <span className="ms-1.5 text-[12.5px] font-normal text-muted" lang={t.lang}>({outletName(n.sourceName, t.lang)})</span>
           </a>
         </li>

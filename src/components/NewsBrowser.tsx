@@ -7,6 +7,8 @@ import RangePicker, { dateLabel, parseRange, rangeLabel } from './RangePicker';
 import type { StoryView, StoryMember } from '@/lib/newsView';
 import { useT } from '@/i18n/client';
 import { plural } from '@/i18n/core';
+import MachineNote from './MachineNote';
+import { anyMachine } from '@/lib/headline';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const bn = (n: number) => String(n).replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
@@ -136,7 +138,7 @@ export default function NewsBrowser({
   const keyed = useMemo(
     () => stories.map((s) => ({
       s,
-      key: fold([s.lead.title, ...s.also.map((a) => a.title), ...(s.members ?? (s.member ? [s.member] : [])).flatMap((m) => [m.name, m.nameEn ?? ''])].join(' ')),
+      key: fold([s.lead.title, s.lead.titleEn ?? '', ...s.also.map((a) => a.title), ...(s.members ?? (s.member ? [s.member] : [])).flatMap((m) => [m.name, m.nameEn ?? ''])].join(' ')),
     })),
     [stories],
   );
@@ -255,6 +257,9 @@ export default function NewsBrowser({
           </button>
         )}
       </p>
+
+      {/* English pages: one line saying the headlines are machine translations, when some shown are. */}
+      {t.en && !loading && anyMachine(visible.map((s) => s.lead)) && <MachineNote className="-mt-4" />}
 
       {loading ? null : filtered.length === 0 ? (
         <p className="py-10 text-center text-[15px] text-muted">

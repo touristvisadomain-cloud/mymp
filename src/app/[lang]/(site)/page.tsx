@@ -52,6 +52,8 @@ import HouseComposition from "@/components/HouseComposition";
 import { experienceStats } from "@/lib/history";
 import StoryCard from "@/components/StoryCard";
 import HomeVideos from "@/components/HomeVideos";
+import MachineNote from "@/components/MachineNote";
+import { anyMachine } from "@/lib/headline";
 import Icon from "@/components/Icon";
 import { siteUrl } from "@/lib/site";
 import {
@@ -511,6 +513,8 @@ export default async function Home() {
               )}
             />
           )}
+          {/* English: one line saying the headlines are machine translations, when some are. */}
+          {t.en && anyMachine(latestNews.map((s) => s.lead)) && <MachineNote />}
         </section>
 
         {videos.some((v) => v.thumbnail) && (
