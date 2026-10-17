@@ -13,7 +13,7 @@ const fromBuild = (): TickerItem[] =>
   [...(newsJson as NewsPost[])]
     .sort((a, b) => b.publishedOn.localeCompare(a.publishedOn))
     .slice(0, LIMIT)
-    .map(({ id, titleBn, sourceName, sourceUrl }) => ({ id, titleBn, sourceName, sourceUrl }));
+    .map(({ id, titleBn, titleEn, sourceName, sourceUrl }) => ({ id, titleBn, titleEn: titleEn ?? null, sourceName, sourceUrl }));
 
 /** Published headlines only, newest first, the same filter the site sync uses. */
 async function fromDatabase(): Promise<TickerItem[] | null> {
@@ -21,13 +21,17 @@ async function fromDatabase(): Promise<TickerItem[] | null> {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
   try {
-    const r = await fetch(
-      `${url}/rest/v1/news_posts?select=id,title_bn,source_name,source_url&status=eq.published&order=published_on.desc,created_at.desc&limit=${LIMIT}`,
-      { headers: { apikey: key, Authorization: `Bearer ${key}` }, next: { revalidate } },
-    );
+    const read = (columns: string) =>
+      fetch(
+        `${url}/rest/v1/news_posts?select=${columns}&status=eq.published&order=published_on.desc,created_at.desc&limit=${LIMIT}`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` }, next: { revalidate } },
+      );
+    // With the English headline once supabase/migrations/006 has added it; without, until then.
+    let r = await read('id,title_bn,title_en,source_name,source_url');
+    if (r.status === 400) r = await read('id,title_bn,source_name,source_url');
     if (!r.ok) return null;
-    const rows = (await r.json()) as { id: string; title_bn: string; source_name: string; source_url: string }[];
-    return rows.map((x) => ({ id: x.id, titleBn: x.title_bn, sourceName: x.source_name, sourceUrl: x.source_url }));
+    const rows = (await r.json()) as { id: string; title_bn: string; title_en?: string | null; source_name: string; source_url: string }[];
+    return rows.map((x) => ({ id: x.id, titleBn: x.title_bn, titleEn: x.title_en ?? null, sourceName: x.source_name, sourceUrl: x.source_url }));
   } catch {
     return null;
   }

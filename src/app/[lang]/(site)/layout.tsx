@@ -71,7 +71,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   // The ticker starts from this build's headlines and then asks for newer ones itself.
   const headlines = publishedNews()
     .slice(0, 12)
-    .map(({ id, titleBn, sourceName, sourceUrl }) => ({ id, titleBn, sourceName, sourceUrl }));
+    .map(({ id, titleBn, titleEn, sourceName, sourceUrl }) => ({ id, titleBn, titleEn: titleEn ?? null, sourceName, sourceUrl }));
 
   return (
     <>

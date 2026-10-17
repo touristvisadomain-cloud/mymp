@@ -5,8 +5,9 @@
  * The language is `?lang=bn` (the default) or `?lang=en`. The fields keep the
  * names the first app versions read (`nameBn`, `seatBn`…); on an English
  * response they carry the English, and a text with no English yet is null,
- * never the Bangla in its place. News headlines are the one exception: they
- * are the outlets' own words and stay in Bangla (docs/app-api.md).
+ * never the Bangla in its place. News headlines are the one exception: the
+ * English (machine-translated) when there is some, the outlet's own Bangla
+ * until then, never null, with the original beside it (docs/app-api.md).
  *
  * Every response may be read from any origin (the app's web build runs on
  * another), is cached at the edge for as long as the route says, and is

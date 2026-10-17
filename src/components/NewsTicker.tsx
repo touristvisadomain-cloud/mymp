@@ -7,7 +7,8 @@ import Link from '@/i18n/Link';
 import { useT } from '@/i18n/client';
 import { outletName } from '@/i18n/names';
 
-export type TickerItem = { id: string; titleBn: string; sourceName: string; sourceUrl: string };
+/** `titleEn`: the headline in English (machine-translated), for the English pages; null until translated. */
+export type TickerItem = { id: string; titleBn: string; titleEn?: string | null; sourceName: string; sourceUrl: string };
 
 // The news job adds headlines every 30 minutes; the site rebuilds only every three hours.
 const REFRESH_MS = 5 * 60_000;

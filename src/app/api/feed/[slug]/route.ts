@@ -6,7 +6,7 @@
  * month list; `?m=2026-08` brings one earlier month when a reader opens it,
  * `?from=2026-10-10&to=2026-10-15` a span of days the reader picked, and
  * `?recent=60` the newest items whatever their month (the app's member page).
- * `?lang=en` names the outlets in English.
+ * `?lang=en` names the outlets in English and puts the English headline in `title`.
  *
  * Cached at the edge for five minutes: a headline that lands during a coffee
  * break is soon enough, and the site keeps its "no function on the read path
@@ -99,9 +99,11 @@ async function handle(req: Request, ctx: { params: Promise<{ slug: string }> }) 
 }
 
 /**
- * The JSON, gzipped for a browser that accepts it (lib/gzipJson). With
- * `?lang=en` (the app's English version) the outlets are named in English;
- * the headlines stay as the outlets wrote them.
+ * The JSON, gzipped for a browser that accepts it (lib/gzipJson). Every item
+ * carries `titleEn` and `summaryEn` (the English, null until translated). With
+ * `?lang=en` (the app's English version) the outlets are named in English and
+ * `title`/`summary` are the English where there is some, the outlet's own in
+ * `titleOriginal`/`summaryOriginal` (lib/app/news.ts, feedInEnglish).
  */
 export async function GET(req: Request, ctx: { params: Promise<{ slug: string }> }) {
   let res = await handle(req, ctx);
