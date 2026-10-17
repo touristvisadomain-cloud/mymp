@@ -73,7 +73,6 @@ export default async function DistrictPage({ params }: PageProps<'/[lang]/jela/[
           colors={Object.fromEntries(rows.map(({ seat, m }) => [seat.slug, partyColor(m?.party?.abbr)]))}
           seatNames={Object.fromEntries(d.seats.map((s) => [s.slug, t.en ? seatName(s, 'en') || s.slug : s.nameBn ?? s.nameEn ?? s.slug]))}
           title={t(`${d.bn} জেলা`, `${name} district`)}
-          startOnClick
         />
       </section>
 
