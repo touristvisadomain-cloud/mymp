@@ -16,7 +16,7 @@ import { getT } from '@/i18n/server';
  * The English is a translation of the Bangla, sentence for sentence: it says
  * no more and no less. Change both together.
  */
-const UPDATED = '2026-09-12';
+const UPDATED = '2026-10-17';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -96,6 +96,12 @@ export default async function PrivacyPage() {
               collected through it either.
             </p>
             <p>
+              The election map&rsquo;s background is Google Maps. When you open that map, your browser loads it from Google, which receives
+              the usual technical data to show it (such as your IP address and the kind of browser), under{' '}
+              <a href="https://policies.google.com/privacy" className="underline">Google&rsquo;s privacy policy</a>. The map does not ask
+              where you are.
+            </p>
+            <p>
               The site is hosted on our own server. Like any web server, it keeps ordinary server logs for a limited time (such as IP
               addresses and the times of requests), which help with security and with keeping the service running. We do not look at these logs
               or use them for any purpose.
@@ -109,12 +115,15 @@ export default async function PrivacyPage() {
 
           <Section title="Android app">
             <p>
-              The &ldquo;My MP&rdquo; app shows this same site&rsquo;s information and works on the same policy: no account is needed, no
-              personal information is collected, and there is no advertising or third-party tracking. Our answer on Google Play&rsquo;s
-              Data safety form is therefore &ldquo;No data collected&rdquo;.
+              The &ldquo;My MP&rdquo; app shows this same site&rsquo;s information and works on the same policy: no account is needed, the
+              app itself collects no personal information, and there is no advertising or tracking. Its maps are Google Maps: to show
+              them, Google receives the usual technical data from your phone (such as its IP address and the kind of phone and app),
+              under <a href="https://policies.google.com/privacy" className="underline">Google&rsquo;s privacy policy</a>. Our answers on
+              Google Play&rsquo;s Data safety form list what Google&rsquo;s maps receive, and nothing else.
             </p>
             <p>
-              The app asks only for permission to use the internet, to fetch information from mymp.bd. The list of members of parliament
+              The app asks only for permission to use the internet and to see whether there is a network, to fetch information from
+              mymp.bd and Google&rsquo;s maps; it does not ask for your location. The list of members of parliament
               is stored on your phone itself, so that the app opens even when there is no network; this copy stays only on your phone,
               is not sent anywhere, and is deleted when you delete the app.
             </p>
@@ -187,6 +196,12 @@ export default async function PrivacyPage() {
             বোঝার জন্য কোনো পরিসংখ্যান সেবা যুক্ত হলে এই পাতায় তা জানানো হবে এবং তাতেও ব্যক্তিগত পরিচয় সংগ্রহ করা হবে না।
           </p>
           <p>
+            নির্বাচনের মানচিত্রের পটভূমি Google Maps-এর। মানচিত্রটি খুললে আপনার ব্রাউজার সেটি Google থেকে আনে, আর তা
+            দেখানোর জন্য Google সাধারণ কারিগরি তথ্য পায় (যেমন IP ঠিকানা ও ব্রাউজারের ধরন), যা{' '}
+            <a href="https://policies.google.com/privacy" className="underline">Google-এর গোপনীয়তা নীতি</a>র অধীন। মানচিত্র আপনার
+            অবস্থান জানতে চায় না।
+          </p>
+          <p>
             সাইটটি আমাদের নিজস্ব সার্ভারে হোস্ট করা। যেকোনো ওয়েব সার্ভারের মতো সেটি সীমিত সময়ের জন্য সাধারণ সার্ভার লগ রাখে (যেমন IP
             ঠিকানা ও অনুরোধের সময়), যা নিরাপত্তা ও সেবা সচল রাখার কাজে লাগে। আমরা এই লগ দেখি না বা কোনো কাজে ব্যবহার করি না।
           </p>
@@ -199,12 +214,15 @@ export default async function PrivacyPage() {
 
         <Section title="অ্যান্ড্রয়েড অ্যাপ">
           <p>
-            “আমার এমপি” অ্যাপটি এই সাইটেরই তথ্য দেখায় এবং একই নীতিতে চলে: কোনো অ্যাকাউন্ট লাগে না, কোনো ব্যক্তিগত তথ্য
-            সংগ্রহ করা হয় না, কোনো বিজ্ঞাপন বা তৃতীয় পক্ষের ট্র্যাকিং নেই। Google Play-র ডেটা সেফটি ফর্মে আমাদের উত্তর
-            তাই “কোনো তথ্য সংগ্রহ করা হয় না”।
+            “আমার এমপি” অ্যাপটি এই সাইটেরই তথ্য দেখায় এবং একই নীতিতে চলে: কোনো অ্যাকাউন্ট লাগে না, অ্যাপ নিজে কোনো
+            ব্যক্তিগত তথ্য সংগ্রহ করে না, কোনো বিজ্ঞাপন বা ট্র্যাকিং নেই। অ্যাপের মানচিত্র Google Maps-এর: তা দেখানোর জন্য
+            Google আপনার ফোন থেকে সাধারণ কারিগরি তথ্য পায় (যেমন IP ঠিকানা, ফোন ও অ্যাপের ধরন), যা{' '}
+            <a href="https://policies.google.com/privacy" className="underline">Google-এর গোপনীয়তা নীতি</a>র অধীন। Google Play-র
+            ডেটা সেফটি ফর্মে আমাদের উত্তরে শুধু Google-এর মানচিত্র যা পায় তা-ই আছে।
           </p>
           <p>
-            অ্যাপ শুধু ইন্টারনেট ব্যবহারের অনুমতি চায়, mymp.bd থেকে তথ্য আনার জন্য। সংসদ সদস্যদের তালিকাটি আপনার ফোনেই
+            অ্যাপ শুধু ইন্টারনেট ব্যবহার আর নেটওয়ার্ক আছে কিনা দেখার অনুমতি চায়, mymp.bd ও Google-এর মানচিত্র থেকে তথ্য আনার
+            জন্য; আপনার অবস্থান জানতে চায় না। সংসদ সদস্যদের তালিকাটি আপনার ফোনেই
             জমা রাখা হয়, যাতে নেটওয়ার্ক না থাকলেও অ্যাপ খোলে; এই কপি শুধু আপনার ফোনে থাকে, কোথাও পাঠানো হয় না, আর
             অ্যাপ মুছে ফেললে তাও মুছে যায়।
           </p>
