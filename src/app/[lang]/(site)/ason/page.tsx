@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     alternates: langAlternates(t.lang, '/ason'),
     openGraph: shareGraph('/ason', undefined, t.lang),
-    title: t('সব সংসদীয় আসন', 'All constituencies'),
+    title: t('সংসদীয় আসনের তালিকা ও প্রতিটি আসনের এমপি', 'Constituencies of Bangladesh and their MPs'),
     description: t(
       `ত্রয়োদশ জাতীয় সংসদের ${t.n(seatTotal)}টি সংসদীয় আসনের তালিকা, জেলা অনুযায়ী সাজানো, প্রতিটি আসনের বর্তমান সংসদ সদস্য ও দলসহ। তথ্যসূত্র বাংলাদেশ জাতীয় সংসদ।`,
       `The ${seatTotal} constituencies of the 13th Parliament, listed by district, with each seat's current Member of Parliament and party. Source: Parliament of Bangladesh.`,

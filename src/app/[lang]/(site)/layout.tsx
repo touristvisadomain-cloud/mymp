@@ -56,7 +56,12 @@ const ORGANIZATION = {
   '@type': 'Organization',
   '@id': `${siteUrl}/#organization`,
   name: 'আমার এমপি',
-  alternateName: ['mymp', 'My MP'],
+  alternateName: ['mymp', 'My MP', 'Amar MP', 'mymp.bd'],
+  description:
+    'বাংলাদেশ জাতীয় সংসদের সব সংসদ সদস্য, আসন, দল, কমিটি ও নির্বাচনী ফলের তথ্য, বাংলা ও ইংরেজিতে। Information on every Member of the Parliament of Bangladesh, in Bangla and English.',
+  areaServed: { '@type': 'Country', name: 'Bangladesh' },
+  knowsLanguage: ['bn', 'en'],
+  knowsAbout: ['Jatiya Sangsad', 'Parliament of Bangladesh', 'Members of Parliament of Bangladesh', 'Bangladesh election 2026'],
   url: siteUrl,
   logo: `${siteUrl}/icon-512.png`,
   email: SITE_EMAIL,

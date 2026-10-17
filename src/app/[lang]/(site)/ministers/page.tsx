@@ -125,7 +125,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     alternates: langAlternates(t.lang, '/ministers'),
     openGraph: shareGraph('/ministers', undefined, t.lang),
-    title: t('মন্ত্রিসভা', 'Cabinet'),
+    title: t('মন্ত্রিসভা: মন্ত্রী ও প্রতিমন্ত্রীদের তালিকা', 'Cabinet of Bangladesh: list of ministers'),
     description: t.en
       ? `The Cabinet of Bangladesh: the Prime Minister, ${t.count(count('মন্ত্রী'), '', 'minister', 'ministers')}, ${t.count(count('প্রতিমন্ত্রী'), '', 'state minister', 'state ministers')} and ${t.count(count('উপদেষ্টা'), '', 'adviser', 'advisers')}, with their ministries and the date each took charge. Source: the Cabinet Division.`
       : `বাংলাদেশের মন্ত্রিসভা: প্রধানমন্ত্রী, ${bn(count('মন্ত্রী'))} জন মন্ত্রী, ${bn(count('প্রতিমন্ত্রী'))} জন প্রতিমন্ত্রী ও ${bn(count('উপদেষ্টা'))} জন উপদেষ্টা, মন্ত্রণালয় ও দায়িত্ব পাওয়ার তারিখসহ। সূত্র মন্ত্রিপরিষদ বিভাগ।`,

@@ -105,7 +105,7 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/ason/[slug
         ? `The Member of Parliament for ${seatEn} is ${name}${party ? `, ${party}` : ''}.${won} ${s.reserved ? 'Party and parliamentary information.' : "Candidates' votes, earlier Members of Parliament and the seat's area."}`
         : `${s.reserved ? seatEn : `The ${seatEn} seat`} ${s.vacantSince ? `has been vacant since ${t.date(s.vacantSince)}` : 'is vacant at present'}. 13th Parliament; the seat's election results and earlier Members of Parliament.`
       : name
-        ? `${s.reserved ? `${s.nameBn}-এর` : `${s.nameBn} আসনের`} সংসদ সদস্য ${name}${m?.party?.nameBn ? `, ${m.party.nameBn}` : ''}।${won} ${s.reserved ? 'দল ও সংসদের তথ্য।' : 'প্রার্থীদের ভোট, আগের সংসদ সদস্য ও আসনের এলাকা।'}`
+        ? `${s.reserved ? `${s.nameBn}-এর` : `${s.nameBn} (${seatEn}) আসনের`} সংসদ সদস্য ${name}${m?.party?.nameBn ? `, ${m.party.nameBn}` : ''}।${won} ${s.reserved ? 'দল ও সংসদের তথ্য।' : 'প্রার্থীদের ভোট, আগের সংসদ সদস্য ও আসনের এলাকা।'}`
         : `${where} ${s.vacantSince ? `${dateBn(s.vacantSince)} থেকে শূন্য` : 'এখন শূন্য'}। ত্রয়োদশ জাতীয় সংসদ; আসনের নির্বাচনী ফল ও আগের সংসদ সদস্য।`,
   };
 }
@@ -130,7 +130,16 @@ export default async function SeatPage({ params }: PageProps<'/[lang]/ason/[slug
   const faqLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: [{ '@type': 'Question', name: answer.question, acceptedAnswer: { '@type': 'Answer', text: answer.sentence } }],
+    mainEntity: [
+      { '@type': 'Question', name: answer.question, acceptedAnswer: { '@type': 'Answer', text: answer.sentence } },
+      // The seat's area, as the page shows it: "which areas are in Dhaka-17" is the other thing people ask.
+      ...(() => {
+        const area = !seat.reserved ? translated(seat.boundaryBn, t.lang) : null;
+        if (!area) return [];
+        const q = t(`${seat.nameBn} আসন কোন কোন এলাকা নিয়ে গঠিত?`, `Which areas make up the ${seatName(seat, 'en')} constituency?`);
+        return [{ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: area.text } }];
+      })(),
+    ],
   };
 
   const idx = seats.findIndex((s) => s.no === seat.no);

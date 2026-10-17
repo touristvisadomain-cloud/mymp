@@ -36,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     alternates: langAlternates(t.lang, '/nirbachon'),
     openGraph: shareGraph('/nirbachon', undefined, t.lang),
-    title: t('ত্রয়োদশ জাতীয় সংসদ নির্বাচন', 'Election to the 13th Parliament'),
+    title: t('ত্রয়োদশ জাতীয় সংসদ নির্বাচন ২০২৬: ফলাফল', 'Bangladesh election 2026 results: 13th Parliament'),
     description: publishedSeats
       ? t(
           `২০২৬ সালের ত্রয়োদশ জাতীয় সংসদ নির্বাচন: ${t.n(publishedSeats)}টি আসনের প্রকাশিত ফল, প্রার্থী ও প্রাপ্ত ভোট, দলভিত্তিক আসনসংখ্যা এবং জেলা অনুযায়ী নির্বাচিত সংসদ সদস্য।`,

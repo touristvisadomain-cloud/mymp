@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     alternates: langAlternates(t.lang, '/jela'),
     openGraph: shareGraph('/jela', undefined, t.lang),
-    title: t('জেলা অনুযায়ী আসন ও সংসদ সদস্য', 'Seats and Members of Parliament by district'),
+    title: t('জেলাভিত্তিক সংসদীয় আসন ও এমপি তালিকা', 'Constituencies and MPs of Bangladesh by district'),
     description: t(
       `বাংলাদেশের ${t.n(districts.length)}টি জেলার ${t.n(seatTotal)}টি সংসদীয় আসন। নিজের জেলা বেছে সেখানকার প্রতিটি আসন ও বর্তমান সংসদ সদস্য দেখুন; তথ্যসূত্র বাংলাদেশ জাতীয় সংসদ।`,
       `The ${seatTotal} parliamentary seats in Bangladesh's ${districts.length} districts. Choose your district to see each of its seats and its current Member of Parliament; source: Parliament of Bangladesh.`,
