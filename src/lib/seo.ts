@@ -17,11 +17,81 @@ export const SITE_DESCRIPTION =
 export const SITE_NAME_EN = 'My MP';
 export const SITE_TITLE_EN = 'My MP | Members of the Parliament of Bangladesh';
 export const SITE_DESCRIPTION_EN =
-  'Every member of the 13th Jatiya Sangsad (the Parliament of Bangladesh) in one place: seats, parties, reserved seats for women, parliamentary committees and sessions. Sources: the Parliament of Bangladesh and the Election Commission.';
+  "Every member of Bangladesh's 13th Parliament: seats, parties, reserved seats for women, committees and sessions. From Parliament and the Election Commission.";
 
 export const siteName = (lang: Lang) => (lang === 'en' ? SITE_NAME_EN : SITE_NAME);
 export const siteTitle = (lang: Lang) => (lang === 'en' ? SITE_TITLE_EN : SITE_TITLE);
 export const siteDescription = (lang: Lang) => (lang === 'en' ? SITE_DESCRIPTION_EN : SITE_DESCRIPTION);
+
+/**
+ * Characters as a reader sees them: grapheme clusters, so a conjunct with its
+ * vowel sign counts once ("ত্রয়ো" is 3, not 7). The owner's own example
+ * description is 131 by this count and 204 in code points.
+ */
+const graphemes = new Intl.Segmenter('bn', { granularity: 'grapheme' });
+export const charCount = (s: string) => [...graphemes.segment(s)].length;
+
+/** About as much of a description as Google shows; a longer one is cut off mid-word in the result. */
+export const DESCRIPTION_MAX = 160;
+/** Where a description that runs over is cut, leaving room for the "…". */
+const DESCRIPTION_CUT = 158;
+/** A cut at a sentence's end is kept only when what is left still says this much. */
+const SENTENCE_MIN = 80;
+/** About as much of a title as Google shows, " | My MP" included. */
+export const TITLE_MAX = 60;
+
+/** A full stop after one of these is an abbreviation ("Dr. ", "মো. "), not a sentence's end. */
+const ABBREVIATION = /(?:^|[\s(])(?:Dr|Mr|Mrs|Ms|Md|Mst|St|No|Prof|Lt|Col|Gen|Brig|ড|ডা|মো|মোছা)$/;
+
+/**
+ * A description held to what search engines show. One that fits (160
+ * characters or fewer) is returned whole, so a Bangla description written to
+ * fit is never touched. A longer one ends at the last full sentence within
+ * 158 characters (। . ? !) when that still says enough, otherwise at the last
+ * whole word, with "…".
+ */
+export function fitDescription(text: string): string {
+  const s = text.replace(/\s+/g, ' ').trim();
+  if (charCount(s) <= DESCRIPTION_MAX) return s;
+  const g = [...graphemes.segment(s)].map((x) => x.segment);
+  const head = g.slice(0, DESCRIPTION_CUT).join('');
+  // One character past the cut shows whether a stop at the very end is followed by a space.
+  const probe = head + (g[DESCRIPTION_CUT] ?? '');
+  let end = -1;
+  for (const m of probe.matchAll(/[।.?!](?=\s)/g)) {
+    if (m.index + 1 > head.length) break;
+    if (m[0] === '.' && ABBREVIATION.test(probe.slice(0, m.index))) continue;
+    end = m.index + 1;
+  }
+  if (end > 0 && charCount(head.slice(0, end)) >= SENTENCE_MIN) return head.slice(0, end);
+  // A whole word, without a dangling comma or "and" before the "…".
+  const words = g.slice(0, DESCRIPTION_CUT - 1).join('');
+  const space = words.lastIndexOf(' ');
+  let cut = (space > 0 ? words.slice(0, space) : words).replace(/[\s,;:(–—-]+$/, '');
+  while (/\s(?:and|or|of|the|in|for|with|to|a|an|ও|এবং|বা)$/i.test(cut)) cut = cut.replace(/\s\S+$/, '').replace(/[\s,;:(–—-]+$/, '');
+  return `${cut}…`;
+}
+
+/**
+ * A page title held to what search engines show. Each candidate, best first,
+ * is tried with the site's name after it (the layout's " | My MP"), then on
+ * its own; the first that fits is used. When none does, the last stands on
+ * its own, since the site's name is the part a reader can most spare.
+ */
+export function fitTitle(lang: Lang, ...candidates: string[]): string | { absolute: string } {
+  const suffix = ` | ${siteName(lang)}`;
+  for (const c of candidates) {
+    if (charCount(c + suffix) <= TITLE_MAX) return c;
+    if (charCount(c) <= TITLE_MAX) return { absolute: c };
+  }
+  return { absolute: candidates[candidates.length - 1] ?? siteName(lang) };
+}
+
+/** A title that carries the site's name itself ({ absolute }): with " | My MP" when it fits, without when it does not. */
+export const withSiteName = (title: string, lang: Lang) => {
+  const full = `${title} | ${siteName(lang)}`;
+  return charCount(full) <= TITLE_MAX ? full : title;
+};
 
 /**
  * The version stamped on the drawn preview cards, /api/og/mp/[slug] and
