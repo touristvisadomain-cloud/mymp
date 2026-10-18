@@ -22,7 +22,7 @@ the app can never show something the site does not.
   [news/counts](#get-newscounts) · [sessions](#get-sessions) · [seats](#get-seats) ·
   [seat](#get-seatslug) · [district](#get-districtslug) · [reserved](#get-reserved) ·
   [party](#get-partyslug) · [committees](#get-committees) · [committee](#get-committeeslug)
-- Shared with the website: [/api/feed/{slug}](#get-apifeedslug) · [/api/news/range](#get-apinewsrange)
+- Shared with the website: [/api/feed/{slug}](#get-apifeedslug) · [/api/news/range](#get-apinewsrange) · [/place-names.json](#get-place-namesjson)
 
 ---
 
@@ -1044,9 +1044,9 @@ One committee (the website's `/committee/{slug}`). 404 for an unknown slug.
 
 ## Shared with the website
 
-These two routes are the website's own; the app reads them as they are. They
-send `access-control-allow-origin: *` on every answer and are gzipped. Five
-minutes at the edge.
+These routes are the website's own; the app reads them as they are. The two
+API routes send `access-control-allow-origin: *` on every answer and are
+gzipped. Five minutes at the edge.
 
 ### GET /api/feed/{slug}
 
@@ -1094,3 +1094,38 @@ lists.
 `version`/`lang`: `{from, to, stories[], next, counts}`. Each link has
 `titleEn` beside `title`.
 The app should prefer `/api/app/v1/news`.
+
+### GET /place-names.json
+
+The place search's list of places the boundary text does not name, a static
+file of the site (`public/place-names.json`, built by
+`scripts/build-place-names.ts`), the same in both languages; `lang` is
+ignored. About 480 KB, 70 KB gzipped. The app keeps a copy on the phone and
+fetches it again once a run.
+
+`{unions[], thanas[], source}`:
+
+- `unions[]`: `[bn, en, upazila, district, upazilaEn, inCity?]`. `upazila` is
+  spelled as the boundary text spells it, and the union's seats are found
+  through it, read the way the text means it (whole, these unions only, or
+  all but these). `inCity`, only for a union since taken into a city
+  corporation: the slugs of the seats that share the city's wards.
+- `thanas[]`: `[bn, en, slugs[], partial]`: a metropolitan thana and the seats
+  its OpenStreetMap points stand in; `partial` (always true) says it may reach
+  into a neighbouring seat.
+- `source`: the data's sources and licences.
+
+The finder that reads it is the website's `src/lib/findSeat.ts`
+(`findSeats(query, seats, limit, names)`), ported to the app's `lib/search.dart`.
+
+```json
+{
+  "unions": [
+    ["চরপাতা", "Charpata", "দৌলতখান", "ভোলা", "Doulatkhan"],
+    ["গাছা", "Gachha", "গাজীপুর সদর", "গাজীপুর", "Gazipur Sadar", ["gazipur-1", "gazipur-2", "gazipur-5"]],
+    "… 4,538 more"
+  ],
+  "thanas": [["গুলশান", "Gulshan", ["dhaka-17"], true], "… 85 more"],
+  "source": "Unions: github.com/nuhil/bangladesh-geocode (MIT). …"
+}
+```
