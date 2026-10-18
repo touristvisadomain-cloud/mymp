@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { buildIndex, search, type Entry, type IndexRow } from '@/lib/search';
-import { findSeats, toBangla, type FinderSeat, type SeatMatch } from '@/lib/findSeat';
+import { findSeats, toBangla, type FinderSeat, type PlaceNames, type SeatMatch } from '@/lib/findSeat';
 import { locatePlace } from '@/lib/locatePlace';
 import { useT } from '@/i18n/client';
 import type { T } from '@/i18n/core';
@@ -30,6 +30,7 @@ const PLACE_LABEL: Record<SeatMatch['kind'], string> = {
   upazila: 'উপজেলা',
   union: 'ইউনিয়ন',
   ward: 'সিটি ওয়ার্ড',
+  thana: 'থানা',
   place: 'এলাকা',
 };
 const PLACE_LABEL_EN: Record<SeatMatch['kind'], string> = {
@@ -38,6 +39,7 @@ const PLACE_LABEL_EN: Record<SeatMatch['kind'], string> = {
   upazila: 'Upazila',
   union: 'Union',
   ward: 'City ward',
+  thana: 'Thana',
   place: 'Area',
 };
 
@@ -55,6 +57,30 @@ function loadIndex(): Promise<Entry[]> {
   return cached;
 }
 
+/**
+ * Every union and the city thanas, for the home page's box only, fetched the
+ * first time someone types there (public/place-names.json, built by
+ * scripts/build-place-names.ts).
+ */
+let namesCached: Promise<PlaceNames | null> | null = null;
+function loadPlaceNames(): Promise<PlaceNames | null> {
+  if (!namesCached) {
+    namesCached = fetch('/place-names.json')
+      .then((r) => (r.ok ? (r.json() as Promise<PlaceNames>) : null))
+      .catch(() => null);
+  }
+  return namesCached;
+}
+
+/** Why a seat may hold only part of the place. */
+function partNote(m: SeatMatch, en: boolean): string | null {
+  if (!m.partial) return null;
+  if (m.kind === 'thana') return en ? 'The thana may reach into a neighbouring seat' : 'থানার কিছু এলাকা পাশের আসনেও থাকতে পারে';
+  if (m.kind === 'union') return en ? 'Now in the city corporation, shared by these seats' : 'এখন সিটি কর্পোরেশনে, এই আসনগুলোতে ভাগ';
+  if (m.kind === 'ward') return en ? 'Part of the city is in this seat' : 'সিটির একাংশ এই আসনে';
+  return en ? 'Part of the upazila is in this seat' : 'উপজেলার একাংশ এই আসনে';
+}
+
 /** The box, not the bare input, shows keyboard focus; the input itself has no outline. */
 const ring = 'focus-within:border-brand focus-within:ring-4 focus-within:ring-brandring';
 
@@ -70,6 +96,8 @@ interface Item {
   /** The title is in Bangla on an English page (an entry the index has no English for). */
   bnTitle?: boolean;
   group: 'place' | 'index';
+  /** A listed union: its name and upazila, to tell unions that share a name apart. */
+  union?: { place: string; upazila: string };
 }
 
 function placeItem(m: SeatMatch, t: T): Item {
@@ -82,20 +110,22 @@ function placeItem(m: SeatMatch, t: T): Item {
       url: who ? `/mp/${who.slug}` : `/ason/${m.seat.slug}`,
       // A member without an English name (none today) is shown by the seat's name rather than in Bangla.
       title: who ? name ?? seat : `${seat}: the seat is now vacant`,
-      sub: [name ? seat : null, who?.party ? partyShort({ abbr: who.party }, 'en') : null, m.partial ? `Part of the ${m.kind === 'ward' ? 'city' : 'upazila'} is in this seat` : null].filter(Boolean).join(' · '),
+      sub: [m.placeEn ?? null, name ? seat : null, who?.party ? partyShort({ abbr: who.party }, 'en') : null, partNote(m, true)].filter(Boolean).join(' · '),
       label: PLACE_LABEL_EN[m.kind],
       color: who?.color,
       group: 'place',
+      union: m.kind === 'union' && m.upazila ? { place: m.placeEn ?? '', upazila: m.upazilaEn ?? m.upazila } : undefined,
     };
   }
   return {
     key: `place-${m.seat.no}`,
     url: who ? `/mp/${who.slug}` : `/ason/${m.seat.slug}`,
     title: who?.name ?? `${m.seat.seat}: আসনটি এখন শূন্য`,
-    sub: [m.seat.seat, who?.partyBn, m.partial ? `${m.kind === 'ward' ? 'সিটির' : 'উপজেলার'} একাংশ এই আসনে` : null].filter(Boolean).join(' · '),
+    sub: [m.place ?? null, m.seat.seat, who?.partyBn, partNote(m, false)].filter(Boolean).join(' · '),
     label: PLACE_LABEL[m.kind],
     color: who?.color,
     group: 'place',
+    union: m.kind === 'union' && m.upazila ? { place: m.place ?? '', upazila: m.upazila } : undefined,
   };
 }
 
@@ -122,6 +152,7 @@ export default function SiteSearch({
   const router = useRouter();
   const listId = useId();
   const [index, setIndex] = useState<Entry[] | null>(null);
+  const [names, setNames] = useState<PlaceNames | null>(null);
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -135,6 +166,15 @@ export default function SiteSearch({
     loadIndex().then((idx) => alive && setIndex(idx));
     return () => { alive = false; };
   }, []);
+
+  // The union and thana list is only for the box that finds places, and only once someone types.
+  const typing = !!places && q.trim().length > 0;
+  useEffect(() => {
+    if (!typing || names) return;
+    let alive = true;
+    loadPlaceNames().then((n) => alive && setNames(n));
+    return () => { alive = false; };
+  }, [typing, names]);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -155,13 +195,27 @@ export default function SiteSearch({
         )
       : [];
     if (!places || query.length < 2) return fromIndex;
-    // A place the index does not know: an upazila, a union, a city ward. Seats
-    // and districts by name are already in the index.
-    const asBangla = toBangla(query, places.upazilaEn);
-    const found = findSeats(asBangla, places.seats, 6).filter((m) => m.kind !== 'seat' && m.kind !== 'district');
+    // A place the index does not know: an upazila, a union, a thana, a city
+    // ward. Seats and districts by name are already in the index.
+    // An English name that is exactly a union's or thana's stays as typed,
+    // rather than becoming an upazila a letter away ("Rampur", not Raipura).
+    const key = (s: string) => s.toLowerCase().replace(/\b(union|thana|upazila|upazilla)\b/g, '').replace(/[^a-z0-9]+/g, '');
+    const typedKey = key(query);
+    const upazilaExactly = !!typedKey && places.upazilaEn.some(([en]) => key(en) === typedKey);
+    const listedExactly = !!names && !!typedKey && !upazilaExactly && [...names.unions, ...names.thanas].some((r) => key(r[1]) === typedKey);
+    const asBangla = listedExactly ? query : toBangla(query, places.upazilaEn);
+    const byName = findSeats(asBangla, places.seats, 8, names ?? undefined);
+    // A union or thana typed in English is looked up by its English name too:
+    // toBangla knows only the upazilas, and may turn it into a near one.
+    const asTyped = names && asBangla !== query && !upazilaExactly ? findSeats(query, places.seats, 8, names).filter((m) => m.kind === 'union' || m.kind === 'thana') : [];
+    const nos = new Set(byName.map((m) => m.seat.no));
+    const found = [...byName, ...asTyped.filter((m) => !nos.has(m.seat.no) && (nos.add(m.seat.no), true))]
+      .filter((m) => m.kind !== 'seat' && m.kind !== 'district')
+      .sort((a, b) => b.score - a.score || a.seat.no - b.seat.no)
+      .slice(0, 8);
     const seen = new Set(found.map((m) => (m.seat.member ? `/mp/${m.seat.member.slug}` : `/ason/${m.seat.slug}`)));
     return [...found.map((m) => placeItem(m, t)), ...fromIndex.filter((i) => !seen.has(i.url))].slice(0, 12);
-  }, [index, q, places, located, t]);
+  }, [index, q, places, located, t, names]);
 
   function go(item: Item | undefined) {
     if (!item) return;
@@ -212,6 +266,11 @@ export default function SiteSearch({
   const showResults = open && (q.trim().length > 0 || !!located);
   const firstIndex = items.findIndex((i) => i.group === 'index');
   const hasPlaces = items.some((i) => i.group === 'place');
+  // Many unions share a name: with two or more of them found, say how to pick one, by an upazila among them.
+  const unionsFound = items.filter((i) => i.union);
+  const sharedName = q.trim() && new Set(unionsFound.map((i) => i.union!.place)).size >= 2
+    ? `${q.trim().replace(/\s*(ইউনিয়ন|union)\s*$/i, '')} ${unionsFound[0]!.union!.upazila}`
+    : null;
 
   return (
     <div ref={boxRef} className="relative">
@@ -277,12 +336,21 @@ export default function SiteSearch({
           role="listbox"
           className="absolute z-30 mt-2 end-0 w-full min-w-[300px] max-h-[420px] overflow-y-auto rounded-xl border border-rule bg-surface shadow-lg py-1"
         >
+          {sharedName && (
+            <li className="px-4 py-2.5 text-[13px] text-inksoft border-b border-rulesoft" role="presentation">
+              {t(`এই নামে কয়েকটি ইউনিয়ন আছে। নিজেরটি খুঁজতে সাথে উপজেলা বা জেলার নাম লিখুন, যেমন "${sharedName}"।`, `Several unions have this name. Add the upazila or district to find yours, for example "${sharedName}".`)}
+            </li>
+          )}
           {located && !q.trim() && (
             <li className="px-4 py-2.5 text-[13px] text-inksoft border-b border-rulesoft" role="presentation">{located.note}</li>
           )}
           {items.length === 0 && !located && (
             <li className="px-4 py-3 text-[14px] text-muted">
-              {index === null ? t('খোঁজা হচ্ছে…', 'Searching…') : t('কিছু পাওয়া যায়নি। বাংলা বা ইংরেজি, দুইভাবেই লেখা যায়।', 'Nothing found. You can type in Bangla or English.')}
+              {index === null
+                ? t('খোঁজা হচ্ছে…', 'Searching…')
+                : places
+                  ? t('কিছু পাওয়া যায়নি। গ্রাম বা মহল্লার নামে খোঁজা যায় না: ইউনিয়ন, উপজেলা বা থানার নাম লিখুন। বাংলা বা ইংরেজি, দুইভাবেই লেখা যায়।', 'Nothing found. Villages and neighbourhoods are not searchable: type the union, upazila or thana instead, in Bangla or English.')
+                  : t('কিছু পাওয়া যায়নি। বাংলা বা ইংরেজি, দুইভাবেই লেখা যায়।', 'Nothing found. You can type in Bangla or English.')}
             </li>
           )}
           {items.map((h, i) => (
