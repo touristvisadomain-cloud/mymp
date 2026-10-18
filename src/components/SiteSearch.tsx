@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { buildIndex, search, type Entry, type IndexRow } from '@/lib/search';
+import { buildIndex, matchTier, search, type Entry, type IndexRow } from '@/lib/search';
+import type { CabinetRow } from '@/lib/cabinetSearch';
 import { findSeats, toBangla, type FinderSeat, type PlaceNames, type SeatMatch } from '@/lib/findSeat';
 import { locatePlace } from '@/lib/locatePlace';
 import { useT } from '@/i18n/client';
@@ -95,7 +96,7 @@ interface Item {
   color?: string;
   /** The title is in Bangla on an English page (an entry the index has no English for). */
   bnTitle?: boolean;
-  group: 'place' | 'index';
+  group: 'cabinet' | 'place' | 'index';
   /** A listed union: its name and upazila, to tell unions that share a name apart. */
   union?: { place: string; upazila: string };
 }
@@ -135,6 +136,7 @@ export default function SiteSearch({
   withButton = false,
   placeholder,
   places,
+  cabinet,
 }: {
   compact?: boolean;
   autoFocus?: boolean;
@@ -146,6 +148,11 @@ export default function SiteSearch({
    * Bangla or English) and by where the visitor stands. The home page's box.
    */
   places?: { seats: FinderSeat[]; upazilaEn: [string, string][] };
+  /**
+   * Find a minister by the post: "ICT", "তথ্য", "Prime Minister",
+   * "prodhan montri" (src/lib/cabinetSearch.ts). The home page's box.
+   */
+  cabinet?: CabinetRow[];
 }) {
   const t = useT();
   placeholder ??= t('আসন, জেলা, এমপি বা দলের নাম লিখুন', 'Type the name of a seat, district, MP or party');
@@ -194,7 +201,18 @@ export default function SiteSearch({
             : { key: h.url, url: h.url, title: h.bn || h.en, sub: h.sub ?? null, label: TYPE_LABEL[h.type] ?? '', group: 'index' },
         )
       : [];
-    if (!places || query.length < 2) return fromIndex;
+    // A minister by the post's name or what people call it: only the best fit,
+    // so "prime" is the Prime Minister and not also primary education.
+    const tiers = cabinet && query.length >= 2 ? cabinet.map((r) => matchTier(query, r.texts)) : [];
+    const bestTier = Math.max(0, ...tiers);
+    const fromCabinet: Item[] = bestTier > 0
+      ? cabinet!
+          .filter((_, i) => tiers[i] === bestTier)
+          .slice(0, 6)
+          .map((r) => ({ key: `cabinet-${r.url}`, url: r.url, title: r.name, bnTitle: t.en && BANGLA.test(r.name), sub: r.post, label: t('মন্ত্রিসভা', 'Cabinet'), color: r.color, group: 'cabinet' }))
+      : [];
+    const cabinetUrls = new Set(fromCabinet.map((i) => i.url));
+    if (!places || query.length < 2) return [...fromCabinet, ...fromIndex.filter((i) => !cabinetUrls.has(i.url))];
     // A place the index does not know: an upazila, a union, a thana, a city
     // ward. Seats and districts by name are already in the index.
     // An English name that is exactly a union's or thana's stays as typed,
@@ -214,8 +232,9 @@ export default function SiteSearch({
       .sort((a, b) => b.score - a.score || a.seat.no - b.seat.no)
       .slice(0, 8);
     const seen = new Set(found.map((m) => (m.seat.member ? `/mp/${m.seat.member.slug}` : `/ason/${m.seat.slug}`)));
-    return [...found.map((m) => placeItem(m, t)), ...fromIndex.filter((i) => !seen.has(i.url))].slice(0, 12);
-  }, [index, q, places, located, t, names]);
+    const fromPlaces = found.map((m) => placeItem(m, t)).filter((i) => !cabinetUrls.has(i.url));
+    return [...fromCabinet, ...fromPlaces, ...fromIndex.filter((i) => !seen.has(i.url) && !cabinetUrls.has(i.url))].slice(0, 12);
+  }, [index, q, places, located, t, names, cabinet]);
 
   function go(item: Item | undefined) {
     if (!item) return;
@@ -265,7 +284,8 @@ export default function SiteSearch({
 
   const showResults = open && (q.trim().length > 0 || !!located);
   const firstIndex = items.findIndex((i) => i.group === 'index');
-  const hasPlaces = items.some((i) => i.group === 'place');
+  const firstPlace = items.findIndex((i) => i.group === 'place');
+  const firstCabinet = items.findIndex((i) => i.group === 'cabinet');
   // Many unions share a name: with two or more of them found, say how to pick one, by an upazila among them.
   const unionsFound = items.filter((i) => i.union);
   const sharedName = q.trim() && new Set(unionsFound.map((i) => i.union!.place)).size >= 2
@@ -355,10 +375,13 @@ export default function SiteSearch({
           )}
           {items.map((h, i) => (
             <li key={h.key} role="option" aria-selected={i === active}>
-              {i === 0 && hasPlaces && (
-                <span className="block px-4 pt-2 pb-1 text-[11.5px] font-bold tracking-[0.5px] text-brand">{t('আপনার এলাকার এমপি', 'The MP for your area')}</span>
+              {i === firstCabinet && (
+                <span className="block px-4 pt-2 pb-1 text-[11.5px] font-bold tracking-[0.5px] text-brand">{t('মন্ত্রিসভা', 'Cabinet')}</span>
               )}
-              {i === firstIndex && hasPlaces && i > 0 && (
+              {i === firstPlace && (
+                <span className={`block px-4 pt-2 pb-1 text-[11.5px] font-bold tracking-[0.5px] text-brand ${i > 0 ? 'border-t border-rulesoft' : ''}`}>{t('আপনার এলাকার এমপি', 'The MP for your area')}</span>
+              )}
+              {i === firstIndex && i > 0 && (
                 <span className="block px-4 pt-2.5 pb-1 text-[11.5px] font-bold tracking-[0.5px] text-muted border-t border-rulesoft">{t('আরও ফল', 'More results')}</span>
               )}
               <button

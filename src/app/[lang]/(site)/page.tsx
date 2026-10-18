@@ -48,6 +48,7 @@ import {
   DocLink,
 } from "@/components/ui";
 import SiteSearch from "@/components/SiteSearch";
+import { cabinetSearchRows } from "@/lib/cabinetSearch";
 import HouseComposition from "@/components/HouseComposition";
 import { experienceStats } from "@/lib/history";
 import StoryCard from "@/components/StoryCard";
@@ -247,6 +248,7 @@ export default async function Home() {
                     "Name of an upazila, union, thana, seat, MP or party, in Bangla or English",
                   )}
                   places={{ seats: finderSeatsIn(t.lang), upazilaEn: upazilaEn as [string, string][] }}
+                  cabinet={cabinetSearchRows(t.lang)}
                 />
               </div>
               <div className="rise [--rise-i:4] flex items-center gap-2.5 text-[13.5px] text-muted overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
