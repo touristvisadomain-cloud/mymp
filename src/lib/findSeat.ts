@@ -256,42 +256,60 @@ export function seatsForUnion(name: string, upazila: string, district: string, s
 }
 
 /** A district's English name, from the seats in it. */
-const districtEn = (bn: string, seats: FinderSeat[]) => seats.find((s) => s.district === bn)?.districtEn ?? '';
+const districtEn = (bn: string, seats: FinderSeat[]) => {
+  const f = fold(bn);
+  return seats.find((s) => fold(s.district) === f)?.districtEn ?? '';
+};
+
+/** The place list's names folded once, not on every keystroke. */
+const prepared = new WeakMap<PlaceNames, { unions: string[][]; unionsEn: string[]; thanas: string[][]; thanasEn: string[] }>();
+function prepare(names: PlaceNames) {
+  let p = prepared.get(names);
+  if (!p) {
+    p = {
+      unions: names.unions.map((r) => placeWords(r[0])),
+      unionsEn: names.unions.map((r) => latin(r[1])),
+      thanas: names.thanas.map((r) => placeWords(r[0])),
+      thanasEn: names.thanas.map((r) => latin(r[1])),
+    };
+    prepared.set(names, p);
+  }
+  return p;
+}
 
 /** Unions and thanas from the place list whose name is the query. */
 function byPlaceName(query: string, seats: FinderSeat[], names: PlaceNames): SeatMatch[] {
   const q = placeWords(query);
   if (!q.length || q.join('').length < 2) return [];
+  const pre = prepare(names);
   const english = /[a-z]/i.test(query);
   const typedWords = query.toLowerCase().replace(/\b(union|thana|upazila|upazilla|police station|ps)\b/g, ' ').split(/[^a-z0-9]+/).filter(Boolean);
   const typed = typedWords.join('');
   const sameLatin = (a: string, key: string) => !!key && (key === a || (a.length >= 6 && editDistance(a, key) <= 1));
   // "kalatia" is কলাতিয়া, not also করটিয়া a letter away: a name a letter off counts only when none is exact.
-  const exactLatin = english && [...names.unions, ...names.thanas].some((r) => latin(r[1]) === typed);
+  const exactLatin = english && [...pre.unionsEn, ...pre.thanasEn].includes(typed);
   const sameName = exactLatin ? (a: string, key: string) => !!key && key === a : sameLatin;
   /** The name, then perhaps words naming where it is: "চরপাতা দৌলতখান", "charpata bhola". */
-  const isName = (bn: string, en: string, where: string[] = []) => {
+  const isName = (w: string[], key: string, where: () => string[] = () => []) => {
     if (english) {
-      const key = latin(en);
       if (sameName(typed, key)) return true;
       // The union's own words, then its upazila's or district's.
       for (let n = 1; n < typedWords.length; n++) {
         if (!sameName(typedWords.slice(0, n).join(''), key)) continue;
         const rest = typedWords.slice(n).join('');
-        if (where.some((w) => sameLatin(rest, latin(w)) || (rest.length >= 4 && latin(w).startsWith(rest)))) return true;
+        if (where().some((x) => sameLatin(rest, latin(x)) || (rest.length >= 4 && latin(x).startsWith(rest)))) return true;
       }
       return false;
     }
-    const w = placeWords(bn);
     if (q.length < w.length || !w.every((x, i) => x === q[i])) return false;
     if (q.length === w.length) return true;
     const rest = q.slice(w.length);
-    return where.some((x) => nearRun(placeWords(x), rest) || hasRun(placeWords(x), rest, true));
+    return where().some((x) => nearRun(placeWords(x), rest) || hasRun(placeWords(x), rest, true));
   };
   const out: SeatMatch[] = [];
   const bySlug = new Map(seats.map((s) => [s.slug, s]));
-  for (const [bn, en, upazila, district, upazilaEn, inCity] of names.unions) {
-    if (!isName(bn, en, english ? [upazilaEn ?? '', districtEn(district, seats)] : [upazila, district])) continue;
+  names.unions.forEach(([bn, en, upazila, district, upazilaEn, inCity], i) => {
+    if (!isName(pre.unions[i]!, pre.unionsEn[i]!, () => (english ? [upazilaEn ?? '', districtEn(district, seats)] : [upazila, district]))) return;
     const named = { place: `${bn} ইউনিয়ন, ${upazila} উপজেলা`, placeEn: `${en} union, ${upazilaEn || upazila}`, upazila, upazilaEn: upazilaEn || undefined };
     if (inCity) {
       // Now city wards the text does not tie to the union: each seat that shares the city may hold it.
@@ -299,20 +317,20 @@ function byPlaceName(query: string, seats: FinderSeat[], names: PlaceNames): Sea
         const seat = bySlug.get(slug);
         if (seat) out.push({ seat, kind: 'union', clause: null, partial: true, score: LISTED_UNION - 10, ...named });
       }
-      continue;
+      return;
     }
     for (const seat of seatsForUnion(bn, upazila, district, seats)) {
       out.push({ seat, kind: 'union', clause: null, partial: false, score: LISTED_UNION, ...named });
     }
-  }
-  for (const [bn, en, slugs, partial] of names.thanas) {
-    if (!isName(bn, en)) continue;
+  });
+  names.thanas.forEach(([bn, en, slugs, partial], i) => {
+    if (!isName(pre.thanas[i]!, pre.thanasEn[i]!)) return;
     for (const slug of slugs) {
       const seat = bySlug.get(slug);
       // Every city thana is marked partial, so being partial costs it no rank.
       if (seat) out.push({ seat, kind: 'thana', clause: null, partial, score: RANK.thana, place: `${bn} থানা`, placeEn: `${en} thana` });
     }
-  }
+  });
   // One line a seat: the same union name in two upazilas of one seat is one answer.
   const seen = new Set<number>();
   return out.filter((m) => !seen.has(m.seat.no) && (seen.add(m.seat.no), true));
