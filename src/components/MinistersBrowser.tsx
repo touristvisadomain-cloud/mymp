@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQueryParam } from '@/lib/useQueryParam';
 import Link from '@/i18n/Link';
 import { useT } from '@/i18n/client';
-import { foldedMatch } from '@/lib/search';
+import { matchTier } from '@/lib/search';
 import MemberPhoto from './MemberPhoto';
 import PartyBadge from './PartyBadge';
 import Icon from './Icon';
@@ -30,6 +30,8 @@ export interface MinisterPerson {
    * it has no English. `aliases`: what people type for it ("ICT", "তথ্য"), for the search only.
    */
   ministries: { name: string | null; key: string; since: string | null; aliases?: string[] }[];
+  /** The rank as people type it ("Prime Minister", "prodhan montri"): for the search only. */
+  titleAliases?: string[];
   sourceUrl: string | null;
 }
 
@@ -260,17 +262,25 @@ export default function MinistersBrowser({
   const q = query.trim().toLowerCase();
   /**
    * A name, a ministry or a seat, as typed: any part of any matches. A
-   * ministry is also found by its shortcuts ("ICT", "তথ্য", "LGRD": config/
-   * ministry-aliases.ts), which the page sends with each card.
+   * ministry is also found by its shortcuts ("ICT", "তথ্য", "LGRD"), and a rank
+   * by its own ("Prime Minister", "prodhan montri"): config/ministry-aliases.ts,
+   * which the page sends with each card. Each card gets a tier (matchTier), and
+   * only the best tier among the cards is shown: "prime" is the Prime Minister,
+   * not also the primary-education ministers that fold to look like it.
    */
-  const matches = (p: MinisterPerson) => {
-    if (!q) return true;
-    if (p.name.toLowerCase().includes(q) || p.ministries.some((m) => (m.name ?? '').toLowerCase().includes(q)) || (p.seat ?? '').toLowerCase().includes(q)) return true;
-    return foldedMatch(query, [p.name, p.seat ?? '', ...p.ministries.flatMap((m) => [m.name ?? '', ...(m.aliases ?? [])])]);
+  const tierOf = (p: MinisterPerson): number => {
+    if (!q) return 1;
+    const plain = p.name.toLowerCase().includes(q) || p.ministries.some((m) => (m.name ?? '').toLowerCase().includes(q)) || (p.seat ?? '').toLowerCase().includes(q);
+    const tier = matchTier(query, [p.name, p.title, ...(p.titleAliases ?? []), p.seat ?? '', ...p.ministries.flatMap((m) => [m.name ?? '', ...(m.aliases ?? [])])]);
+    return Math.max(plain ? 3 : 0, tier);
   };
+  const inMinistry = (p: MinisterPerson) => !ministry || p.ministries.some((m) => m.key === ministry);
+  const tiers = new Map(groups.flatMap((g) => g.people).filter(inMinistry).map((p) => [p.key, tierOf(p)]));
+  const best = Math.max(0, ...tiers.values());
+  const matches = (p: MinisterPerson) => !q || (best > 0 && (tiers.get(p.key) ?? 0) === best);
   const shown = groups.map((g) => ({
     ...g,
-    people: g.people.filter((p) => (!ministry || p.ministries.some((m) => m.key === ministry)) && matches(p)),
+    people: g.people.filter((p) => inMinistry(p) && matches(p)),
   }));
   const filtering = !!ministry || !!q;
   const total = shown.reduce((n, g) => n + g.people.length, 0);

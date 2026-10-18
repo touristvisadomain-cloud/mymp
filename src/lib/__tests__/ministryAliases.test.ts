@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ministryAliases } from '../../../config/ministry-aliases';
-import { foldedMatch } from '../search';
+import { ministryAliases, rankAliases } from '../../../config/ministry-aliases';
+import { foldedMatch, matchTier } from '../search';
 
 // Run with: npm test
 
@@ -68,4 +68,53 @@ test('a short English word matches only as typed: rail is not religious', () => 
   assert.ok(found('rail', 'রেলপথ মন্ত্রণালয়'));
   assert.ok(!found('rail', 'ধর্ম বিষয়ক মন্ত্রণালয়'));
   assert.ok(!found('home', 'ধর্ম বিষয়ক মন্ত্রণালয়'));
+});
+
+/** A card's rank found the page's way: the title and its shortcuts. */
+const rankFound = (query: string, titleBn: string) => foldedMatch(query, [titleBn, ...rankAliases(titleBn)]);
+
+test('the Prime Minister, however it is typed', () => {
+  for (const q of ['Prime Minister', 'prime minister', 'Primie Minister', 'prime', 'PM', 'প্রধানমন্ত্রী', 'প্রধান মন্ত্রী', 'prodhan montri', 'profhan montri', 'prodhanmontri', 'pradhan mantri']) {
+    assert.ok(rankFound(q, 'প্রধানমন্ত্রী'), q);
+  }
+  for (const q of ['Prime Minister', 'prodhan montri', 'PM', 'প্রধানমন্ত্রী']) {
+    for (const other of ['মন্ত্রী', 'প্রতিমন্ত্রী', 'উপদেষ্টা']) assert.ok(!rankFound(q, other), `${q} is not ${other}`);
+  }
+});
+
+test('the other ranks by name', () => {
+  assert.ok(rankFound('state minister', 'প্রতিমন্ত্রী'));
+  assert.ok(rankFound('protimontri', 'প্রতিমন্ত্রী'));
+  assert.ok(rankFound('adviser', 'উপদেষ্টা'));
+  assert.ok(rankFound('advisor', 'উপদেষ্টা'));
+  assert.ok(!rankFound('zzzzz', 'প্রধানমন্ত্রী'));
+});
+
+/** A small cabinet, searched as the page does: only the best tier among the cards shows. */
+function cabinetSearch(query: string): string[] {
+  const cards = [
+    { who: 'PM', title: 'প্রধানমন্ত্রী', ministries: ['মন্ত্রিপরিষদ বিভাগ', 'প্রতিরক্ষা মন্ত্রণালয়'] },
+    { who: 'primary adviser', title: 'উপদেষ্টা', ministries: ['প্রাথমিক ও গণশিক্ষা মন্ত্রণালয়', 'শিক্ষা মন্ত্রণালয়'] },
+    { who: 'primary state minister', title: 'প্রতিমন্ত্রী', ministries: ['প্রাথমিক ও গণশিক্ষা মন্ত্রণালয়'] },
+    { who: 'ICT minister', title: 'মন্ত্রী', ministries: [ICT] },
+    { who: 'information minister', title: 'মন্ত্রী', ministries: [INFO] },
+    { who: 'railways minister', title: 'মন্ত্রী', ministries: ['রেলপথ মন্ত্রণালয়'] },
+  ];
+  const scored = cards.map((c) => ({ c, t: matchTier(query, [c.title, ...rankAliases(c.title), ...c.ministries.flatMap((m) => [m, ...ministryAliases(m)])]) }));
+  const best = Math.max(0, ...scored.map((x) => x.t));
+  return scored.filter((x) => best > 0 && x.t === best).map((x) => x.c.who);
+}
+
+test('prime is the Prime Minister alone, not the primary-education ministers', () => {
+  for (const q of ['Prime Minister', 'Primie Minister', 'prime', 'PM', 'প্রধানমন্ত্রী', 'প্রধান মন্ত্রী', 'prodhan montri', 'profhan montri', 'prodhanmontri']) {
+    assert.deepEqual(cabinetSearch(q), ['PM'], q);
+  }
+  assert.deepEqual(cabinetSearch('primary'), ['primary adviser', 'primary state minister']);
+  assert.deepEqual(cabinetSearch('ICT'), ['ICT minister']);
+  assert.deepEqual(cabinetSearch('totto'), ['information minister']);
+  // তথ্য is the information ministry's own word; তথ্যপ্রযুক্তি (ICT) only starts with it.
+  assert.deepEqual(cabinetSearch('তথ্য'), ['information minister']);
+  assert.deepEqual(cabinetSearch('তথ্যপ্রযুক্তি'), ['ICT minister']);
+  assert.deepEqual(cabinetSearch('rail'), ['railways minister']);
+  assert.deepEqual(cabinetSearch('zzzzz'), []);
 });

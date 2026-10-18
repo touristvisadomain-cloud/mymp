@@ -70,3 +70,23 @@ export function ministryAliases(ministryBn: string | null | undefined): string[]
   if (!ministryBn) return [];
   return BY_KEY.get(ministryKey(ministryBn)) ?? [];
 }
+
+/**
+ * The ranks as people type them, in either script and romanised: "Prime
+ * Minister", "PM", "prodhan montri", "প্রধান মন্ত্রী". Keyed by the list's own
+ * title. A typo of one letter in a longer English word ("primie", "profhan")
+ * is forgiven by the search itself, not listed here.
+ */
+const RANKS: Record<string, string[]> = {
+  'প্রধানমন্ত্রী': ['Prime Minister', 'PM', 'Premier', 'Prodhan Montri', 'Prodhanmontri', 'Prodhan Mantri', 'Pradhan Mantri', 'Prodhanmantri', 'প্রধান মন্ত্রী', 'সরকারপ্রধান', 'Head of Government'],
+  'মন্ত্রী': ['Minister', 'Montri', 'Mantri', 'Cabinet Minister', 'পূর্ণ মন্ত্রী'],
+  'প্রতিমন্ত্রী': ['State Minister', 'Minister of State', 'Protimontri', 'Proti Montri', 'Pratimantri', 'প্রতি মন্ত্রী'],
+  'উপমন্ত্রী': ['Deputy Minister', 'Upomontri', 'Upamantri', 'উপ মন্ত্রী'],
+  'উপদেষ্টা': ['Adviser', 'Advisor', 'Upodeshta', 'Upodesta', 'Upadeshta'],
+};
+
+/** The shortcuts for a rank as the list writes it ("প্রধানমন্ত্রী"); empty when there are none. */
+export function rankAliases(titleBn: string | null | undefined): string[] {
+  if (!titleBn) return [];
+  return RANKS[titleBn.trim()] ?? [];
+}

@@ -213,29 +213,61 @@ export function search(index: Entry[], raw: string, limit = 8): Entry[] {
     .map((r) => r.e);
 }
 
+function withinOne(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0;
+  while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  if (a.length === b.length) return a.slice(i + 1) === b.slice(i + 1);
+  return a.length > b.length ? a.slice(i + 1) === b.slice(i) : a.slice(i) === b.slice(i + 1);
+}
+
 /**
- * A short list matched the site search's way: every query word starts some
- * word of the texts, or the whole query without spaces starts one of them
- * without spaces ("আই সি টি" finds "আইসিটি"). Only the start of a word, and an
- * English word under five letters only as typed: folded spellings are short
- * ("zzzz" folds to "j", "rail" to "ral", the start of "religious") and would
- * match almost anything. Longer ones fold, so "totto" finds "Tottho". The
- * cabinet page uses it for names, seats, ministries and the ministries'
+ * How well a query fits a short list of texts, the site search's way, as a
+ * tier, so a page can show only the best ones:
+ *   4  the whole query is one of the texts, past spelling ("Primie Minister"
+ *      is "Prime Minister", "ict" is "ICT")
+ *   3  every query word starts a word as typed ("prime", "তথ্য")
+ *   2  ... once both are folded ("totto" and "Tottho")
+ *   1  ... with one slipped key in a longer English word ("profhan")
+ *   0  no fit
+ * Only the start of a word, and an English word under five letters only as
+ * typed: folded spellings are short ("zzzz" folds to "j", "rail" to "ral",
+ * the start of "religious") and would match almost anything. And folding
+ * makes "prime" look like "primary", which is why the tiers exist: a page
+ * that shows only its best tier gives "prime" the Prime Minister alone.
+ * The cabinet page uses it for names, seats, ministries, ranks and their
  * shortcuts (config/ministry-aliases.ts).
  */
-export function foldedMatch(query: string, texts: string[]): boolean {
+export function matchTier(query: string, texts: string[]): number {
   const raw = query.toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u).filter((w) => w.length >= 2);
-  if (!raw.length) return false;
+  if (!raw.length) return 0;
+  const whole = normalise(query);
+  const wholeCompact = whole.replace(/ /g, '');
+  const isShortLatin = (w: string) => /^[a-z0-9]+$/.test(w) && w.length < 5;
+  if (whole && !isShortLatin(wholeCompact) || wholeCompact.length >= 2) {
+    if (texts.some((t) => { const n = normalise(t); return n === whole || n.replace(/ /g, '') === wholeCompact; })) return 4;
+  }
   const textWords = texts.flatMap((t) => t.toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u)).filter(Boolean);
   const foldedWords = textWords.map(normalise).filter(Boolean);
-  const isShortLatin = (w: string) => /^[a-z0-9]+$/.test(w) && w.length < 5;
-  const one = (w: string) => {
-    if (textWords.some((x) => x.startsWith(w))) return true;
-    if (isShortLatin(w)) return false;
+  const tierOf = (w: string): number => {
+    if (textWords.some((x) => x.startsWith(w))) return 3;
+    if (isShortLatin(w)) return 0;
     const f = normalise(w);
-    return f.length >= 2 && foldedWords.some((x) => x.startsWith(f));
+    if (f.length >= 2 && foldedWords.some((x) => x.startsWith(f))) return 2;
+    // One slipped key in a longer English word: "primie" for "prime",
+    // "profhan" for "prodhan". Against the start of a word as long as the
+    // query, or the whole word.
+    if (/^[a-z]{5,}$/.test(w) && textWords.some((x) => /^[a-z]+$/.test(x) && (withinOne(w, x.slice(0, w.length)) || withinOne(w, x)))) return 1;
+    return 0;
   };
-  if (raw.every(one)) return true;
-  const whole = normalise(query).replace(/ /g, '');
-  return whole.length >= 3 && !isShortLatin(query.trim().toLowerCase()) && texts.some((t) => normalise(t).replace(/ /g, '').startsWith(whole));
+  const tier = Math.min(...raw.map(tierOf));
+  if (tier > 0) return tier;
+  // "আই সি টি" for "আইসিটি": the whole query without spaces starts a text without spaces.
+  return wholeCompact.length >= 3 && !isShortLatin(wholeCompact) && texts.some((t) => normalise(t).replace(/ /g, '').startsWith(wholeCompact)) ? 2 : 0;
+}
+
+/** Whether a query fits a short list of texts at all (matchTier above 0). */
+export function foldedMatch(query: string, texts: string[]): boolean {
+  return matchTier(query, texts) > 0;
 }
