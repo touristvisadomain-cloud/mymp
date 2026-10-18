@@ -243,8 +243,8 @@ export default async function Home() {
                 <SiteSearch
                   withButton
                   placeholder={t(
-                    "উপজেলা, ইউনিয়ন, আসন, এমপি বা দলের নাম, বাংলা বা ইংরেজিতে",
-                    "Name of an upazila, union, seat, MP or party, in Bangla or English",
+                    "উপজেলা, ইউনিয়ন, থানা, আসন, এমপি বা দলের নাম, বাংলা বা ইংরেজিতে",
+                    "Name of an upazila, union, thana, seat, MP or party, in Bangla or English",
                   )}
                   places={{ seats: finderSeatsIn(t.lang), upazilaEn: upazilaEn as [string, string][] }}
                 />
