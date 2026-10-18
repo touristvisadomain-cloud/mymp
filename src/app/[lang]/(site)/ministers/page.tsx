@@ -4,6 +4,7 @@ import { langAlternates, fitDescription } from '@/lib/seo';
 import { pageShare } from '@/lib/og/pages';
 import { posts, currentPosts, getMemberById, bn, dateBn, partyColor, postsCheckedOnBn } from '@/lib/data';
 import { ministryKey, normalizeName } from '@/lib/posts/names';
+import { ministryAliases } from '../../../../../config/ministry-aliases';
 import { adviserForPost, rankIn } from '@/lib/advisers';
 import { nameOf, plainName, firstLetter, changes } from '@/lib/cabinet';
 import { Page, PageHead, Card } from '@/components/ui';
@@ -85,14 +86,14 @@ function cabinet(t: T) {
       people.set(key, p);
     }
     if (r.ministryBn) {
-      p.ministries.push({ name: inLang(r.ministryBn, lang), key: ministryKey(r.ministryBn), since: lang === 'bn' ? dateBn(r.fromDate) : t.date(r.fromDate) });
+      p.ministries.push({ name: inLang(r.ministryBn, lang), key: ministryKey(r.ministryBn), since: lang === 'bn' ? dateBn(r.fromDate) : t.date(r.fromDate), aliases: ministryAliases(r.ministryBn) });
     }
   }
   for (const x of posts.pending ?? []) {
     const key = `${x.title}|pending|${normalizeName(x.nameBn)}`;
     people.set(key, {
       key, title: x.title, name: plainName(x.nameBn), nameLang: lang === 'en' ? 'bn' : undefined, href: null, photo: null, initial: firstLetter(x.nameBn), party: null, seat: null,
-      rankNote: null, isMp: false, pending: true, ministries: x.ministries.map((n) => ({ name: inLang(n, lang), key: ministryKey(n), since: null })),
+      rankNote: null, isMp: false, pending: true, ministries: x.ministries.map((n) => ({ name: inLang(n, lang), key: ministryKey(n), since: null, aliases: ministryAliases(n) })),
       sourceUrl: CABINET_PAGE_FOR_READERS,
     });
   }

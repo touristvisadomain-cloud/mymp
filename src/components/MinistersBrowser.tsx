@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQueryParam } from '@/lib/useQueryParam';
 import Link from '@/i18n/Link';
 import { useT } from '@/i18n/client';
+import { foldedMatch } from '@/lib/search';
 import MemberPhoto from './MemberPhoto';
 import PartyBadge from './PartyBadge';
 import Icon from './Icon';
@@ -24,8 +25,11 @@ export interface MinisterPerson {
   isMp: boolean;
   /** On the cabinet list, not yet placed by an editor as an MP or not. */
   pending: boolean;
-  /** Each ministry's name in the page's language; null on an English page while it has no English. */
-  ministries: { name: string | null; key: string; since: string | null }[];
+  /**
+   * Each ministry's name in the page's language; null on an English page while
+   * it has no English. `aliases`: what people type for it ("ICT", "তথ্য"), for the search only.
+   */
+  ministries: { name: string | null; key: string; since: string | null; aliases?: string[] }[];
   sourceUrl: string | null;
 }
 
@@ -254,9 +258,16 @@ export default function MinistersBrowser({
   const [ministry, setMinistry] = useQueryParam('ministry');
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
-  /** A name or a ministry, as typed: any part of either matches. */
-  const matches = (p: MinisterPerson) =>
-    !q || p.name.toLowerCase().includes(q) || p.ministries.some((m) => (m.name ?? '').toLowerCase().includes(q)) || (p.seat ?? '').toLowerCase().includes(q);
+  /**
+   * A name, a ministry or a seat, as typed: any part of any matches. A
+   * ministry is also found by its shortcuts ("ICT", "তথ্য", "LGRD": config/
+   * ministry-aliases.ts), which the page sends with each card.
+   */
+  const matches = (p: MinisterPerson) => {
+    if (!q) return true;
+    if (p.name.toLowerCase().includes(q) || p.ministries.some((m) => (m.name ?? '').toLowerCase().includes(q)) || (p.seat ?? '').toLowerCase().includes(q)) return true;
+    return foldedMatch(query, [p.name, p.seat ?? '', ...p.ministries.flatMap((m) => [m.name ?? '', ...(m.aliases ?? [])])]);
+  };
   const shown = groups.map((g) => ({
     ...g,
     people: g.people.filter((p) => (!ministry || p.ministries.some((m) => m.key === ministry)) && matches(p)),

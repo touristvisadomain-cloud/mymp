@@ -29,6 +29,7 @@ import { nameOf, changes } from '@/lib/cabinet';
 import { memberRoles, memberText, postBadges, postEn } from '@/lib/memberProfile';
 import { candidateNameEn, resultNote, sourceOf } from '@/lib/resultsView';
 import { inLang, translated } from '@/i18n/content';
+import { ministryAliases } from '../../../config/ministry-aliases';
 import {
   personName, seatName, districtName, districtNameEn, partyName, partyShort, partyByAbbr, committeeName, committeeRole,
   OFFICE, HOUSE_ROLE, govPost, titleCaseName,
@@ -286,6 +287,8 @@ export function cabinet(lang: Lang = 'bn') {
       return {
         title: en ? enOnly(govPost(p.title, 'en')) : p.title,
         ministryBn: inLang(p.ministryBn, lang),
+        /** What people type for the ministry ("ICT", "তথ্য"): for the app's search, never shown. */
+        ministryAliases: ministryAliases(p.ministryBn),
         fromDate: p.fromDate ?? null,
         member: m ? brief(m, lang) : null,
         holderBn: en ? listedName(p, 'en') : p.nameBn,

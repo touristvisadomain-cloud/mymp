@@ -212,3 +212,30 @@ export function search(index: Entry[], raw: string, limit = 8): Entry[] {
     .slice(0, limit)
     .map((r) => r.e);
 }
+
+/**
+ * A short list matched the site search's way: every query word starts some
+ * word of the texts, or the whole query without spaces starts one of them
+ * without spaces ("আই সি টি" finds "আইসিটি"). Only the start of a word, and an
+ * English word under five letters only as typed: folded spellings are short
+ * ("zzzz" folds to "j", "rail" to "ral", the start of "religious") and would
+ * match almost anything. Longer ones fold, so "totto" finds "Tottho". The
+ * cabinet page uses it for names, seats, ministries and the ministries'
+ * shortcuts (config/ministry-aliases.ts).
+ */
+export function foldedMatch(query: string, texts: string[]): boolean {
+  const raw = query.toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u).filter((w) => w.length >= 2);
+  if (!raw.length) return false;
+  const textWords = texts.flatMap((t) => t.toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u)).filter(Boolean);
+  const foldedWords = textWords.map(normalise).filter(Boolean);
+  const isShortLatin = (w: string) => /^[a-z0-9]+$/.test(w) && w.length < 5;
+  const one = (w: string) => {
+    if (textWords.some((x) => x.startsWith(w))) return true;
+    if (isShortLatin(w)) return false;
+    const f = normalise(w);
+    return f.length >= 2 && foldedWords.some((x) => x.startsWith(f));
+  };
+  if (raw.every(one)) return true;
+  const whole = normalise(query).replace(/ /g, '');
+  return whole.length >= 3 && !isShortLatin(query.trim().toLowerCase()) && texts.some((t) => normalise(t).replace(/ /g, '').startsWith(whole));
+}
