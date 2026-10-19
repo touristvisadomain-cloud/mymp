@@ -12,6 +12,41 @@ const staticExport = process.env.STATIC_EXPORT === "1";
  * search result lands on the matching section here instead of a 404. The old
  * per-member ids do not map onto the new slugs, so those fall back to the list.
  */
+/**
+ * The previous site's party slugs (its English names, spelled several ways),
+ * to the slugs here (data/parties.json). A slug not listed goes to the list.
+ */
+const OLD_PARTY_SLUGS: Record<string, string> = {
+  "bangladesh-nationalist-party": "bnp",
+  "bangladesh-nationalist-party-bnp": "bnp",
+  "bangladesh-jamaat-e-islami": "bjei",
+  "bangladesh-jamaat-e-islami-bjei": "bjei",
+  "jamaat-e-islami": "bjei",
+  independent: "ind",
+  "national-citizen-party": "ncp",
+  "national-citizens-party": "ncp",
+  "national-citizens-party-ncp": "ncp",
+  "bangladesh-khilafat-majlis": "bkm",
+  "bangladesh-khelafat-majlis": "bkm",
+  "islami-andolan-bangladesh": "imb",
+  "islamic-movement-bangladesh": "imb",
+  "gono-odhikar-parishad": "gop",
+  "gonoodhikar-parishad": "gop",
+  "gana-adhikar-parishad": "gop",
+  "council-on-people": "gop",
+  "bangladesh-jatiyo-party": "bjp",
+  "bangladesh-jatiya-party": "bjp",
+  "bangladesh-national-party-bjp": "bjp",
+  "khilafat-majlis": "km",
+  "khelafat-majlis": "km",
+  "ganosamhati-andolon": "psm",
+  "gonosamhati-andolon": "psm",
+  "ganosamhati-andolan": "psm",
+  "peoples-solidarity-movement": "psm",
+  "jatiya-ganatantrik-party": "jagpa",
+  "jatiya-ganatantrik-party-jagpa": "jagpa",
+};
+
 const legacyRedirects = [
   // One address for search engines and shares: www.mymp.bd served the same
   // pages as a second site until 2026-10-12.
@@ -24,6 +59,18 @@ const legacyRedirects = [
   { source: "/mps", destination: "/mp", permanent: true },
   { source: "/mps/:id", destination: "/mp", permanent: true },
   { source: "/parties", destination: "/dol", permanent: true },
+  // A party's old page goes to its page here (Search Console, 2026-10-19:
+  // /parties/national-citizen-party and others were landing on the list).
+  ...Object.entries(OLD_PARTY_SLUGS).map(([old, slug]) => ({
+    source: `/parties/${old}`,
+    destination: `/dol/${slug}`,
+    permanent: true,
+  })),
+  {
+    source: "/parties/:slug(bnp|bjei|ind|ncp|bkm|imb|gop|bjp|km|psm|jagpa)",
+    destination: "/dol/:slug",
+    permanent: true,
+  },
   { source: "/parties/:slug", destination: "/dol", permanent: true },
   { source: "/about", destination: "/somporke", permanent: true },
   { source: "/contact", destination: "/jogajog", permanent: true },
