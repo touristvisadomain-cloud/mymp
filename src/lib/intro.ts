@@ -215,6 +215,7 @@ export interface IntroContext {
 export function resultSourceByEn(url: string): string {
   if (/wikipedia\.org/i.test(url)) return 'according to Wikipedia';
   if (/tbsnews\.net/i.test(url)) return "according to The Business Standard's count";
+  if (/thefinancialexpress\.com\.bd/i.test(url)) return 'according to The Financial Express';
   return "according to the Election Commission's gazette";
 }
 
