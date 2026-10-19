@@ -86,7 +86,6 @@ export default async function ReservedSeatsPage() {
 
   const nameOf = (m: { nameBn?: string | null; nameEn?: string | null }) => (t.en ? personName(m, 'en') : m.nameBn ?? '');
   const seatLabel = (s: (typeof reservedSeats)[number]) => (t.en ? seatName(s, 'en') : s.nameBn ?? '');
-  const one = (n: number) => (Number.isInteger(n) ? t.n(n) : t.n(n.toFixed(1)));
 
   const STEPS = [
     {
@@ -237,20 +236,19 @@ export default async function ReservedSeatsPage() {
 
       {/* The sharing out, party by party. */}
       <section className="mt-10">
-        <h2 className="display text-[19px] sm:text-[21px]">{t('আনুপাতিক ভাগের হিসাব', 'The sharing out, party by party')}</h2>
+        <h2 className="display text-[19px] sm:text-[21px]">{t('সাধারণ আসন বনাম সংরক্ষিত আসন', 'General seats and reserved seats')}</h2>
         <p className="mt-1 text-[13.5px] text-muted leading-relaxed max-w-[720px]">
           {t(
-            `প্রতিটি দলের সাধারণ আসনকে ${t.n(perSeat)} দিয়ে ভাগ করলে মোটামুটি তার সংরক্ষিত আসনের ভাগ পাওয়া যায়। ভগ্নাংশ আর স্বতন্ত্র ও ছোট দলের সদস্যদের জন্য আইনের নিজস্ব নিয়ম আছে, তাই হিসাব সব সময় হুবহু মেলে না।`,
-            `Dividing each party's general seats by ${perSeat} gives roughly its share of the reserved seats. The law has its own rules for fractions and for independents and small parties, so the figures do not always match exactly.`,
+            'সাধারণ আসনে প্রতিটি দলের সংসদ সদস্য আর সংরক্ষিত আসনে তার সদস্য, পাশাপাশি। জোটের দলগুলো একসাথে মনোনয়ন দিতে পারে, আর স্বতন্ত্র ও ছোট দলের জন্য আইনের নিজস্ব নিয়ম আছে, তাই প্রতিটি দলের সংখ্যা সাধারণ আসনের অনুপাতের সাথে হুবহু মেলে না।',
+            "Each party's members for general seats beside its members for reserved seats. Parties in an alliance can nominate together, and the law has its own rules for independents and small parties, so a single party's figure does not always follow its share of the general seats exactly.",
           )}
         </p>
         <Card className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[520px] text-[14px]">
+          <table className="w-full min-w-[420px] text-[14px]">
             <thead>
               <tr className="text-start text-[12px] font-bold tracking-[0.5px] text-muted border-b border-rule">
                 <th className="text-start font-bold px-4 sm:px-5 py-3">{t('দল', 'Party')}</th>
                 <th className="text-end font-bold px-3 py-3">{t('সাধারণ আসন', 'General seats')}</th>
-                <th className="text-end font-bold px-3 py-3">{t(`÷ ${t.n(perSeat)}`, `÷ ${perSeat}`)}</th>
                 <th className="text-end font-bold px-4 sm:px-5 py-3">{t('সংরক্ষিত আসন', 'Reserved seats')}</th>
               </tr>
             </thead>
@@ -264,7 +262,6 @@ export default async function ReservedSeatsPage() {
                     </Link>
                   </td>
                   <td className="px-3 py-2.5 text-end tnum text-inksoft">{t.n(r.general)}</td>
-                  <td className="px-3 py-2.5 text-end tnum text-muted">{one(r.general / perSeat)}</td>
                   <td className="px-4 sm:px-5 py-2.5 text-end tnum">
                     <span className={`inline-block min-w-[2.25rem] px-2 py-0.5 rounded-full text-[13.5px] font-bold ${r.held ? 'bg-brandsoft text-brand' : 'text-muted'}`}>{t.n(r.held)}</span>
                   </td>
@@ -294,7 +291,8 @@ export default async function ReservedSeatsPage() {
                   .filter((m) => m.party?.abbr === party.abbr)
                   .map((m) => (
                     <li key={m.id}>
-                      <MemberCard m={m} badge={(t.en ? seatName(m.seat, 'en') : m.seat?.nameBn) || undefined} />
+                      {/* The card already names the seat; a badge would say it twice. */}
+                      <MemberCard m={m} />
                     </li>
                   ))}
               </ul>
