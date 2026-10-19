@@ -3,9 +3,12 @@
 import { useMemo, useState } from 'react';
 import Link from '@/i18n/Link';
 import { useT } from '@/i18n/client';
+import PartyBadge from './PartyBadge';
 
 /** One party's share of a district's (or a division's) seats. */
 export interface SeatShare {
+  /** The party; null for a vacant seat. */
+  abbr: string | null;
   /** The party's short name in the page's language; "শূন্য" / "Vacant" for a seat no one holds. */
   label: string;
   /** The party colour; null for a vacant seat. */
@@ -20,8 +23,8 @@ export interface DistrictCard {
   alt: string;
   altLang?: 'bn';
   seats: number;
-  /** Each seat's holder's colour, in seat order: the strip under the name. */
-  strip: (string | null)[];
+  /** Each seat's holder's party, in seat order: a symbol per seat under the name. */
+  seatParties: { abbr: string | null; color: string | null }[];
   shares: SeatShare[];
   /** Words the filter matches: both names. */
   keys: string;
@@ -35,12 +38,26 @@ export interface DivisionGroup {
   districts: DistrictCard[];
 }
 
-/** A row of seats as small bars, one per seat, in its holder's colour. */
-function SeatStrip({ strip, tall = false }: { strip: (string | null)[]; tall?: boolean }) {
+/** A party's election symbol; an empty ring for a seat no one holds. */
+function PartySymbol({ abbr, color, size }: { abbr: string | null; color: string | null; size: number }) {
+  if (!abbr || !color) {
+    return <span aria-hidden="true" className="shrink-0 rounded-full border-2 border-dashed border-rule" style={{ width: size, height: size }} />;
+  }
+  return <PartyBadge abbr={abbr} color={color} size={size} />;
+}
+
+/** Every seat of the district as its holder's symbol, in seat order, on a soft tile each. */
+function SeatSymbols({ seats }: { seats: { abbr: string | null; color: string | null }[] }) {
   return (
-    <span aria-hidden="true" className={`flex gap-[3px] ${tall ? 'h-2' : 'h-1.5'}`}>
-      {strip.map((c, i) => (
-        <span key={i} className={`grow rounded-full ${c ? '' : 'bg-rule'}`} style={c ? { background: c } : undefined} />
+    <span aria-hidden="true" className="flex flex-wrap gap-1.5">
+      {seats.map((p, i) => (
+        <span
+          key={i}
+          className="inline-grid place-items-center w-[34px] h-[34px] rounded-[9px] bg-white border"
+          style={{ borderColor: p.color ? `color-mix(in srgb, ${p.color} 35%, transparent)` : 'var(--color-rule)' }}
+        >
+          <PartySymbol abbr={p.abbr} color={p.color} size={24} />
+        </span>
       ))}
     </span>
   );
@@ -55,7 +72,7 @@ function Shares({ shares, max = 3, end = false }: { shares: SeatShare[]; max?: n
     <span className={`flex flex-wrap gap-x-3 gap-y-1 text-[12.5px] text-inksoft ${end ? 'sm:justify-end' : ''}`}>
       {shown.map((s) => (
         <span key={s.label} className="inline-flex items-center gap-1.5 whitespace-nowrap">
-          <span aria-hidden="true" className={`w-2 h-2 rounded-full ${s.color ? '' : 'bg-rule'}`} style={s.color ? { background: s.color } : undefined} />
+          <PartySymbol abbr={s.abbr} color={s.color} size={16} />
           {s.label} <span className="tnum font-semibold text-ink">{t.n(s.count)}</span>
         </span>
       ))}
@@ -166,7 +183,7 @@ export default function DistrictBrowser({ divisions }: { divisions: DivisionGrou
                         <span className="text-[11px] font-bold tracking-[0.5px] text-muted mt-1">{t('আসন', x.seats === 1 ? 'seat' : 'seats')}</span>
                       </span>
                     </span>
-                    <SeatStrip strip={x.strip} />
+                    <SeatSymbols seats={x.seatParties} />
                     <Shares shares={x.shares} />
                   </Link>
                 </li>

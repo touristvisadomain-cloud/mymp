@@ -28,6 +28,7 @@ function sharesOf(abbrs: (string | null)[], t: T): SeatShare[] {
   return [...c.entries()]
     .sort((x, y) => (x[0] === null ? 1 : y[0] === null ? -1 : y[1] - x[1]))
     .map(([a, count]) => ({
+      abbr: a,
       label: a ? partyShort({ abbr: a }, t.lang) : t('শূন্য', 'Vacant'),
       color: a ? partyColor(a) : null,
       count,
@@ -52,7 +53,7 @@ function divisionGroups(t: T): DivisionGroup[] {
       alt: t.en ? d.bn : d.en,
       altLang: t.en ? 'bn' : undefined,
       seats: d.seats.length,
-      strip: abbrs.map((a) => (a ? partyColor(a) : null)),
+      seatParties: abbrs.map((a) => ({ abbr: a, color: a ? partyColor(a) : null })),
       shares: sharesOf(abbrs, t),
       keys: `${d.bn} ${d.en} ${name1}`.toLowerCase(),
     });
