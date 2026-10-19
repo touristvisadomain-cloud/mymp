@@ -29,7 +29,7 @@ const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!URL_BASE || !KEY) throw new Error('.env.local needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
 const HEAD = { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' };
 
-const ALLOWED = new Set(['bioBn', 'bioSources', 'professionBn', 'educationBn', 'birthPlaceBn', 'partyRoleBn']);
+const ALLOWED = new Set(['bioBn', 'bioSources', 'professionBn', 'educationBn', 'birthPlaceBn', 'partyRoleBn', 'dutiesBn', 'dutiesSources']);
 const WIKI_FIELDS = new Set(['educationBn', 'birthPlaceBn', 'professionBn']);
 const argOf = (name: string) => { const i = process.argv.indexOf(`--${name}`); return i >= 0 ? process.argv[i + 1] : undefined; };
 const ACTOR = argOf('actor') ?? 'editorial: member profiles, written from cited sources';
