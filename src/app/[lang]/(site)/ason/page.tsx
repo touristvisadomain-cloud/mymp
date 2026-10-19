@@ -68,6 +68,7 @@ function divisionsOf(t: T): SeatDivision[] {
                 party: m.party ? partyShort(m.party, t.lang) : t('স্বতন্ত্র', 'Independent'),
               }
             : null,
+          keys: [s.nameBn, s.nameEn, seatName(s, 'en'), m?.nameBn, m?.nameEn, m ? personName(m, 'en') : null, d.bn, d.en].filter(Boolean).join(' '),
         };
       }),
     });

@@ -12,6 +12,8 @@ export interface SeatRowData {
   /** The places the seat covers, shortened from the boundary text (Bangla pages only). */
   area: string | null;
   member: { name: string; slug: string; photo: string | null; initial: string; abbr: string | null; color: string; party: string } | null;
+  /** The seat, member and district in both scripts, for the finder: "tarique" finds ঢাকা-১৭ on a Bangla page too. */
+  keys: string;
 }
 
 export interface SeatDistrict {
@@ -49,13 +51,13 @@ export default function SeatBrowser({ divisions, parties }: { divisions: SeatDiv
   const total = parties.reduce((n, p) => n + p.count, 0);
 
   const shown = useMemo(() => {
-    const keep = (s: SeatRowData, d: SeatDistrict) => {
+    const keep = (s: SeatRowData) => {
       if (party && (party === 'vacant' ? s.member : s.member?.abbr !== party)) return false;
       if (!query) return true;
-      return fold(`${s.name} ${s.member?.name ?? ''} ${d.name} ${s.area ?? ''}`).includes(query);
+      return fold(`${s.keys} ${s.area ?? ''}`).includes(query);
     };
     return divisions
-      .map((v) => ({ ...v, districts: v.districts.map((d) => ({ ...d, seats: d.seats.filter((s) => keep(s, d)) })).filter((d) => d.seats.length) }))
+      .map((v) => ({ ...v, districts: v.districts.map((d) => ({ ...d, seats: d.seats.filter(keep) })).filter((d) => d.seats.length) }))
       .filter((v) => v.districts.length);
   }, [divisions, party, query]);
   const found = shown.reduce((n, v) => n + v.districts.reduce((m, d) => m + d.seats.length, 0), 0);
@@ -113,7 +115,7 @@ export default function SeatBrowser({ divisions, parties }: { divisions: SeatDiv
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={t('আসন, এমপি, জেলা বা উপজেলা', 'Seat, MP or district')}
+            placeholder={t('আসন, এমপি, জেলা বা উপজেলা, বাংলা বা ইংরেজিতে', 'Seat, MP or district, in English or Bangla')}
             className="w-full h-11 ps-10 pe-3 rounded-[10px] border border-rule bg-surface text-[15px] outline-none focus:border-brand focus:ring-4 focus:ring-brandring placeholder:text-muted"
           />
         </label>
