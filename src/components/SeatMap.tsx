@@ -274,7 +274,7 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
     clickable: false,
     strokeWeight: 0,
     fillColor: '#ffffff',
-    fillOpacity: 0.5,
+    fillOpacity: 0.62,
     zIndex: -1,
     map,
   });
@@ -356,7 +356,7 @@ async function startLeaflet(el: HTMLElement, d: Drawing): Promise<Engine> {
   L.polygon([box, ...districtHoles(d.features)].map((ring) => ring.map(([lng, lat]) => [lat!, lng!] as [number, number])), {
     stroke: false,
     fillColor: '#ffffff',
-    fillOpacity: 0.5,
+    fillOpacity: 0.62,
     interactive: false,
   }).addTo(m).bringToBack();
   const labels = d.features.map((f) => {
