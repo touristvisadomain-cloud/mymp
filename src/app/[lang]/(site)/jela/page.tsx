@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
-import Link from '@/i18n/Link';
 import { langAlternates, fitDescription } from '@/lib/seo';
 import { pageShare } from '@/lib/og/pages';
-import { getMemberById } from '@/lib/data';
+import { getMemberById, partyColor } from '@/lib/data';
 import { districtList } from '@/lib/districts';
-import { Page, PageHead, Stat, PartyDot } from '@/components/ui';
+import { Page, PageHead, Stat } from '@/components/ui';
 import { getT } from '@/i18n/server';
-import { districtName } from '@/i18n/names';
+import { districtName, partyShort } from '@/i18n/names';
+import { divisionOf } from '@/lib/districtIntro';
+import DistrictBrowser, { type DivisionGroup, type SeatShare } from '@/components/DistrictBrowser';
+import type { T } from '@/i18n/core';
 import ShareButtons from '@/components/ShareButtons';
 import { siteUrl } from '@/lib/site';
 
@@ -18,6 +20,48 @@ import { siteUrl } from '@/lib/site';
  */
 const districts = districtList();
 const seatTotal = districts.reduce((n, d) => n + d.seats.length, 0);
+
+/** Seat counts by party, largest first; vacant seats last. */
+function sharesOf(abbrs: (string | null)[], t: T): SeatShare[] {
+  const c = new Map<string | null, number>();
+  for (const a of abbrs) c.set(a, (c.get(a) ?? 0) + 1);
+  return [...c.entries()]
+    .sort((x, y) => (x[0] === null ? 1 : y[0] === null ? -1 : y[1] - x[1]))
+    .map(([a, count]) => ({
+      label: a ? partyShort({ abbr: a }, t.lang) : t('শূন্য', 'Vacant'),
+      color: a ? partyColor(a) : null,
+      count,
+    }));
+}
+
+/**
+ * The districts under their divisions, in seat order: the division of the
+ * first seat comes first, as the seats are numbered north to south.
+ */
+function divisionGroups(t: T): DivisionGroup[] {
+  const groups = new Map<string, DivisionGroup & { abbrs: (string | null)[] }>();
+  for (const d of districts) {
+    const name = divisionOf(d, t.lang) ?? t('অন্যান্য', 'Other');
+    const id = `div-${(divisionOf(d, 'en') ?? 'other').toLowerCase().replace(/[^a-z]+/g, '-')}`;
+    const abbrs = d.seats.map((s) => (s.memberId ? getMemberById(s.memberId)?.party?.abbr ?? null : null));
+    const g = groups.get(id) ?? { id, name, seats: 0, shares: [], districts: [], abbrs: [] };
+    const name1 = t.en ? districtName(d, 'en') : d.bn;
+    g.districts.push({
+      slug: d.slug,
+      name: name1,
+      alt: t.en ? d.bn : d.en,
+      altLang: t.en ? 'bn' : undefined,
+      seats: d.seats.length,
+      strip: abbrs.map((a) => (a ? partyColor(a) : null)),
+      shares: sharesOf(abbrs, t),
+      keys: `${d.bn} ${d.en} ${name1}`.toLowerCase(),
+    });
+    g.seats += d.seats.length;
+    g.abbrs.push(...abbrs);
+    groups.set(id, g);
+  }
+  return [...groups.values()].map(({ abbrs, ...g }) => ({ ...g, shares: sharesOf(abbrs, t) }));
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -64,37 +108,7 @@ export default async function DistrictIndex() {
         />
       </div>
 
-      <ul className="mt-8 pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {districts.map((d) => {
-          // The parties holding the district's seats, in seat order, so a
-          // reader sees at a glance whether it went one way or split.
-          const abbrs = d.seats
-            .map((s) => (s.memberId ? getMemberById(s.memberId)?.party?.abbr : null))
-            .filter((a): a is string => !!a);
-          return (
-            <li key={d.slug}>
-              <Link
-                href={`/jela/${d.slug}`}
-                className="reveal group h-full bg-surface border border-rule rounded-card shadow-card p-4 flex items-center gap-3 hover:border-brand hover:shadow-lift hover:-translate-y-0.5 transition-all"
-              >
-                <span className="grow min-w-0 flex flex-col gap-0.5">
-                  <span className="display text-[16.5px] group-hover:text-brand transition-colors">{t.en ? districtName(d, 'en') : d.bn}</span>
-                  {/* The Bangla page gives the English name underneath; the English page, the Bangla. */}
-                  {t.en ? <span lang="bn" className="text-[12.5px] text-muted">{d.bn}</span> : <span className="text-[12.5px] text-muted">{d.en}</span>}
-                </span>
-                <span className="shrink-0 flex flex-col items-end gap-1.5">
-                  <span className="tnum text-[13px] text-inksoft font-semibold">{t.count(d.seats.length, 'টি আসন', 'seat', 'seats')}</span>
-                  <span aria-hidden="true" className="flex gap-1">
-                    {abbrs.slice(0, 8).map((a, i) => (
-                      <PartyDot key={`${a}-${i}`} abbr={a} size={9} />
-                    ))}
-                  </span>
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <DistrictBrowser divisions={divisionGroups(t)} />
     </Page>
   );
 }
