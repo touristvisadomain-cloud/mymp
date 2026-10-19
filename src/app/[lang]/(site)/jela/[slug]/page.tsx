@@ -256,7 +256,7 @@ export default async function DistrictPage({ params }: PageProps<'/[lang]/jela/[
       </div>
 
       {listSections.length > 0 && (
-        <div className={`mt-6 grid grid-cols-1 ${listSections.length > 1 ? 'md:grid-cols-2' : ''} ${listSections.length > 2 ? 'xl:grid-cols-3' : ''} gap-4`}>
+        <div className={`mt-6 grid grid-cols-1 ${listSections.length > 1 ? 'md:grid-cols-2' : ''} ${listSections.length > 2 ? 'xl:grid-cols-3' : ''} gap-4 items-start`}>
           {listSections.map((s) => (
             <Card key={s!.key} className="p-5 flex flex-col gap-3">
               <h2 className="display text-[17px] flex items-center gap-2">
