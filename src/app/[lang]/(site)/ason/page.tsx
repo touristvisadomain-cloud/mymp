@@ -8,6 +8,7 @@ import { Page, PageHead, Stat } from '@/components/ui';
 import { getT } from '@/i18n/server';
 import { districtName, partyShort, personName, seatName } from '@/i18n/names';
 import { divisionOf } from '@/lib/districtIntro';
+import { seatArea } from '@/lib/seatArea';
 import { memberInitial } from '@/components/mp/initial';
 import SeatBrowser, { type PartyTotal, type SeatDivision } from '@/components/SeatBrowser';
 import type { T } from '@/i18n/core';
@@ -28,19 +29,6 @@ const seatTotal = districts.reduce((n, d) => n + d.seats.length, 0);
 /** A seat's sitting member: one who resigned keeps the seat's memberId while it stands vacant. */
 const holder = (s: (typeof districts)[number]['seats'][number]) => (s.memberId && !s.vacantSince ? getMemberById(s.memberId) ?? null : null);
 
-/** "(ক) পঞ্চগড় সদর, (খ) তেঁতুলিয়া এবং (গ)আটোয়ারী উপজেলা" → "পঞ্চগড় সদর, তেঁতুলিয়া ও আটোয়ারী উপজেলা": what the card shows under the member. */
-function areaOf(boundary: string | null | undefined): string | null {
-  if (!boundary) return null;
-  const s = boundary
-    .replace(/\([ক-হ]\)\s*/g, '')
-    .replace(/\([০-৯\d]+\)\s*/g, '')
-    .replace(/\s*এবং\s*/g, ' ও ')
-    .replace(/\s*ঃ\s*-?/g, ': ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return s || null;
-}
-
 /** The seats under their divisions and districts, as the browser shows them. */
 function divisionsOf(t: T): SeatDivision[] {
   const out = new Map<string, SeatDivision>();
@@ -56,7 +44,7 @@ function divisionsOf(t: T): SeatDivision[] {
           slug: s.slug,
           name: t.en ? seatName(s, 'en') : s.nameBn ?? s.nameEn ?? '',
           // The boundary text is in Bangla only; an English page leaves it to the seat's page.
-          area: t.en ? null : areaOf(s.boundaryBn),
+          area: t.en ? null : seatArea(s.boundaryBn),
           member: m
             ? {
                 name: t.en ? personName(m, 'en') : m.nameBn ?? m.nameEn ?? '',

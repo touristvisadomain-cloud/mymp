@@ -86,6 +86,29 @@ function placeList(fs: Feature[]): string[] {
   const lines = [...byCity].map(([city, c]) => `${city}র ${[c.nums.length ? `ওয়ার্ড ${c.nums.join(', ')}` : '', ...c.names].filter(Boolean).join(', ')}`);
   return [...lines, ...out];
 }
+/**
+ * The district's outline as holes in a veil over the rest of the map, so the
+ * district stands out: every upazila's outer ring, and a city's wards or the
+ * city itself only where no upazila already covers them (a city drawn on top
+ * of its upazila would cut a second hole into the first and fill it again).
+ */
+function districtHoles(fs: Feature[]): number[][][] {
+  const upazilas = fs.filter((f) => f.properties.kind === 'upazila');
+  const covered = (f: Feature) => upazilas.some((u) => inFeature(labelPoint(f), u));
+  return fs
+    .filter((f) => f.properties.kind === 'upazila' || !covered(f))
+    .flatMap((f) => polygonsOf(f).map((rings) => rings[0]!));
+}
+/** Twice the signed area of a ring of [lng, lat]: its winding. */
+const winding = (ring: number[][]) => ring.reduce((a, [x1, y1], i) => {
+  const [x2, y2] = ring[(i + 1) % ring.length]!;
+  return a + (x2! - x1!) * (y2! + y1!);
+}, 0);
+/** A box well past the district, the veil's outer edge. */
+const VEIL_BOX = (b: { n: number; s: number; e: number; w: number }) => [
+  [b.w - 15, b.n + 12], [b.e + 15, b.n + 12], [b.e + 15, b.s - 12], [b.w - 15, b.s - 12],
+];
+
 /** Wards are small: their names show only from street level. */
 const labelZoomOf = (f: Feature, base: number) => (f.properties.kind === 'ward' ? Math.max(base, 12) : base);
 
@@ -221,6 +244,8 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
     streetViewControl: false,
     fullscreenControl: false,
     gestureHandling: 'cooperative',
+    // A district fills the box: zoom 9.6, not a whole step back at 9.
+    isFractionalZoomEnabled: true,
   });
   const byName = new Map(d.features.map((f) => [keyOf(f.properties.kind, f.properties.city, f.properties.name), f]));
   const own = (gf: google.maps.Data.Feature) => byName.get(keyOf(String(gf.getProperty('kind')), gf.getProperty('city') as string | undefined, String(gf.getProperty('name'))))!;
@@ -235,6 +260,24 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
   if (d.onClick) map.data.addListener('click', (e: google.maps.Data.MouseEvent) => d.onClick!(own(e.feature)));
   const bounds = new g.maps.LatLngBounds();
   for (const f of d.focus) for (const rings of polygonsOf(f)) for (const [lng, lat] of rings[0]!) bounds.extend({ lat: lat!, lng: lng! });
+  // The rest of the map under a pale veil, the district clear.
+  const all = new g.maps.LatLngBounds();
+  for (const f of d.features) for (const rings of polygonsOf(f)) for (const [lng, lat] of rings[0]!) all.extend({ lat: lat!, lng: lng! });
+  const ne = all.getNorthEast(), sw = all.getSouthWest();
+  const outer = VEIL_BOX({ n: ne.lat(), s: sw.lat(), e: ne.lng(), w: sw.lng() });
+  const toPath = (ring: number[][], clockwise: boolean) => {
+    const r = winding(ring) > 0 === clockwise ? ring : [...ring].reverse();
+    return r.map(([lng, lat]) => ({ lat: lat!, lng: lng! }));
+  };
+  const veil = new g.maps.Polygon({
+    paths: [toPath(outer, true), ...districtHoles(d.features).map((h) => toPath(h, false))],
+    clickable: false,
+    strokeWeight: 0,
+    fillColor: '#ffffff',
+    fillOpacity: 0.5,
+    zIndex: -1,
+    map,
+  });
   map.fitBounds(bounds, 18);
   // Google fits to the box it sees at the start; once drawn, and while the
   // box settles in the first seconds, fit again so the district fills it.
@@ -283,6 +326,7 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
     destroy() {
       ro.disconnect();
       here?.setMap(null);
+      veil.setMap(null);
       for (const l of labels) l.marker.setMap(null);
     },
   };
@@ -290,7 +334,7 @@ async function startGoogle(el: HTMLElement, d: Drawing, key: string): Promise<En
 
 async function startLeaflet(el: HTMLElement, d: Drawing): Promise<Engine> {
   const L = (await import('leaflet')).default;
-  const m = L.map(el, { zoomControl: true, scrollWheelZoom: false, attributionControl: true });
+  const m = L.map(el, { zoomControl: true, scrollWheelZoom: false, attributionControl: true, zoomSnap: 0.25 });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
@@ -306,6 +350,15 @@ async function startLeaflet(el: HTMLElement, d: Drawing): Promise<Engine> {
     },
   }).addTo(m);
   void layer;
+  // The rest of the map under a pale veil, the district clear.
+  const whole = L.geoJSON({ type: 'FeatureCollection', features: d.features } as never).getBounds();
+  const box = VEIL_BOX({ n: whole.getNorth(), s: whole.getSouth(), e: whole.getEast(), w: whole.getWest() });
+  L.polygon([box, ...districtHoles(d.features)].map((ring) => ring.map(([lng, lat]) => [lat!, lng!] as [number, number])), {
+    stroke: false,
+    fillColor: '#ffffff',
+    fillOpacity: 0.5,
+    interactive: false,
+  }).addTo(m).bringToBack();
   const labels = d.features.map((f) => {
     const [lng, lat] = labelPoint(f);
     const marker = L.marker([lat, lng], { interactive: false, icon: L.divIcon({ className: 'seatmap-label seatmap-label-osm', html: d.shortName(f), iconSize: undefined }) });
