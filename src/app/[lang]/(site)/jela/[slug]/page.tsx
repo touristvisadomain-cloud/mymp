@@ -5,7 +5,7 @@ import { getMemberById, meta } from '@/lib/data';
 import SeatMap from '@/components/SeatMap';
 import { districtGroups as districts } from '@/lib/districts';
 import { districtIntro, divisionOf } from '@/lib/districtIntro';
-import { districtWiki } from '@/lib/districtWiki';
+import { districtWiki, WIKI_HEADINGS, type WikiKey } from '@/lib/districtWiki';
 import { seatArea } from '@/lib/seatArea';
 import upazilaEnTable from '../../../../../../data/upazila-en.json';
 import fs from 'node:fs';
@@ -50,12 +50,17 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/jela/[slug
   const title = t(`${d.bn} জেলার এমপি ও সংসদীয় আসন`, `${name} district: MPs and constituencies`);
   // The district's own card (src/app/api/og/jela/[slug]/route.tsx): its seats, and who holds them.
   const image = cardImage(`/api/og/jela/${d.slug}${t.en ? '/en' : ''}`, title);
+  // The fuller title first, where it fits: the district's introduction and places to see are what people search for too.
+  const fuller = t(`${d.bn} জেলা: পরিচিতি, দর্শনীয় স্থান, এমপি ও আসন`, `${name} district: about, places to see, MPs and seats`);
+  const wiki = districtWiki(d.slug, t.lang);
+  // The description: the district in a sentence from its article, then its seats and members.
+  const first = wiki?.text.split(t.en ? /(?<=\.)\s/ : /(?<=।)\s*/)[0] ?? '';
   return {
-    title: fitTitle(t.lang, title),
+    title: fitTitle(t.lang, fuller, title),
     alternates: langAlternates(t.lang, `/jela/${d.slug}`),
     openGraph: shareGraph(`/jela/${d.slug}`, image, t.lang),
     twitter: shareTwitter(image),
-    description: fitDescription(districtIntro(d, t.lang).short),
+    description: fitDescription(`${first ? `${first} ` : ''}${districtIntro(d, t.lang).short}`),
   };
 }
 
@@ -68,6 +73,10 @@ export default async function DistrictPage({ params }: PageProps<'/[lang]/jela/[
   const division = divisionOf(d, t.lang);
   const divisionId = divisionOf(d, 'en')?.toLowerCase().replace(/[^a-z]+/g, '-');
   const wiki = districtWiki(d.slug, t.lang);
+  const section = (key: WikiKey) => wiki?.sections?.find((s) => s.key === key);
+  // Sections told in sentences, in the card; the lists (places, rivers, people) get cards of their own.
+  const proseSections = (wiki?.sections ?? []).filter((s): s is typeof s & { text: string } => !!s.text);
+  const listSections = (['places', 'rivers', 'notable'] as const).map(section).filter((s) => !!s?.items?.length);
   const upazilas = upazilasOf(d.slug);
   const tone = Object.fromEntries(d.seats.map((s, i) => [s.slug, SEAT_TONES[i % SEAT_TONES.length]!]));
   const upazilaName = (bn: string) => (t.en ? upazilaEn.get(bn.normalize('NFC')) ?? bn : bn);
@@ -106,12 +115,35 @@ export default async function DistrictPage({ params }: PageProps<'/[lang]/jela/[
           text: t(`ত্রয়োদশ জাতীয় সংসদে ${d.bn} জেলার সংসদ সদস্য: ${holders.join('; ')}।`, `The Members of the 13th Parliament from ${name} district: ${holders.join('; ')}.`),
         },
       },
+      // What people ask of a district beyond its seats, answered from the description below.
+      ...(['places', 'rivers'] as const).flatMap((key) => {
+        const items = section(key)?.items;
+        if (!items?.length) return [];
+        return [{
+          '@type': 'Question',
+          name: key === 'places'
+            ? t(`${d.bn} জেলার দর্শনীয় স্থান কোনগুলো?`, `What are the places to see in ${name} district?`)
+            : t(`${d.bn} জেলার নদ-নদী কোনগুলো?`, `Which rivers flow through ${name} district?`),
+          acceptedAnswer: { '@type': 'Answer', text: `${items.join(t(', ', ', '))}${t('।', '.')}` },
+        }];
+      }),
     ],
+  };
+  // The district as a place, for search engines: its name in both scripts, its division, and its article.
+  const placeLd = {
+    '@context': 'https://schema.org',
+    '@type': 'AdministrativeArea',
+    name: t(`${d.bn} জেলা`, `${name} District`),
+    alternateName: t(`${d.en} District`, `${d.bn} জেলা`),
+    ...(wiki ? { description: wiki.text, sameAs: wiki.url } : {}),
+    ...(division ? { containedInPlace: { '@type': 'AdministrativeArea', name: t(`${division} বিভাগ`, `${division} Division`) } } : {}),
+    url: `${siteUrl}${t.href(`/jela/${d.slug}`)}`,
   };
 
   return (
     <Page>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(placeLd) }} />
       <Breadcrumb
         items={[
           { href: '/', label: t('হোম', 'Home') },
@@ -148,21 +180,26 @@ export default async function DistrictPage({ params }: PageProps<'/[lang]/jela/[
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
-        {/* The district itself, from Wikipedia; then in Parliament, from the site's own records. */}
-        <Card className="p-5 sm:p-7 flex flex-col gap-5">
-          {wiki && (
-            <div className="flex flex-col gap-2.5">
-              <h2 className="display text-[19px] sm:text-[21px]">{t('জেলা পরিচিতি', 'About the district')}</h2>
-              <p className="text-[15.5px] sm:text-[16px] leading-[1.8] text-inksoft text-pretty">{wiki.text}</p>
-              <p className="text-[12.5px] text-muted">
-                {t('উইকিপিডিয়া থেকে', 'From Wikipedia')}: <DocLink href={wiki.url}>{wiki.title}</DocLink> · CC BY-SA 4.0
-              </p>
-            </div>
-          )}
-          <div className={`flex flex-col gap-2.5 ${wiki ? 'pt-5 border-t border-rulesoft' : ''}`}>
-            <h2 className="display text-[19px] sm:text-[21px]">{t('সংসদে জেলাটি', 'The district in Parliament')}</h2>
-            <p className="text-[15.5px] sm:text-[16px] leading-[1.8] text-inksoft text-pretty">{districtIntro(d, t.lang).text}</p>
+        {/* The district itself, from Wikipedia: its opening, then its story section by section. */}
+        <Card className="p-5 sm:p-7 flex flex-col gap-6">
+          <div className="flex flex-col gap-2.5">
+            <h2 className="display text-[21px] sm:text-[24px]">{t(`${d.bn} জেলা পরিচিতি`, `About ${name} district`)}</h2>
+            <p className="text-[16px] sm:text-[17px] leading-[1.85] text-ink text-pretty">{wiki?.text ?? districtIntro(d, t.lang).text}</p>
           </div>
+          {proseSections.map((s) => (
+            <section key={s.key} className="flex flex-col gap-2 pt-5 border-t border-rulesoft">
+              <h3 className="display text-[17px] sm:text-[18px] flex items-center gap-2">
+                <span aria-hidden="true" className="w-1.5 h-[0.9em] rounded-full bg-gradient-to-b from-logo to-brand shrink-0" />
+                {t(...WIKI_HEADINGS[s.key])}
+              </h3>
+              <p className="text-[15px] sm:text-[15.5px] leading-[1.85] text-inksoft text-pretty">{s.text}</p>
+            </section>
+          ))}
+          {wiki && (
+            <p className="pt-4 border-t border-rulesoft text-[12.5px] text-muted">
+              {t('তথ্যসূত্র: উইকিপিডিয়া', 'Source: Wikipedia')}, <DocLink href={wiki.url}>{wiki.title}</DocLink> · CC BY-SA 4.0
+            </p>
+          )}
         </Card>
 
         <aside className="flex flex-col gap-4">
@@ -218,6 +255,40 @@ export default async function DistrictPage({ params }: PageProps<'/[lang]/jela/[
         </aside>
       </div>
 
+      {listSections.length > 0 && (
+        <div className={`mt-6 grid grid-cols-1 ${listSections.length > 1 ? 'md:grid-cols-2' : ''} ${listSections.length > 2 ? 'xl:grid-cols-3' : ''} gap-4`}>
+          {listSections.map((s) => (
+            <Card key={s!.key} className="p-5 flex flex-col gap-3">
+              <h2 className="display text-[17px] flex items-center gap-2">
+                <span aria-hidden="true" className="w-8 h-8 rounded-full bg-brandsoft text-brand grid place-items-center shrink-0">
+                  {s!.key === 'places' ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
+                  ) : s!.key === 'rivers' ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M2 8c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 14c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 20c2-2 4-2 6 0s4 2 6 0 4-2 6 0" /></svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7.5 8-7.5s8 3.1 8 7.5" /></svg>
+                  )}
+                </span>
+                {t(`${d.bn} জেলার ${WIKI_HEADINGS[s!.key][0]}`, `${WIKI_HEADINGS[s!.key][1]} of ${name}`)}
+              </h2>
+              {s!.key === 'notable' ? (
+                <ul className="flex flex-col divide-y divide-rulesoft text-[14px] text-inksoft">
+                  {s!.items!.map((x) => (
+                    <li key={x} className="py-1.5">{x.replace(/\s*[–—-]{1,2}\s*/, ' · ')}</li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="flex flex-wrap gap-1.5">
+                  {s!.items!.map((x) => (
+                    <li key={x} className="px-2.5 py-1 rounded-full bg-sunk text-[13px] font-semibold text-inksoft">{x}</li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+
       <section className="mt-10 flex flex-col gap-3">
         <h2 className="display text-[22px] font-bold">{t('জেলার মানচিত্র', 'Map of the district')}</h2>
         <SeatMap
@@ -248,6 +319,8 @@ export default async function DistrictPage({ params }: PageProps<'/[lang]/jela/[
 
       <section className="mt-10 pb-14 flex flex-col gap-4">
         <h2 className="display text-[22px] font-bold">{t('আসন ও সংসদ সদস্য', 'Seats and their members')}</h2>
+        {/* The district in Parliament, from the site's own records (the card above opens with it when Wikipedia has nothing). */}
+        {wiki && <p className="max-w-[820px] text-[15.5px] leading-[1.8] text-inksoft text-pretty">{districtIntro(d, t.lang).text}</p>}
         <ul className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {rows.map(({ seat, m }) => {
             const area = t.en ? null : seatArea(seat.boundaryBn);
