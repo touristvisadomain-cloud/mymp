@@ -137,6 +137,11 @@ export function clausesOf(boundary: string): Clause[] {
   const parts = boundary.replace(/(\S)এবং/g, '$1 এবং').split(/\([কখগঘঙচছজঝঞটঠ]\)/).map((p) => p.trim().replace(/^[,;।\s]+|[,;।\s]+$/g, '')).filter(Boolean);
   return parts.flatMap((text): Clause[] => {
     const isWard = words(text).some((w) => WARD_WORDS.has(w));
+    // "আটোয়ারী উপজেলা [বোদা পৌরসভার অংশ বাদে]": the whole of it but the part in brackets.
+    const left = /\[([^\]]*বাদে)\]/.exec(text);
+    if (left) {
+      return [{ text, holds: [text.replace(left[0], '').trim()], except: [left[1]!], kind: 'upazila' as const, partial: true }];
+    }
     if (/ব্যা?তীত/.test(text)) {
       // "নিম্নলিখিত ইউনিয়ন সমূহ ব্যতীত কেরানিগঞ্জ উপজেলাঃ(১) জিনজিরা, …"
       const [head, list = ''] = text.split(/[ঃ:]/, 2);

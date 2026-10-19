@@ -308,6 +308,9 @@ for (const seat of seats) {
     shapes.set(key, o);
   };
   let found = 0;
+  // An upazila held as "X উপজেলার ইউনিয়নসমূহ" (every union) and "X পৌরসভা" in two clauses is held whole.
+  const unionsOf = new Set<string>();
+  const townOf = new Set<string>();
 
   for (const c of clausesOf(seat.boundaryBn)) {
     const text = words(c.text);
@@ -319,6 +322,8 @@ for (const seat of seats) {
       // "(খ) ঢাকা ক্যান্টনমেন্ট এলাকা": the cantonment, where its outline is known, in whichever of the district's cities holds it.
       if (isCantonment) {
         for (const cf of city) {
+          // "সাভার সেনানিবাস এলাকা" is not the city's: the clause must name the city.
+          if (!text.includes(words(CITY_BN[cf.properties.name_en] ?? cf.properties.name_en)[0]!)) continue;
           const camp = (wardsByCity.get(cf.properties.name_en) ?? []).find((w) => w.cantonment);
           if (!camp) continue;
           add(`ward:${cf.properties.name_en}:${camp.name}`, () => ({ name: camp.name, kind: 'ward', city: CITY_BN[cf.properties.name_en] ?? cf.properties.name_en, geometry: camp.geometry }), 'whole');
@@ -377,14 +382,20 @@ for (const seat of seats) {
       // "নরসিংদী" inside "নরসিংদী সদর": the longer name at the same place wins.
       .filter((h, _, all) => !all.some((o) => o !== h && o.at <= h.at && o.at + o.len >= h.at + h.len && (o.len > h.len || o.u.base.join('').length > h.u.base.join('').length)))
       .sort((a, b) => a.at - b.at);
+    // A municipality ("সিরাজগঞ্জ পৌরসভা", "বোদা পৌরসভা") has no boundary of its own: part of its upazila.
+    const isTown = text.some((w) => w.startsWith(fold('পৌরসভা')));
+    const allUnions = c.kind === 'union' && /উপজেলার\s+ইউনিয়ন\s*সমূহ\s*$/.test(c.text.trim());
     hits.forEach((h, i) => {
       // In "পলাশ এবং নরসিংদী সদর উপজেলার নিম্নলিখিত…", only the last is partial.
-      const part: Part = c.partial && i === hits.length - 1 ? 'part' : 'whole';
+      const part: Part = isTown || (c.partial && i === hits.length - 1) ? 'part' : 'whole';
       add(`up:${h.u.name}`, () => ({ name: h.u.name, kind: 'upazila', geometry: { type: h.u.geometry.type, coordinates: round(h.u.geometry.coordinates) } }), part);
+      if (isTown) townOf.add(h.u.name);
+      if (allUnions && i === hits.length - 1) unionsOf.add(h.u.name);
       found++;
     });
-    if (!hits.length && !(c.kind === 'ward' || isCity)) report.push(`${seat.nameBn}: no upazila in "${c.text.slice(0, 70)}"`);
+    if (!hits.length && !(c.kind === 'ward' || isCity || isTown)) report.push(`${seat.nameBn}: no upazila in "${c.text.slice(0, 70)}"`);
   }
+  for (const name of unionsOf) if (townOf.has(name)) shapes.get(`up:${name}`)!.seats[seat.slug] = 'whole';
   if (found) matchedSeats++;
   else report.push(`${seat.nameBn}: NOTHING MATCHED (${ups.length} upazilas known in ${d.bn})`);
 }

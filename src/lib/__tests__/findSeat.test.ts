@@ -27,6 +27,17 @@ test('a union listed as an exception belongs to the other seat', () => {
   assert.deepEqual(where('আমিনবাজার'), ['ঢাকা-২:union']);
 });
 
+test('a part set aside in brackets ("বাদে") is not in the seat', () => {
+  // পঞ্চগড়-১ holds আটোয়ারী but the part of বোদা municipality in it; পঞ্চগড়-২ holds বোদা.
+  const seats = [
+    seat(1, 'পঞ্চগড়-১', 'পঞ্চগড়', '(ক) পঞ্চগড় সদর উপজেলা, (খ) তেঁতুলিয়া উপজেলা এবং (গ) আটোয়ারী উপজেলা [বোদা পৌরসভার অংশ বাদে]'),
+    seat(2, 'পঞ্চগড়-২', 'পঞ্চগড়', '(ক) বোদা উপজেলার ইউনিয়নসমূহ, (খ) বোদা পৌরসভা এবং (গ) দেবীগঞ্জ উপজেলা'),
+  ];
+  const at = (q: string) => findSeats(q, seats).map((m) => `${m.seat.seat}:${m.kind}${m.partial ? '+part' : ''}`);
+  assert.deepEqual(at('বোদা'), ['পঞ্চগড়-২:upazila+part']);
+  assert.deepEqual(at('আটোয়ারী'), ['পঞ্চগড়-১:upazila+part']);
+});
+
 test('a split upazila shows every seat that holds part of it', () => {
   assert.deepEqual(where('কেরানীগঞ্জ').sort(), ['ঢাকা-২:upazila+part', 'ঢাকা-৩:upazila+part']);
 });
