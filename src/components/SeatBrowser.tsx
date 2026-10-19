@@ -115,7 +115,7 @@ export default function SeatBrowser({ divisions, parties }: { divisions: SeatDiv
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={t('আসন, এমপি, জেলা বা উপজেলা, বাংলা বা ইংরেজিতে', 'Seat, MP or district, in English or Bangla')}
+            placeholder={t('আসন, এমপি, জেলা বা উপজেলা', 'Seat, MP or district')}
             className="w-full h-11 ps-10 pe-3 rounded-[10px] border border-rule bg-surface text-[15px] outline-none focus:border-brand focus:ring-4 focus:ring-brandring placeholder:text-muted"
           />
         </label>
