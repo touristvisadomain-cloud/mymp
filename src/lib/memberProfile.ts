@@ -78,6 +78,10 @@ export function memberText(m: Member, lang: Lang) {
   // On an English page with no English biography yet, the page says the Bangla one exists and links to it.
   const bioOnlyInBangla = en && !!m.bioBn?.trim() && !bio;
   const paragraphs = (bio?.text ?? '').split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  // A paragraph that is one line starting "### " is a sub-heading ("### রাজনৈতিক জীবন").
+  const blocks = paragraphs.map((p) =>
+    /^###\s+\S/.test(p) && !p.includes('\n') ? { heading: true, text: p.replace(/^###\s+/, '') } : { heading: false, text: p },
+  );
   const year = electionYear(meta.parliamentNo);
   // parliament.gov.bd writes a biography for the presiding officers only (and repeats it as the summary);
   // everyone else gets an introduction put together from the facts on this page.
@@ -102,5 +106,5 @@ export function memberText(m: Member, lang: Lang) {
         );
   // The page opens with the same sentences search results and link previews show.
   const lead = mpDescription(m, lang);
-  return { result, wonThisResult, year, bio, bioOnlyInBangla, paragraphs, summary, showSummary, intro, lead };
+  return { result, wonThisResult, year, bio, bioOnlyInBangla, paragraphs, blocks, summary, showSummary, intro, lead };
 }

@@ -71,6 +71,10 @@ export interface Member {
   summaryBn: string | null;
   /** Where an editor's biography (bioBn) was written from: URLs, space- or line-separated. */
   bioSources?: string | null;
+  /** The member's current office and what they have done in it lately, from dated news; an admin override only. */
+  dutiesBn?: string | null;
+  /** Where dutiesBn was written from: URLs, space- or line-separated. */
+  dutiesSources?: string | null;
   /** This parliament: oath date to the scheduled end of the term. */
   term: { start: string | null; end: string | null };
   /**

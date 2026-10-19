@@ -31,6 +31,7 @@ import {
 } from '@/i18n/names';
 
 import { siteUrl } from '@/lib/site';
+import { seatProfile } from '@/lib/seatProfiles';
 
 export function generateStaticParams() {
   return allMembers.map((m) => ({ slug: m.slug }));
@@ -101,7 +102,7 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
   const prior = priorTermsOf(m.id);
   const socials = socialsOf(m, t.lang);
   const fbNotice = facebookNotice(m, t.lang);
-  const { result, wonThisResult, year, bio, bioOnlyInBangla, paragraphs, summary, showSummary, intro, lead } = memberText(m, t.lang);
+  const { result, wonThisResult, year, bio, bioOnlyInBangla, paragraphs, blocks, summary, showSummary, intro, lead } = memberText(m, t.lang);
   const cc = committeeCounts();
   const partyMates = m.party ? membersOfParty(m.party.abbr).filter((x) => x.id !== m.id) : [];
   const sameDistrict = district
@@ -146,13 +147,18 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
   const wikiSources = facts.some((f) => f.wiki) ? (m.bioSource ?? '').split(' ').filter(Boolean) : [];
 
   const bioSources = sourceList(m.bioSources);
+  // The member's office and recent work, and the constituency's own story: Bangla for now.
+  const duties = en ? null : m.dutiesBn?.trim() || null;
+  const dutiesSources = sourceList(m.dutiesSources);
+  const seatStory = !en && m.seat && !m.seat.reserved ? seatProfile(m.seat.slug) : null;
   const party = partyBn(m.party);
   // The same person elsewhere: search engines use these to tie this page to
   // the member's Wikipedia article and their own accounts.
   const sameAs = (() => {
     const same = [
       ...(m.bioSource ?? '').split(/\s+/),
-      ...bioSources,
+      // From the biography's sources only the encyclopaedia's articles: a news story is not the person.
+      ...bioSources.filter((u) => /wikipedia\.org\/wiki\//.test(u)),
       // Only links the site stands behind: an unconfirmed Facebook page is not claimed as the member's.
       ...socials.filter((s) => !s.unverified).map((s) => s.url),
     ].filter((u): u is string => !!u && /^https?:\/\//.test(u) && (!/wikipedia\.org/.test(u) || /\/wiki\//.test(u)));
@@ -399,9 +405,16 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
             )}
             {paragraphs.length > 0 && (
               <Card className="p-5 sm:p-6 flex flex-col gap-3">
-                {paragraphs.map((p, i) => (
-                  <p key={i} className="text-[15px] leading-[1.8] wrap-anywhere">{p}</p>
-                ))}
+                {blocks.map((b, i) =>
+                  b.heading ? (
+                    <h3 key={i} className={`display text-[17px] sm:text-[18px] flex items-center gap-2 ${i > 0 ? 'pt-3' : ''}`}>
+                      <span aria-hidden="true" className="w-1.5 h-[0.9em] rounded-full bg-gradient-to-b from-logo to-brand shrink-0" />
+                      {b.text}
+                    </h3>
+                  ) : (
+                    <p key={i} className="text-[15px] leading-[1.8] wrap-anywhere">{b.text}</p>
+                  ),
+                )}
                 {bio?.translated && <TranslatedNote bnHref={bnHref} />}
                 {bioSources.length > 0 && (
                   // A biography is only as good as where it came from, so it says.
@@ -478,6 +491,29 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
             )}
           </section>
 
+          {duties && (
+            <section className="flex flex-col gap-4" id="dayitto">
+              <H2>বর্তমান দায়িত্ব ও কার্যক্রম</H2>
+              <Card className="p-5 sm:p-6 flex flex-col gap-3">
+                {duties.split(/\n{2,}/).map((p, i) => (
+                  <p key={i} className="text-[15px] leading-[1.8] wrap-anywhere">{p.trim()}</p>
+                ))}
+                {dutiesSources.length > 0 && (
+                  <p className="pt-3 mt-1 border-t border-rulesoft text-[12.5px] text-muted leading-relaxed">
+                    সূত্র:{' '}
+                    {dutiesSources.map((u, i) => (
+                      <span key={u}>
+                        <a href={u} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand">{sourceLabel(u, t.lang)}</a>
+                        {i < dutiesSources.length - 1 ? ', ' : ''}
+                      </span>
+                    ))}
+                    । ভুল দেখলে জানান।
+                  </p>
+                )}
+              </Card>
+            </section>
+          )}
+
           {m.seat && !m.seat.reserved && district && (
             <section className="flex flex-col gap-4" id="elaka">
               <H2>{t('নির্বাচনী এলাকা', 'Constituency')}</H2>
@@ -492,6 +528,27 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
                     .map((x) => [x.slug, en ? seatName(x, 'en') || x.slug : x.nameBn ?? x.nameEn ?? x.slug]),
                 )}
               />
+              {seatStory && (
+                // The constituency's own story, kept per seat (data/seat-profiles.json): it outlasts any one member.
+                <Card className="p-5 sm:p-6 flex flex-col gap-3">
+                  <h3 className="display text-[17px] sm:text-[18px]">নির্বাচনী এলাকার পরিচিতি</h3>
+                  {seatStory.bn.split(/\n{2,}/).map((p, i) => (
+                    <p key={i} className="text-[15px] leading-[1.8] text-inksoft wrap-anywhere">{p.trim()}</p>
+                  ))}
+                  {seatStory.sources.length > 0 && (
+                    <p className="pt-3 mt-1 border-t border-rulesoft text-[12.5px] text-muted leading-relaxed">
+                      সূত্র:{' '}
+                      {seatStory.sources.map((u, i) => (
+                        <span key={u}>
+                          <a href={u} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand">{sourceLabel(u, t.lang)}</a>
+                          {i < seatStory.sources.length - 1 ? ', ' : ''}
+                        </span>
+                      ))}
+                      । ভুল দেখলে জানান।
+                    </p>
+                  )}
+                </Card>
+              )}
             </section>
           )}
 
