@@ -47,12 +47,12 @@ function SeatStrip({ strip, tall = false }: { strip: (string | null)[]; tall?: b
 }
 
 /** "● বিএনপি ৫ · ● জামায়াত ১" */
-function Shares({ shares, max = 3 }: { shares: SeatShare[]; max?: number }) {
+function Shares({ shares, max = 3, end = false }: { shares: SeatShare[]; max?: number; end?: boolean }) {
   const t = useT();
   const shown = shares.slice(0, max);
   const rest = shares.slice(max).reduce((n, s) => n + s.count, 0);
   return (
-    <span className="flex flex-wrap gap-x-3 gap-y-1 text-[12.5px] text-inksoft">
+    <span className={`flex flex-wrap gap-x-3 gap-y-1 text-[12.5px] text-inksoft ${end ? 'sm:justify-end' : ''}`}>
       {shown.map((s) => (
         <span key={s.label} className="inline-flex items-center gap-1.5 whitespace-nowrap">
           <span aria-hidden="true" className={`w-2 h-2 rounded-full ${s.color ? '' : 'bg-rule'}`} style={s.color ? { background: s.color } : undefined} />
@@ -81,14 +81,16 @@ export default function DistrictBrowser({ divisions }: { divisions: DivisionGrou
           ...d,
           districts: !query || d.name.toLowerCase().includes(query) ? d.districts : d.districts.filter((x) => x.keys.includes(query)),
         }))
-        .filter((d) => d.districts.length),
+        .filter((d) => d.districts.length)
+        // Narrowed by a name, a division counts only the districts shown.
+        .map((d) => (query ? { ...d, seats: d.districts.reduce((n, x) => n + x.seats, 0) } : d)),
     [divisions, query],
   );
   const found = shown.reduce((n, d) => n + d.districts.length, 0);
 
   return (
     <div className="mt-8 pb-14">
-      <div className="sticky top-[env(safe-area-inset-top,0px)] z-20 -mx-4 sm:-mx-5 px-4 sm:px-5 py-3 bg-paper/90 backdrop-blur border-b border-rulesoft flex flex-col lg:flex-row lg:items-center gap-3">
+      <div className="py-3 border-y border-rulesoft flex flex-col lg:flex-row lg:items-center gap-3">
         <label className="relative shrink-0 lg:w-[280px]">
           <span className="sr-only">{t('জেলা খুঁজুন', 'Find a district')}</span>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="absolute start-3.5 top-1/2 -translate-y-1/2 text-muted">
@@ -140,9 +142,11 @@ export default function DistrictBrowser({ divisions }: { divisions: DivisionGrou
                   )}
                 </span>
               </div>
-              <div className="sm:w-[300px] flex flex-col gap-2">
-                <Shares shares={d.shares} max={4} />
-              </div>
+              {!query && (
+                <div className="sm:max-w-[520px]">
+                  <Shares shares={d.shares} max={5} end />
+                </div>
+              )}
             </div>
 
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
