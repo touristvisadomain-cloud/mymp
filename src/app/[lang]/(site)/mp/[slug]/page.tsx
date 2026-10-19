@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { shareGraph, shareTwitter, cardImage, langAlternates, fitDescription } from '@/lib/seo';
-import { sourceLabel, sourceList } from '@/lib/sourceLabel';
+import { sourceLabels, sourceList } from '@/lib/sourceLabel';
 import { mpDescription, mpTitle, partyBn, isIndependent, partyEnBare, possessiveEn } from '@/lib/seo/mpDescription';
 import Link from '@/i18n/Link';
 import { notFound } from 'next/navigation';
@@ -420,9 +420,9 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
                   // A biography is only as good as where it came from, so it says.
                   <p className="pt-3 mt-1 border-t border-rulesoft text-[12.5px] text-muted leading-relaxed">
                     {t('সূত্র', plural(bioSources.length, 'Source', 'Sources'))}:{' '}
-                    {bioSources.map((u, i) => (
+                    {sourceLabels(bioSources, t.lang).map((label, i) => [bioSources[i]!, label] as const).map(([u, label], i) => (
                       <span key={u}>
-                        <a href={u} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand">{sourceLabel(u, t.lang)}</a>
+                        <a href={u} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand">{label}</a>
                         {i < bioSources.length - 1 ? ', ' : ''}
                       </span>
                     ))}
@@ -501,9 +501,9 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
                 {dutiesSources.length > 0 && (
                   <p className="pt-3 mt-1 border-t border-rulesoft text-[12.5px] text-muted leading-relaxed">
                     সূত্র:{' '}
-                    {dutiesSources.map((u, i) => (
+                    {sourceLabels(dutiesSources, t.lang).map((label, i) => [dutiesSources[i]!, label] as const).map(([u, label], i) => (
                       <span key={u}>
-                        <a href={u} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand">{sourceLabel(u, t.lang)}</a>
+                        <a href={u} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand">{label}</a>
                         {i < dutiesSources.length - 1 ? ', ' : ''}
                       </span>
                     ))}
@@ -538,9 +538,9 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
                   {seatStory.sources.length > 0 && (
                     <p className="pt-3 mt-1 border-t border-rulesoft text-[12.5px] text-muted leading-relaxed">
                       সূত্র:{' '}
-                      {seatStory.sources.map((u, i) => (
+                      {sourceLabels(seatStory.sources, t.lang).map((label, i) => [seatStory.sources[i]!, label] as const).map(([u, label], i) => (
                         <span key={u}>
-                          <a href={u} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand">{sourceLabel(u, t.lang)}</a>
+                          <a href={u} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand">{label}</a>
                           {i < seatStory.sources.length - 1 ? ', ' : ''}
                         </span>
                       ))}
