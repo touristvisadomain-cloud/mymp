@@ -28,6 +28,7 @@
 import fs from 'node:fs';
 import { seats, districtOf } from '../src/lib/data';
 import { clausesOf, fold, wardNumbers } from '../src/lib/findSeat';
+import { carve } from './carve-upazilas';
 
 interface OsmPlace {
   name: string;
@@ -409,6 +410,8 @@ for (const [slug, shapes] of perDistrict) {
     attribution: 'Upazilas © OpenStreetMap contributors (ODbL); city corporations: OCHA COD-AB (CC BY-IGO); city wards: geoBoundaries, from BBS/OCHA 2015 (CC BY 3.0 IGO)',
     features: [...shapes.values()].map((o) => ({ type: 'Feature', properties: { name: o.name, kind: o.kind, ...(o.city ? { city: o.city } : {}), seats: o.seats }, geometry: o.geometry })),
   };
+  // OpenStreetMap's older upazilas often still hold the ones carved out of them.
+  carve(fc.features as unknown as Parameters<typeof carve>[0]);
   fs.writeFileSync(`public/geo/${slug}.json`, JSON.stringify(fc));
   files++;
 }
