@@ -150,6 +150,12 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
   // The member's office and recent work, and the constituency's own story: Bangla for now.
   const duties = en ? null : m.dutiesBn?.trim() || null;
   const dutiesSources = sourceList(m.dutiesSources);
+  // The biography's "বর্তমান দায়িত্ব" (the post and since when) and the duties card below said the same
+  // thing twice: with a duties text, that section opens the card instead.
+  const roleAt = duties ? blocks.findIndex((b) => b.heading && /^বর্তমান দায়িত্ব/.test(b.text)) : -1;
+  const roleEnd = roleAt < 0 ? -1 : blocks.findIndex((b, i) => i > roleAt && b.heading);
+  const roleParas = roleAt < 0 ? [] : blocks.slice(roleAt + 1, roleEnd < 0 ? undefined : roleEnd).map((b) => b.text);
+  const bioBlocks = roleAt < 0 ? blocks : [...blocks.slice(0, roleAt), ...(roleEnd < 0 ? [] : blocks.slice(roleEnd))];
   const seatStory = !en && m.seat && !m.seat.reserved ? seatProfile(m.seat.slug) : null;
   const party = partyBn(m.party);
   // The same person elsewhere: search engines use these to tie this page to
@@ -405,7 +411,7 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
             )}
             {paragraphs.length > 0 && (
               <Card className="p-5 sm:p-6 flex flex-col gap-3">
-                {blocks.map((b, i) =>
+                {bioBlocks.map((b, i) =>
                   b.heading ? (
                     <h3 key={i} className={`display text-[17px] sm:text-[18px] flex items-center gap-2 ${i > 0 ? 'pt-3' : ''}`}>
                       <span aria-hidden="true" className="w-1.5 h-[0.9em] rounded-full bg-gradient-to-b from-logo to-brand shrink-0" />
@@ -495,7 +501,7 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
             <section className="flex flex-col gap-4" id="dayitto">
               <H2>বর্তমান দায়িত্ব ও কার্যক্রম</H2>
               <Card className="p-5 sm:p-6 flex flex-col gap-3">
-                {duties.split(/\n{2,}/).map((p, i) => (
+                {[...roleParas, ...duties.split(/\n{2,}/)].map((p, i) => (
                   <p key={i} className="text-[15px] leading-[1.8] wrap-anywhere">{p.trim()}</p>
                 ))}
                 {dutiesSources.length > 0 && (
