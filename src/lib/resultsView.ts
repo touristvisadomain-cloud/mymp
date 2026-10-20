@@ -23,6 +23,12 @@ export function sourceOf(url: string, lang: Lang = 'bn'): { name: string; link: 
       ? { name: 'The Business Standard', link: 'Original page', by: "according to The Business Standard's count" }
       : { name: 'দ্য বিজনেস স্ট্যান্ডার্ড', link: 'মূল পাতা', by: 'দ্য বিজনেস স্ট্যান্ডার্ডের হিসাব অনুযায়ী' };
   }
+  // The returning officer's signed result sheet on the Election Commission's result portal (linked from ecs.gov.bd).
+  if (/103\.183\.38\.66/.test(url)) {
+    return en
+      ? { name: 'Election Commission result sheet', link: 'Result sheet', by: "according to the Election Commission's result sheet" }
+      : { name: 'নির্বাচন কমিশনের ফলাফল শিট', link: 'ফলাফল শিট', by: 'নির্বাচন কমিশনের ফলাফল শিট অনুযায়ী' };
+  }
   // A seat where The Business Standard's count was wrong: the returning officer's figures as The Financial Express reported them.
   if (/thefinancialexpress\.com\.bd/i.test(url)) {
     return en
