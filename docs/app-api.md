@@ -281,8 +281,12 @@ All the [brief](#the-member-brief)'s fields, and:
 | `fatherBn`, `motherBn` | string \| null | English: the source's English name, else a translation. **en: null if neither** (about 90 members). |
 | `isFreedomFighter` | boolean | |
 | `email` | string \| null | The official address Parliament publishes. |
-| `bioBn` | string \| null | The biography; paragraphs separated by a blank line (`"\n\n"`). **en: null if untranslated.** |
+| `bioBn` | string \| null | The biography; paragraphs separated by a blank line (`"\n\n"`). Sub-headings are plain paragraphs here (the `"### "` that marks them is removed, for app versions before 1.3.7). **en: null if untranslated.** |
+| `bioBlocks[]` | object | The biography as the page shows it: `{heading, text}`, `heading: true` for a sub-heading ("রাজনৈতিক জীবন"). Leaves out the "বর্তমান দায়িত্ব" section when that opens `duties` instead. Empty when there is no biography. |
 | `bioTranslated` | boolean | True when `bioBn` is a translation from Bangla. |
+| `duties` | string[] | "বর্তমান দায়িত্ব ও কার্যক্রম": the post and since when, then the work since, one string per paragraph. Bangla only; empty on English and for a member without one. |
+| `dutiesSourceLinks[]` | object | Where `duties` was written from, `{url, label}`. |
+| `seatStory` | object \| null | "নির্বাচনী এলাকার পরিচিতি": `{paragraphs: string[], sourceLinks: [{url, label}]}`. Bangla only; null on English, for a reserved seat, or when none has been written. |
 | `bioOnlyInBangla` | boolean | English only: a biography exists in Bangla but has no English yet (the site says "available in Bangla" and links the Bangla page). Always false on Bangla. |
 | `summaryBn` | string \| null | The source's one-paragraph summary (presiding officers). **en: null if untranslated.** |
 | `summaryTranslated` | boolean | |

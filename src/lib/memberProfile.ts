@@ -82,6 +82,14 @@ export function memberText(m: Member, lang: Lang) {
   const blocks = paragraphs.map((p) =>
     /^###\s+\S/.test(p) && !p.includes('\n') ? { heading: true, text: p.replace(/^###\s+/, '') } : { heading: false, text: p },
   );
+  // The member's office and recent work: Bangla for now. The biography's "বর্তমান দায়িত্ব" (the post and
+  // since when) said the same as this, so with a duties text that section opens it instead.
+  const dutiesText = en ? null : m.dutiesBn?.trim() || null;
+  const roleAt = dutiesText ? blocks.findIndex((b) => b.heading && /^বর্তমান দায়িত্ব/.test(b.text)) : -1;
+  const roleEnd = roleAt < 0 ? -1 : blocks.findIndex((b, i) => i > roleAt && b.heading);
+  const roleParas = roleAt < 0 ? [] : blocks.slice(roleAt + 1, roleEnd < 0 ? undefined : roleEnd).map((b) => b.text);
+  const bioBlocks = roleAt < 0 ? blocks : [...blocks.slice(0, roleAt), ...(roleEnd < 0 ? [] : blocks.slice(roleEnd))];
+  const duties = dutiesText ? [...roleParas, ...dutiesText.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)] : [];
   const year = electionYear(meta.parliamentNo);
   // parliament.gov.bd writes a biography for the presiding officers only (and repeats it as the summary);
   // everyone else gets an introduction put together from the facts on this page.
@@ -106,5 +114,5 @@ export function memberText(m: Member, lang: Lang) {
         );
   // The page opens with the same sentences search results and link previews show.
   const lead = mpDescription(m, lang);
-  return { result, wonThisResult, year, bio, bioOnlyInBangla, paragraphs, blocks, summary, showSummary, intro, lead };
+  return { result, wonThisResult, year, bio, bioOnlyInBangla, paragraphs, blocks, bioBlocks, duties, summary, showSummary, intro, lead };
 }

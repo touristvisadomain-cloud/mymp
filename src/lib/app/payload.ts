@@ -28,6 +28,7 @@ import { sourceList, sourceLabel } from '@/lib/sourceLabel';
 import { nameOf, changes } from '@/lib/cabinet';
 import { memberRoles, memberText, postBadges, postEn } from '@/lib/memberProfile';
 import { candidateNameEn, resultNote, sourceOf } from '@/lib/resultsView';
+import { seatProfile } from '@/lib/seatProfiles';
 import { inLang, translated } from '@/i18n/content';
 import { ministryAliases, rankAliases } from '../../../config/ministry-aliases';
 import {
@@ -350,8 +351,21 @@ export function memberDetail(slug: string, lang: Lang = 'bn') {
     motherBn: en ? titleCaseName(m.motherEn) ?? inLang(m.motherBn, 'en') : m.motherBn,
     isFreedomFighter: m.isFreedomFighter,
     email: m.email,
-    bioBn: bio?.text ?? null,
+    // App versions before 1.3.7 show this as plain paragraphs, so the "### " that marks a sub-heading is left out here.
+    bioBn: bio?.text.replace(/^###\s+/gm, '') ?? null,
+    /**
+     * The biography as the page shows it: paragraphs and sub-headings ({heading: true}), less its
+     * "বর্তমান দায়িত্ব" section when that opens `duties` instead.
+     */
+    bioBlocks: text.bioBlocks,
     bioTranslated: !!bio?.translated,
+    /** "বর্তমান দায়িত্ব ও কার্যক্রম": the post and since when, then the work since; Bangla only, [] when none. */
+    duties: text.duties,
+    dutiesSourceLinks: text.duties.length ? sourceList(m.dutiesSources).map((url) => ({ url, label: sourceLabel(url, lang) })) : [],
+    /** "নির্বাচনী এলাকার পরিচিতি": the constituency in a few paragraphs; Bangla only, null when none. */
+    seatStory: ((s) => (s ? { paragraphs: s.bn.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean), sourceLinks: s.sources.map((url) => ({ url, label: sourceLabel(url, lang) })) } : null))(
+      !en && m.seat && !m.seat.reserved ? seatProfile(m.seat.slug) : null,
+    ),
     /** English response only: a biography exists, in Bangla, with no English yet. */
     bioOnlyInBangla: text.bioOnlyInBangla,
     summaryBn: summary?.text ?? null,

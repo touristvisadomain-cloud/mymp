@@ -102,7 +102,7 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
   const prior = priorTermsOf(m.id);
   const socials = socialsOf(m, t.lang);
   const fbNotice = facebookNotice(m, t.lang);
-  const { result, wonThisResult, year, bio, bioOnlyInBangla, paragraphs, blocks, summary, showSummary, intro, lead } = memberText(m, t.lang);
+  const { result, wonThisResult, year, bio, bioOnlyInBangla, paragraphs, bioBlocks, duties, summary, showSummary, intro, lead } = memberText(m, t.lang);
   const cc = committeeCounts();
   const partyMates = m.party ? membersOfParty(m.party.abbr).filter((x) => x.id !== m.id) : [];
   const sameDistrict = district
@@ -148,14 +148,8 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
 
   const bioSources = sourceList(m.bioSources);
   // The member's office and recent work, and the constituency's own story: Bangla for now.
-  const duties = en ? null : m.dutiesBn?.trim() || null;
+  // The office and recent work, opened by the biography's "বর্তমান দায়িত্ব" (lib/memberProfile.ts).
   const dutiesSources = sourceList(m.dutiesSources);
-  // The biography's "বর্তমান দায়িত্ব" (the post and since when) and the duties card below said the same
-  // thing twice: with a duties text, that section opens the card instead.
-  const roleAt = duties ? blocks.findIndex((b) => b.heading && /^বর্তমান দায়িত্ব/.test(b.text)) : -1;
-  const roleEnd = roleAt < 0 ? -1 : blocks.findIndex((b, i) => i > roleAt && b.heading);
-  const roleParas = roleAt < 0 ? [] : blocks.slice(roleAt + 1, roleEnd < 0 ? undefined : roleEnd).map((b) => b.text);
-  const bioBlocks = roleAt < 0 ? blocks : [...blocks.slice(0, roleAt), ...(roleEnd < 0 ? [] : blocks.slice(roleEnd))];
   const seatStory = !en && m.seat && !m.seat.reserved ? seatProfile(m.seat.slug) : null;
   const party = partyBn(m.party);
   // The same person elsewhere: search engines use these to tie this page to
@@ -497,11 +491,11 @@ export default async function MemberPage({ params }: PageProps<'/[lang]/mp/[slug
             )}
           </section>
 
-          {duties && (
+          {duties.length > 0 && (
             <section className="flex flex-col gap-4" id="dayitto">
               <H2>বর্তমান দায়িত্ব ও কার্যক্রম</H2>
               <Card className="p-5 sm:p-6 flex flex-col gap-3">
-                {[...roleParas, ...duties.split(/\n{2,}/)].map((p, i) => (
+                {duties.map((p, i) => (
                   <p key={i} className="text-[15px] leading-[1.8] wrap-anywhere">{p.trim()}</p>
                 ))}
                 {dutiesSources.length > 0 && (
