@@ -2,6 +2,7 @@ import { allMembers as members, seats, parties, committees, meta, districtOf } f
 import { allAdvisers, adviserPosts } from '@/lib/advisers';
 import { siteUrl } from '@/lib/site';
 import { hrefIn } from '@/i18n/core';
+import { hreflangs } from '@/lib/seo';
 
 // Built once per deploy like the pages it lists; the data only changes with a publish.
 export const dynamic = 'force-static';
@@ -59,11 +60,10 @@ export function GET() {
   const urls = entries.flatMap((e) => {
     const bn = siteUrl + hrefIn('bn', e.path);
     const en = siteUrl + hrefIn('en', e.path);
-    const alternates = [
-      `<xhtml:link rel="alternate" hreflang="bn-BD" href="${esc(bn)}"/>`,
-      `<xhtml:link rel="alternate" hreflang="en" href="${esc(en)}"/>`,
-      `<xhtml:link rel="alternate" hreflang="x-default" href="${esc(bn)}"/>`,
-    ];
+    // The same pairs as each page's own tags (lib/seo.ts): English is offered abroad, Bangla in Bangladesh.
+    const alternates = hreflangs(bn, en).map(
+      ([code, href]) => `<xhtml:link rel="alternate" hreflang="${code}" href="${esc(href)}"/>`,
+    );
     return [bn, en].map((loc) =>
       [
         '<url>',

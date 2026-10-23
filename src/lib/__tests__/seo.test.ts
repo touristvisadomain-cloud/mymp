@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { charCount, fitDescription, fitTitle, withSiteName } from '../seo';
+import { charCount, fitDescription, fitTitle, langAlternates, SITE_TITLE, withSiteName } from '../seo';
 
 test('a description that fits is returned whole, Bangla included', () => {
   // 159 characters as a reader counts them, far more in code points.
@@ -51,4 +51,23 @@ test('a title keeps the site name only while it fits in 60', () => {
     withSiteName('Mohammad Amin Ur Rashid | Minister for Fisheries and Livestock', 'en'),
     'Mohammad Amin Ur Rashid | Minister for Fisheries and Livestock',
   );
+});
+
+test('English pages are offered abroad, not to readers in Bangladesh', () => {
+  const { canonical, languages } = langAlternates('bn', '/mp/tarique-rahman');
+  assert.equal(canonical, '/mp/tarique-rahman');
+  const l = languages as Record<string, string>;
+  assert.equal(l['bn-BD'], '/mp/tarique-rahman');
+  assert.equal(l['x-default'], '/mp/tarique-rahman');
+  // A plain "en" would send everyone in Bangladesh with Google in English to the English page.
+  assert.equal(l.en, undefined);
+  assert.equal(l['en-BD'], undefined);
+  assert.equal(l['en-GB'], '/en/mp/tarique-rahman');
+  assert.equal(l['en-US'], '/en/mp/tarique-rahman');
+  assert.equal(langAlternates('en', '/').canonical, '/en');
+});
+
+test('the Bangla home title carries "My MP" in Latin letters', () => {
+  assert.ok(SITE_TITLE.startsWith('আমার এমপি (My MP)'));
+  assert.ok(charCount(SITE_TITLE) <= 60);
 });

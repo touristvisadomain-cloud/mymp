@@ -9,7 +9,9 @@ import { hrefIn, type Lang } from '@/i18n/core';
  * home page adds the explicit title, description and og:url on top.
  */
 export const SITE_NAME = 'আমার এমপি';
-export const SITE_TITLE = 'আমার এমপি | বাংলাদেশের সংসদ সদস্যদের তথ্য';
+// "My MP" in Latin letters too: people type the name that way, and a search for "my mp"
+// should find the Bangla home page by its own title (owner, 2026-10-23).
+export const SITE_TITLE = 'আমার এমপি (My MP) | বাংলাদেশের সংসদ সদস্যদের তথ্য';
 export const SITE_DESCRIPTION =
   'ত্রয়োদশ জাতীয় সংসদের সব সংসদ সদস্যের তথ্য এক জায়গায়। আসন, দল, সংরক্ষিত আসন, সংসদীয় কমিটি ও অধিবেশনের তথ্য। সূত্র: বাংলাদেশ জাতীয় সংসদ ও নির্বাচন কমিশন।';
 
@@ -140,6 +142,25 @@ export function baseOpenGraph(lang: Lang): NonNullable<Metadata['openGraph']> {
 }
 
 /**
+ * Where the English pages are offered: English readers in these countries
+ * (the English-speaking world and where most Bangladeshis abroad live).
+ * Deliberately not a plain "en": with it, everyone in Bangladesh whose Google
+ * is set to English was sent to the English page, even for "my mp". A reader in
+ * Bangladesh now matches no English entry and gets x-default, the Bangla page,
+ * which is what the site is for (owner, 2026-10-23). The English page is one
+ * click away on every page.
+ */
+export const EN_HREFLANGS = [
+  'en-GB', 'en-US', 'en-CA', 'en-AU', 'en-NZ', 'en-IE', 'en-IN', 'en-SG', 'en-MY',
+  'en-AE', 'en-SA', 'en-QA', 'en-KW', 'en-OM', 'en-BH', 'en-ZA',
+] as const;
+
+/** Every hreflang code and the address it points to: Bangla for Bangladesh and as the default, English abroad. */
+export function hreflangs(bn: string, en: string): [string, string][] {
+  return [['bn-BD', bn], ...EN_HREFLANGS.map((c): [string, string] => [c, en]), ['x-default', bn]];
+}
+
+/**
  * A page's canonical address in its own language and its address in the
  * other, so search engines show each reader their language's page and do not
  * take the two for duplicates. Bangla is the default (x-default).
@@ -147,7 +168,7 @@ export function baseOpenGraph(lang: Lang): NonNullable<Metadata['openGraph']> {
 export function langAlternates(lang: Lang, path: string): NonNullable<Metadata['alternates']> {
   const bn = hrefIn('bn', path);
   const en = hrefIn('en', path);
-  return { canonical: lang === 'en' ? en : bn, languages: { 'bn-BD': bn, en, 'x-default': bn } };
+  return { canonical: lang === 'en' ? en : bn, languages: Object.fromEntries(hreflangs(bn, en)) };
 }
 
 export const BASE_TWITTER: NonNullable<Metadata['twitter']> = {

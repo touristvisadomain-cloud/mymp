@@ -98,7 +98,7 @@ function websiteLd(lang: Lang) {
     "@type": "WebSite",
     "@id": en ? `${siteUrl}/en#website` : `${siteUrl}/#website`,
     name: siteName(lang),
-    alternateName: en ? ["mymp", siteName("bn")] : "mymp",
+    alternateName: en ? ["mymp", siteName("bn")] : ["My MP", "mymp", "Amar MP"],
     url: home,
     inLanguage: en ? "en" : "bn-BD",
     description: siteDescription(lang),
