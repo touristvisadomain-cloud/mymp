@@ -344,6 +344,19 @@ const nameSimilarity = (a, b) => {
 const PLACEHOLDER_DOB = new Set(['1900-01-01', '1970-01-01', '0001-01-01']);
 const realDob = (d) => !!d && !PLACEHOLDER_DOB.has(d);
 
+/*
+ * Earlier members whom the name-and-seat rule below would join to a sitting member
+ * but who are verifiably someone else. Each entry is the sitting member, the earlier
+ * parliament and that record's seat number; the earlier record then stays unlinked.
+ */
+const KNOWN_DIFFERENT = [
+  // Satkhira-2: the 8th-parliament (2001) MP was Mawlana Abdul Khaleque Mondal (born 1944,
+  // sentenced by the International Crimes Tribunal in 2022, died in 2023). The sitting
+  // member Muhammad Abdul Khaleq (born 1963) is a first-time MP (Prothom Alo, Feb 2026;
+  // termsCount 1). Same seat, near-identical names and no birth date on the old record.
+  { memberId: '013010601', parliamentNo: 8, seatNo: 106 },
+];
+
 const samePerson = (cur, old) => {
   const nameSim = nameSimilarity(cur.nameKey, old.nameKey);
   const dobEqual = realDob(cur.dob) && realDob(old.dob) && cur.dob === old.dob;
@@ -627,7 +640,8 @@ async function main() {
     const c = t.constituency ?? {};
     const old = { empId: m.empId ?? null, nameKey: nameKey(m.nameEng), dob: clean(m.dateOfBirth), seatNo: typeof c.constituencyNo === 'number' ? c.constituencyNo : null, district: districtKey(c.constituencyEng), seatKey: seatKey(c.constituencyEng) };
     if (!old.nameKey && !old.empId) return null;
-    return members.find((cur) => samePerson(cur._match, old)) ?? null;
+    const cur = members.find((x) => samePerson(x._match, old)) ?? null;
+    return cur && KNOWN_DIFFERENT.some((d) => d.memberId === cur.id && d.parliamentNo === n && d.seatNo === old.seatNo) ? null : cur;
   };
   const priorTerms = {};
   const seatHolders = {};
